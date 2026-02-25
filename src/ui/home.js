@@ -54,9 +54,7 @@ function renderHome(){
       const best=LS.get(m.gameId+'-best',0);
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
       return `<div class="mission-card" onclick="startGame('${m.gameId}')">
-        <div class="mission-icon" style="background:${g.color}15;color:${g.color}">
-          <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">${GI[m.gameId]||'●'}</div>
-        </div>
+        <div class="mission-icon" style="background:${g.color}15;color:${g.color}">${GI[m.gameId]||'●'}</div>
         <div class="mission-info">
           <div class="mission-name">${m.name}</div>
           <div class="mission-desc">목표 ${m.target}점 · 최고 ${best}점</div>
