@@ -6,10 +6,7 @@ function renderHome(){
   const rankNameEl = document.getElementById('rankName');
   if(rankNameEl) {
     rankNameEl.textContent=rank.name;
-    rankNameEl.style.color=rank.color;
   }
-  const rankNextEl = document.getElementById('rankNext');
-  if(rankNextEl) rankNextEl.textContent=next?`다음 목표: ${next.name}`:'최고로 젊은 두뇌!';
   
   const xpCurEl = document.getElementById('xpCur');
   if(xpCurEl) xpCurEl.textContent=xp+' XP';
@@ -33,7 +30,6 @@ function renderHome(){
   GAMES.forEach(g=>{const b=LS.get(g.id+'-best',0);if(b>0){total+=b;count++}});
   const avg=count>0?Math.round(total/count):0;
   
-  // PCT calculation
   let pctSum=0,pctCount=0;
   GAMES.forEach(g=>{const b=LS.get(g.id+'-best',0);if(b>0){pctSum+=estimatedPercentile(g.id,b);pctCount++}});
   const overallPct=pctCount>0?Math.round(pctSum/pctCount):0;
@@ -56,11 +52,11 @@ function renderHome(){
       return `<div class="mission-card" onclick="startGame('${m.gameId}')">
         <div class="mission-icon" style="background:${g.color}15;color:${g.color}">${GI[m.gameId]||'●'}</div>
         <div class="mission-info">
-          <div class="mission-name">${m.name}</div>
-          <div class="mission-desc">목표 ${m.target}점 · 최고 ${best}점</div>
+          <div class="mission-name">${m.name} <span style="font-size:11px;color:var(--sub);font-weight:400">목표 ${m.target}점 · 최고 ${best}점</span></div>
+          <div class="mission-desc">${m.desc}</div>
           ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
         </div>
-        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:24px;height:24px"></div>':`<div class="mission-reward" style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><span class="tds-badge-xs tds-badge-weak-blue">+20 XP</span><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
+        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px"></div>':`<div class="mission-reward" style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><span class="tds-badge-xs tds-badge-weak-blue">+20 XP</span><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
       </div>`}).join('');
   }
 
