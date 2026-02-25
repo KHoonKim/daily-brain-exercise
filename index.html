@@ -21,59 +21,75 @@
 <!-- ===== HOME ===== -->
 <div id="homeScreen" class="home screen active">
   <div class="home-header">
-    <h1><img src="icon-192.png" style="width:28px;height:28px;vertical-align:-6px;border-radius:6px"> 매일매일 두뇌운동</h1>
+    <div class="header-left">
+      <img src="icon-192.png" class="header-icon">
+      <span class="header-title">두뇌운동</span>
+    </div>
     <div class="home-header-r">
-      <div id="streakBadge" style="display:none"></div>
-      <span id="pointDisplay" style="display:none"></span>
-      <span id="ticketCount" class="tds-badge tds-badge-sm tds-badge-fill-blue" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer" onclick="showTicketShop()"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:13px;height:13px"><span id="ticketNum"></span></span>
-    </div>
-  </div>
-
-  <!-- Daily Workout (Primary - TOP) -->
-  <div id="dailyWorkout"></div>
-
-  <!-- Point Progress -->
-  <div style="background:var(--card);border-radius:var(--r16);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:14px;font-weight:800">두뇌점수 모으기</div>
-      <div style="font-size:14px;font-weight:800;color:#3182F6" id="pointProgress">0 / 100점</div>
-    </div>
-    <div style="height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden">
-      <div id="pointBar" style="height:100%;background:#3182F6;border-radius:2px;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%"></div>
-    </div>
-    <div id="streakLabel" style="display:none"></div>
-    <div style="font-size:12px;color:var(--sub);margin-top:4px">100점이 모이면 100원으로 교환할 수 있어요</div>
-    <button class="btn btn-combo" id="exchangeBtn" onclick="exchangePoints()" disabled style="margin:10px 0 0">100원 받기</button>
-  </div>
-  <div id="streakDays" style="display:none"></div>
-
-  <!-- Profile Summary (Compact - below workout) -->
-  <div style="background:var(--card);border-radius:var(--r16);padding:20px 16px 14px;margin-bottom:12px;box-shadow:var(--shadow)">
-    <div style="display:flex;align-items:center;margin-bottom:12px">
-      <div style="flex:1;text-align:center">
-        <div style="font-size:12px;color:var(--sub);margin-bottom:4px">나의 두뇌 나이</div>
-        <div style="font-size:36px;font-weight:900" id="rankName">100세</div>
-      </div>
-      <div style="width:1px;height:48px;background:var(--border)"></div>
-      <div style="flex:1;text-align:center">
-        <div style="font-size:12px;color:var(--sub);margin-bottom:4px">종합 순위</div>
-        <div style="font-size:36px;font-weight:900;color:var(--purple)" id="overallPct">--%</div>
+      <div id="ticketCount" class="ticket-badge" onclick="showTicketShop()">
+        <img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" class="emoji-sm">
+        <span id="ticketNum">5</span>
       </div>
     </div>
-    <div class="xp-bar">
-      <div class="xp-bar-label"><span id="xpCur">0 XP</span><span id="xpMax">200 XP</span></div>
-      <div class="xp-bar-track"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
-    </div>
-    <div id="rankNext" style="display:none"></div><div id="rankBadge" style="display:none"></div>
   </div>
 
-  <!-- Missions -->
-  <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg" style="width:16px;height:16px;vertical-align:-3px"> 오늘의 챌린지 <span class="st-sub" id="missionCount">0/5</span></div>
-  <div id="missionList"></div>
+  <div class="home-scroll-content">
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="pc-content">
+        <div class="pc-left">
+          <div class="pc-label">나의 두뇌 나이</div>
+          <div class="pc-value" id="rankName">100세</div>
+          <div class="pc-rank-next" id="rankNext">다음 목표: 90세</div>
+        </div>
+        <div class="pc-right">
+          <div class="pc-label">종합 순위</div>
+          <div class="pc-value purple" id="overallPct">--%</div>
+        </div>
+      </div>
+      <div class="xp-progress-container">
+        <div class="xp-label">
+          <span id="xpCur">0 XP</span>
+          <span id="xpMax" class="sub">200 XP</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="xpFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
 
-  <!-- Individual Games (Secondary) -->
-  <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg" style="width:16px;height:16px;vertical-align:-3px"> 자유 훈련</div>
-  <div id="gameGrid"></div>
+    <!-- Daily Workout -->
+    <div id="dailyWorkout"></div>
+
+    <!-- Point Progress Section -->
+    <div class="point-section">
+      <div class="section-header">
+        <span class="section-title-sm">두뇌점수 모으기</span>
+        <span class="point-val" id="pointProgress">0 / 100점</span>
+      </div>
+      <div class="progress-track-sm">
+        <div id="pointBar" class="progress-fill-blue" style="width:0%"></div>
+      </div>
+      <p class="point-hint">100점이 모이면 100원으로 교환할 수 있어요</p>
+      <button class="btn btn-primary btn-lg" id="exchangeBtn" onclick="exchangePoints()" disabled>100원 받기</button>
+    </div>
+
+    <!-- Challenges -->
+    <div class="section-title">
+      <img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg" class="emoji-md">
+      오늘의 챌린지
+      <span class="st-sub" id="missionCount">0/5</span>
+    </div>
+    <div id="missionList"></div>
+
+    <!-- Game Grid -->
+    <div class="section-title">
+      <img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg" class="emoji-md">
+      자유 훈련
+    </div>
+    <div id="gameGrid"></div>
+  </div>
+</div>
 
   <div id="pointExchangeVal" style="display:none"></div>
 
@@ -427,36 +443,31 @@
 
 <div class="overlay" id="overlay">
   <div class="result-sheet">
-    <div class="r-handle"></div>
-    <div style="height:20px"></div>
-    <div style="background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)">
+    <div class="result-card">
       <h3 id="r-title">훈련 완료!</h3>
       <div class="r-score" id="r-score">0</div>
-      <div id="r-bonus" class="hide" style="text-align:center;margin:4px 0;transition:all .5s"></div>
-      <div class="r-cat" id="r-cat"></div>
-      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><div class="r-xp hide" id="r-xp">+0 XP</div><div class="r-xp hide" id="r-pt" style="background:var(--p)">+0 두뇌점수</div></div>
-      <div class="r-mission hide" id="r-mission"></div>
+      <div class="r-cat" id="r-cat">최고기록 도전 중</div>
+      <div class="r-badges">
+        <div class="r-badge r-badge-xp" id="r-xp">+0 XP</div>
+        <div class="r-badge r-badge-pt" id="r-pt">+0 두뇌점수</div>
+      </div>
       <div class="r-stats" id="r-stats"></div>
     </div>
-    <div id="r-percentile" class="hide" style="text-align:center;margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,var(--p-light),#F3E8FF);border-radius:var(--r12);border:1px solid var(--border)"><div style="font-size:12px;color:var(--sub);margin-bottom:2px">전체 플레이어 중</div><div id="r-pct-val" style="font-size:24px;font-weight:800;color:var(--purple)">상위 10%</div><div id="r-pct-players" style="font-size:11px;color:var(--sub);margin-top:2px"></div></div>
-    <div id="r-science" style="background:var(--card);border-radius:var(--r12);padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px" id="r-sci-title"></div>
-      <div style="font-size:12px;color:var(--sub);line-height:1.5" id="r-sci-desc"></div>
-    </div>
-    <!-- Brain Age Card -->
-    <!-- brain age removed: rank = brain age -->
-    <!-- 재도전 (최우선) -->
-    <div id="r-retry-msg" class="hide" style="text-align:center;font-size:13px;font-weight:600;color:var(--p);padding:8px 16px;margin-bottom:6px;background:var(--p)10;border-radius:var(--r12)"></div>
-    <button class="btn btn-primary" id="r-main-btn" onclick="replayGame()" style="width:100%;font-size:17px;padding:16px;font-weight:800;margin-bottom:12px">광고보고 한 번 더 도전하기</button>
 
-    <!-- Share & Leaderboard -->
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <button class="btn btn-weak" id="r-share-btn" onclick="shareScore()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F4E4.svg" style="width:16px;height:16px">공유</button>
-      <button class="btn btn-weak" id="r-lb-btn" onclick="AIT.openLeaderboard()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F3C6.svg" style="width:16px;height:16px">리더보드</button>
-      <button class="btn btn-weak" id="r-invite-btn" onclick="inviteFriend()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F44B.svg" style="width:16px;height:16px">초대</button>
+    <!-- Science Tip -->
+    <div id="r-science" style="background:var(--card);border-radius:20px;padding:20px;margin-bottom:16px;text-align:left;box-shadow:var(--shadow-sm)">
+      <div style="font-size:14px;font-weight:800;color:var(--p);margin-bottom:6px" id="r-sci-title">두뇌 상식</div>
+      <div style="font-size:13px;color:var(--sub-text);line-height:1.6" id="r-sci-desc"></div>
     </div>
 
-    <button class="btn btn-home" onclick="goHomeFromResult()" style="margin-top:0">홈으로</button>
+    <button class="btn btn-primary btn-lg" id="r-main-btn" onclick="replayGame()" style="margin-bottom:12px">광고보고 한 번 더 도전하기</button>
+
+    <div class="btn-group">
+      <button class="btn btn-weak btn-md" onclick="shareScore()">공유하기</button>
+      <button class="btn btn-weak btn-md" onclick="AIT.openLeaderboard()">순위보기</button>
+    </div>
+
+    <button class="btn btn-home btn-lg" onclick="goHomeFromResult()">홈으로 돌아가기</button>
   </div>
 </div>
 

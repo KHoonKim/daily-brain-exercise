@@ -24,9 +24,7 @@ function getRetryMotivation(gameId,score,best,isNew){
 
 let _showResultArgs=null;
 function showResult(score,name,stats,extra={}){
-  // 타이머 게임 첫 종료 시 +5초 제안
   const timerGames=['math','stroop','pattern','focus','rps','compare','oddone','maxnum','signfind','coincount','sort','flanker','nback','leftright','rotate','colormix','wordcomp','headcount','pyramid','clock','blockcount','calccomp','serial','matchpair','mirror'];
-  
   const isTimerEnd = extra._isTimerEnd || false; 
 
   if(!timeExtendUsed && timerGames.includes(curGame) && !extra._fromTimeExtend && isTimerEnd){
@@ -53,107 +51,73 @@ function showResult(score,name,stats,extra={}){
   const completed=updateMission(curGame,score,extra);
   completed.forEach(m=>addXP(m.xp));
 
-  const titleEl = document.getElementById('r-title');
-  if(titleEl) titleEl.textContent=name+' 완료!';
+  // Update UI elements
+  document.getElementById('r-title').textContent=name+' 완료!';
+  document.getElementById('r-score').textContent=score;
   
-  const bonusEl=document.getElementById('r-bonus');
-  if(bonusEl) {
-    if(extra.timeBonus){
-      const tb=extra.timeBonus,ts=extra.timeLeft;
-      const baseScore=score-tb;
-      setScore('r-score',baseScore);
-      bonusEl.innerHTML=`<div style="font-size:14px;color:var(--sub);margin:2px 0">남은 시간 ${ts}초 × 5</div><div style="font-size:20px;font-weight:800;color:var(--ok)">+${tb}점</div>`;
-      bonusEl.classList.remove('hide');
-      setTimeout(()=>{setScore('r-score',score);bonusEl.querySelector('div:last-child').style.opacity='0.5'},1500);
-    }else{
-      setScore('r-score',score);
-      bonusEl.classList.add('hide');
-    }
-  }
-
   const catEl = document.getElementById('r-cat');
-  if(catEl) {
-    const bestNow=LS.get(curGame+'-best',0);
-    if(isNew&&score>0){catEl.textContent='새로운 최고기록!';catEl.style.color='var(--ok)'}
-    else if(bestNow>0){const pct=Math.round(score/bestNow*100);
-      if(pct>=100){catEl.textContent=`최고기록 달성!`;catEl.style.color='var(--ok)'}
-      else if(pct>=90){catEl.textContent=`최고기록의 ${pct}% — 거의 다 왔어요!`;catEl.style.color='var(--p)'}
-      else if(pct>=70){catEl.textContent=`최고기록의 ${pct}% — 조금만 더!`;catEl.style.color='var(--p)'}
-      else{catEl.textContent=`최고기록 ${bestNow}점 대비 ${pct}%`;catEl.style.color='var(--sub)'}
-    }else{catEl.textContent='첫 기록!';catEl.style.color='var(--p)'}
+  if(isNew&&score>0){catEl.textContent='새로운 최고기록!';catEl.style.color='var(--ok)'}
+  else if(best>0){
+    const pct=Math.round(score/best*100);
+    catEl.textContent=`최고기록 ${best}점 대비 ${pct}%`;
+    catEl.style.color='var(--sub-text)';
+  }else{
+    catEl.textContent='첫 기록을 세웠어요!';
+    catEl.style.color='var(--p)';
   }
 
-  const xpEl=document.getElementById('r-xp');
-  if(xpEl) {
-    xpEl.textContent=`+${xpGain} XP`;
-    xpEl.classList.remove('hide');
-  }
-
-  const ptEl=document.getElementById('r-pt');
-  if(ptEl) {
-    let ptGain=0;
-    if(completed.length)ptGain+=completed.length;
-    if(ptGain>0){ptEl.textContent=`+${ptGain} 두뇌점수`;ptEl.classList.remove('hide')}
-    else{ptEl.classList.add('hide')}
-  }
-
-  const mEl=document.getElementById('r-mission');
-  if(mEl) {
-    if(completed.length){
-      mEl.innerHTML=''+completed.map(m=>`${m.name} 완료! (+${m.xp}XP)`).join(' / ');
-      mEl.classList.remove('hide');
-    }else{mEl.classList.add('hide')}
+  document.getElementById('r-xp').textContent=`+${xpGain} XP`;
+  let ptGain=completed.length;
+  const ptEl = document.getElementById('r-pt');
+  if(ptGain>0){
+    ptEl.textContent=`+${ptGain} 두뇌점수`;
+    ptEl.style.display='inline-flex';
+  }else{
+    ptEl.style.display='none';
   }
 
   const statsEl=document.getElementById('r-stats');
-  if(statsEl) {
-    if(stats?.length){statsEl.innerHTML=stats.map(s=>`<div class="r-stat"><div class="rs-val">${s.val}</div><div class="rs-label">${s.label}</div></div>`).join('');statsEl.classList.remove('hide')}
-    else{statsEl.classList.add('hide')}
+  if(stats?.length){
+    statsEl.innerHTML=stats.map(s=>`<div class="r-stat"><span class="rs-val">${s.val}</span><span class="rs-label">${s.label}</span></div>`).join('');
+    statsEl.style.display='flex';
+  }else{
+    statsEl.style.display='none';
   }
+
+  // Science Tip
+  const SCIENCE={
+    math:{t:'암산이 두뇌에 미치는 효과',d:'암산은 전두엽의 작업 기억과 처리 속도를 활성화합니다. 도호쿠 대학 연구에 따르면 빠른 계산 훈련이 전두전피질 혈류를 증가시켜 인지 기능 저하를 예방합니다.'},
+    memory:{t:'기억력 카드와 작업 기억',d:'카드 매칭은 시각적 작업 기억(Visual Working Memory)을 훈련합니다. 해마와 전두엽이 협력하여 단기 정보를 저장하고 비교하는 능력이 향상됩니다.'},
+    reaction:{t:'반응속도와 신경 전달',d:'반응속도 훈련은 신경 전달 속도와 운동 피질의 효율성을 높입니다. 규칙적인 훈련으로 평균 반응시간이 10-15% 개선될 수 있습니다.'},
+    stroop:{t:'스트룹 효과와 인지 억제',d:'글자 색상과 의미가 충돌할 때 전두엽의 억제 제어(Inhibitory Control)가 작동합니다. 이 능력은 충동 조절과 의사결정에 핵심적입니다.'},
+    sequence:{t:'순서 기억과 작업 기억 용량',d:'숫자 순서 기억은 작업 기억 용량(Working Memory Span)을 측정하고 훈련합니다. 일반 성인의 기억 폭은 7±2개이며, 훈련으로 확장 가능합니다.'},
+    word:{t:'단어 찾기와 언어 처리',d:'단어 검색은 좌측 측두엽의 언어 네트워크를 활성화합니다. 시각 탐색과 어휘 인출을 동시에 수행하여 멀티태스킹 능력을 강화합니다.'},
+    pattern:{t:'패턴 인식과 유동 지능',d:'패턴 완성은 유동 지능(Fluid Intelligence)의 핵심 요소입니다. 규칙을 추론하는 능력은 새로운 문제 해결과 학습 속도에 직결됩니다.'},
+    focus:{t:'선택적 주의력 훈련',d:'타겟만 빠르게 터치하는 과제는 선택적 주의력(Selective Attention)을 훈련합니다. 불필요한 자극을 걸러내는 이 능력은 일상의 집중력과 직결됩니다.'}
+  };
+  const tip = SCIENCE[curGame] || {t:'꾸준한 두뇌 훈련의 중요성',d:'매일 10분 내외의 두뇌 훈련은 인지 예비능(Cognitive Reserve)을 높여 뇌 건강을 유지하는 데 큰 도움이 됩니다.'};
+  document.getElementById('r-sci-title').textContent=tip.t;
+  document.getElementById('r-sci-desc').textContent=tip.d;
 
   if(window.AIT) {
     AIT.log('game_complete',{game:curGame,score,best:LS.get(curGame+'-best',0),isNew,xp:xpGain});
     if(score>0 && AIT.isToss) AIT.submitScore(score).catch(()=>{});
   }
 
-  const pctEl=document.getElementById('r-percentile');
-  if(pctEl) {
-    pctEl.classList.add('hide');
-    if(score>0 && window.AIT){
-      AIT.getUserHash().then(uh=>fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:curGame,score,userHash:uh})}))
-      .then(r=>r.json())
-      .then(d=>{
-        const top=100-d.percentile;
-        const valEl = document.getElementById('r-pct-val');
-        if(valEl) {
-          valEl.textContent=top<=1?'상위 1%':`상위 ${top}%`;
-          valEl.style.color=top<=10?'var(--ok)':top<=30?'var(--purple)':'var(--p)';
-        }
-        const pEl = document.getElementById('r-pct-players');
-        if(pEl) pEl.textContent=d.totalPlayers>=100?`${d.totalPlayers.toLocaleString()}명 참여`:'';
-        pctEl.classList.remove('hide');
-      }).catch(()=>{});
-    }
-  }
+  const motivation = getRetryMotivation(curGame, score, best, isNew);
+  document.getElementById('r-main-btn').textContent = motivation.btn;
   
   if(wkActive) {
     wkOnGameEnd(curGame, score);
-    const retryBtn = document.getElementById('r-retry-btn');
-    if(retryBtn) retryBtn.classList.add('hide');
-    const wkBtn = document.getElementById('r-wk-btn');
-    if(wkBtn) {
-      wkBtn.classList.remove('hide');
-      wkBtn.textContent='다음 운동 ('+(getTodayWorkout().done.length)+'/'+WK_SIZE+')';
-    }
+    const wkBtn = document.getElementById('r-main-btn');
+    const doneCount = getTodayWorkout().done.length;
+    wkBtn.onclick = () => wkContinue();
+    wkBtn.textContent = doneCount < WK_SIZE ? `다음 운동 (${doneCount}/${WK_SIZE})` : '운동 완료하기';
   } else {
-    const retryBtn = document.getElementById('r-retry-btn');
-    if(retryBtn) retryBtn.classList.remove('hide');
-    const wkBtn = document.getElementById('r-wk-btn');
-    if(wkBtn) wkBtn.classList.add('hide');
+    document.getElementById('r-main-btn').onclick = () => replayGame();
   }
   
-  const overlay = document.getElementById('overlay');
-  if(overlay) overlay.classList.add('active');
+  document.getElementById('overlay').classList.add('active');
 
   if(newRank !== oldRank){
     setTimeout(()=>showLevelUp(newRank,newXP),600);
@@ -204,6 +168,6 @@ function showAd(cb, type='interstitial'){
   }
   const o=document.createElement('div');
   o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font:600 17px var(--font);flex-direction:column;gap:12px';
-  o.innerHTML='<div style="color:var(--sub)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div>광고 로딩 중...</div>';
+  o.innerHTML='<div style="color:var(--sub-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div>광고 로딩 중...</div>';
   document.body.appendChild(o);setTimeout(()=>{o.remove();cb?.()},1500);
 }
