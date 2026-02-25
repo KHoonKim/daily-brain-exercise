@@ -29,16 +29,14 @@ function showTicketModal(gameId) {
   if (adBtn) {
     adBtn.onclick = () => {
       closeTicketModal();
-      if (window.AIT && AIT.showAd) {
-        AIT.showAd('interstitial').then(() => {
-          wkActive = false;
-          curGame = gameId; curScore = 0;
-          LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
-          show('game-' + gameId); initGoalBar(gameId);
-          initGameById(gameId);
-          AIT.log('game_start', { game: gameId, source: 'ticket_ad' });
-        });
-      }
+      showAd(() => {
+        wkActive = false;
+        curGame = gameId; curScore = 0;
+        LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
+        show('game-' + gameId); initGoalBar(gameId);
+        initGameById(gameId);
+        if (window.AIT) AIT.log('game_start', { game: gameId, source: 'ticket_ad' });
+      });
     };
   }
 }
