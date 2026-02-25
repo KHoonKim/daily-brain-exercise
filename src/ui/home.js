@@ -55,7 +55,7 @@ function renderHome(){
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
       return `<div class="mission-card" onclick="startGame('${m.gameId}')">
         <div class="mission-icon" style="background:${g.color}15;color:${g.color}">
-          <div style="width:20px;height:20px;display:flex;align-items:center;justify-content:center">${GI[m.gameId]||'●'}</div>
+          <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">${GI[m.gameId]||'●'}</div>
         </div>
         <div class="mission-info">
           <div class="mission-name">${m.name}</div>

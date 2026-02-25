@@ -91,7 +91,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .game-card{background:var(--card);border-radius:20px;padding:16px;cursor:pointer;transition:all .2s;position:relative;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:12px}
 .game-card:active{transform:scale(.96);background:#F9FAFB}
 .game-card .gc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.game-card .gc-icon svg{width:22px;height:22px}
+.game-card .gc-icon svg, .mission-icon svg{width:22px;height:22px;stroke-width:2px}
 .game-card .gc-info{flex:1;min-width:0}
 .game-card .gc-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .game-card .gc-best{font-size:12px;color:var(--sub-text);margin-top:2px;font-weight:500}
