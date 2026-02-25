@@ -1,11 +1,17 @@
 {
-  "name": "daily-brain-api",
+  "name": "score",
   "version": "1.0.0",
-  "main": "server.js",
-  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
-    "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "better-sqlite3": "^12.6.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
   }
 }
