@@ -74,3 +74,42 @@ function doubleCoins(){
     pendingCoins=0;
   });
 }
+
+// ===== MISSIONS & HISTORY =====
+function getTodayMissions(){
+  const today=getDayKey();
+  let missions=LS.getJSON('missions-'+today,null);
+  if(missions&&(missions.length!==5||missions.every(m=>m.target<=10)||!missions[0].gameId||missions[0].type)){missions=null;localStorage.removeItem('bf-missions-'+today)}
+  if(!missions){
+    const gameMissions=GAMES.map(g=>{
+      const best=LS.get(g.id+'-best',0);
+      const defaults={math:80,memory:60,reaction:200,stroop:80,sequence:50,word:60,pattern:60,focus:80,rotate:60,reverse:50,numtouch:200,rhythm:40,rps:80,oddone:80,compare:80,bulb:50,colormix:60,wordcomp:60,timing:60,matchpair:100,headcount:60,pyramid:60,maxnum:80,signfind:80,coincount:60,clock:60,wordmem:60,blockcount:60,flanker:80,memgrid:50,nback:80,scramble:60,serial:80,leftright:80,calccomp:60,flash:40,sort:60,mirror:50};
+      const target=best>0?Math.round(best*1.05):(defaults[g.id]||50);
+      return {id:'goal-'+g.id,gameId:g.id,name:g.name,desc:`${target}점 이상 달성`,target,best,xp:20,icon:'●',bg:g.color,progress:0,done:false};
+    });
+    const shuffled=[...gameMissions].sort(()=>Math.random()-.5);
+    missions=shuffled.slice(0,5);
+    LS.setJSON('missions-'+today,missions);
+  }
+  return missions;
+}
+function updateMission(gameId,score,extra={}){
+  const today=getDayKey();
+  const missions=LS.getJSON('missions-'+today,[]);
+  let completed=[];
+  missions.forEach(m=>{
+    if(m.done)return;
+    if(m.gameId===gameId&&score>=m.target){m.progress=score;m.done=true;completed.push(m);addPoints(1)}
+  });
+  LS.setJSON('missions-'+today,missions);
+  const allDone=missions.every(m=>m.done);
+  const bonusKey='mission-bonus-'+today;
+  if(allDone&&!LS.get(bonusKey)){LS.set(bonusKey,1);addPoints(2);toast('챌린지 올클리어 보너스 +2점!')}
+  return completed;
+}
+function recordDailyScore(score){
+  const today=getDayKey();
+  const hist=LS.getJSON('scoreHist',{});
+  hist[today]=Math.max(hist[today]||0,score);
+  LS.setJSON('scoreHist',hist);
+}
