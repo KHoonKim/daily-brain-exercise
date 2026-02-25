@@ -1,0 +1,7 @@
+node_modules/
+server/node_modules/
+server/scores.db
+server/scores.db-shm
+server/scores.db-wal
+dist/
+.DS_Store
