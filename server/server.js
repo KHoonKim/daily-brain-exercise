@@ -208,6 +208,33 @@ app.get('/api/score/rank/:game/:userHash', (req, res) => {
   res.json({ rank, total, best: userBest.best });
 });
 
+// GET /api/score/overall-rank/:userHash — user's overall rank and percentile
+app.get('/api/score/overall-rank/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  
+  // Calculate total points for all users
+  const allUsersPoints = db.prepare(`
+    SELECT user_hash, SUM(max_score) as total_points
+    FROM (
+      SELECT user_hash, game, MAX(score) as max_score
+      FROM scores
+      WHERE user_hash IS NOT NULL
+      GROUP BY user_hash, game
+    )
+    GROUP BY user_hash
+    ORDER BY total_points DESC
+  `).all();
+
+  const userIdx = allUsersPoints.findIndex(u => u.user_hash === userHash);
+  if (userIdx === -1) return res.json({ rank: null, total: allUsersPoints.length });
+
+  const total = allUsersPoints.length;
+  const rank = userIdx + 1;
+  const percentile = Math.max(1, Math.round(((total - rank) / total) * 100));
+  
+  res.json({ rank, total, percentile, totalPoints: allUsersPoints[userIdx].total_points });
+});
+
 // GET /api/score/leaderboard/:game — top 50 players for a game
 app.get('/api/score/leaderboard/:game', (req, res) => {
   const { game } = req.params;

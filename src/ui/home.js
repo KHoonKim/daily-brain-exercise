@@ -35,13 +35,21 @@ function renderHome(){
   let total=0,count=0;
   GAMES.forEach(g=>{const b=LS.get(g.id+'-best',0);if(b>0){total+=b;count++}});
   const avg=count>0?Math.round(total/count):0;
-  
-  let pctSum=0,pctCount=0;
-  GAMES.forEach(g=>{const b=LS.get(g.id+'-best',0);if(b>0){pctSum+=estimatedPercentile(g.id,b);pctCount++}});
-  const overallPct=pctCount>0?Math.round(pctSum/pctCount):0;
-  const overallPctEl = document.getElementById('overallPct');
-  if(overallPctEl) overallPctEl.textContent=overallPct>0?('상위 '+(101-overallPct)+'%'):'--';
   recordDailyScore(avg);
+
+  // Real overall rank from server
+  if (window.AIT) {
+    AIT.getUserHash().then(uh => {
+      fetch(`/api/score/overall-rank/${uh}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.percentile !== undefined) {
+            const el = document.getElementById('overallPct');
+            if (el) el.textContent = `상위 ${101 - d.percentile}%`;
+          }
+        }).catch(() => {});
+    });
+  }
 
   // Missions
   const missions=getTodayMissions();
