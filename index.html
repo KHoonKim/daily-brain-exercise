@@ -10,7 +10,7 @@
 <meta property="og:title" content="매일매일 두뇌운동">
 <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="stylesheet" href="src/styles/main.css?v=116">
+<link rel="stylesheet" href="src/styles/main.css?v=117">
 </head>
 <body>
 <div class="app" id="app">
@@ -419,37 +419,41 @@
 
 <!-- ===== TICKET SHOP ===== -->
 <div class="screen" id="ticketShop">
-  <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span></div>
-  <div class="g-body" style="padding:24px 20px;text-align:center">
-    <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:72px;height:72px"></div>
-    <div style="font-size:14px;color:var(--sub);margin-bottom:4px">보유 티켓</div>
-    <div id="ts-count" style="font-size:40px;font-weight:800;color:var(--p);margin-bottom:24px">0장</div>
+  <div class="g-hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="g-title">티켓 충전</span>
+    <div style="width:24px"></div>
+  </div>
+  <div class="g-body" style="padding:32px 20px;text-align:center">
+    <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:80px;height:80px"></div>
+    <div style="font-size:15px;color:var(--sub-text);font-weight:600;margin-bottom:8px">보유 티켓</div>
+    <div id="ts-count" style="font-size:48px;font-weight:900;color:var(--text);margin-bottom:40px">0장</div>
 
-    <button class="btn btn-primary" onclick="ticketAdRefill()" id="ts-ad-btn" style="width:100%;font-size:16px;padding:16px;margin-bottom:20px">
-      <span style="display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px">광고 보고 3~5장 받기</span>
+    <button class="btn btn-primary btn-lg" onclick="ticketAdRefill()" style="margin-bottom:32px">
+      <img src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px;margin-right:8px">
+      광고 보고 3~5장 받기
     </button>
 
-    <div style="background:var(--card);border-radius:var(--r16);padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px">
-      <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:32px;height:32px;flex-shrink:0">
-      <div style="text-align:left"><div style="font-size:15px;font-weight:700">매일 오전 9시 자동 충전</div><div style="font-size:12px;color:var(--sub);margin-top:2px">5장 미만이면 5장으로 채워져요</div></div>
+    <div style="background:var(--card);border-radius:24px;padding:24px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:16px;text-align:left;margin-bottom:12px">
+      <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:40px;height:40px;flex-shrink:0">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">매일 오전 9시 자동 충전</div>
+        <div style="font-size:13px;color:var(--sub-text);margin-top:2px;font-weight:500;line-height:1.4">남은 티켓이 5장 미만이면<br>5장으로 다시 채워드려요.</div>
+      </div>
     </div>
-    <div style="font-size:12px;color:var(--sub)">최대 99장까지 보유 가능</div>
-
-    <!-- 배너 광고 영역 -->
-    <div id="ts-banner" style="margin-top:24px;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>
+    <div style="font-size:13px;color:var(--sub-text);font-weight:500">최대 99장까지 보유 가능</div>
   </div>
 </div>
 
-<!-- ===== RESULT ===== -->
+<!-- ===== OVERLAYS ===== -->
 <!-- Ticket Modal -->
-<div class="overlay" id="ticketModal" style="display:none;z-index:1001">
-  <div style="background:var(--card);border-radius:var(--r20);padding:28px 24px;margin:auto;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15)">
-    <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:48px;height:48px"></div>
-    <div style="font-size:18px;font-weight:800;margin-bottom:6px">티켓을 모두 사용했어요</div>
-    <div style="font-size:14px;color:var(--sub);margin-bottom:6px">오전 9시에 티켓이 충전됩니다</div>
-    <div style="font-size:13px;color:var(--sub);margin-bottom:20px">광고를 보고 바로 시작할 수도 있어요!</div>
-    <button class="btn btn-primary" id="ticketAdBtn" style="width:100%;margin-bottom:10px;font-size:16px;padding:14px">잠깐 광고보고 시작하기</button>
-    <button class="btn btn-home" onclick="closeTicketModal()" style="width:100%;font-size:14px;padding:12px">돌아가기</button>
+<div class="heart-overlay" id="ticketModal">
+  <div class="heart-card">
+    <div style="margin-bottom:16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:64px;height:64px"></div>
+    <div style="font-size:20px;font-weight:900;margin-bottom:12px;line-height:1.4">티켓을 모두<br>사용했어요</div>
+    <div style="font-size:14px;color:var(--sub-text);margin-bottom:24px;font-weight:500;line-height:1.5">매일 오전 9시에 충전되지만,<br>광고를 보고 바로 시작할 수 있어요!</div>
+    <button class="btn btn-primary btn-lg" id="ticketAdBtn" style="margin-bottom:12px">광고보고 바로 시작하기</button>
+    <button class="btn btn-home btn-lg" onclick="closeTicketModal()">돌아가기</button>
   </div>
 </div>
 
@@ -529,53 +533,53 @@
 
 </div>
 
-<script src="src/core/ait.js?v=116"></script>
-<script src="src/core/config.js?v=116"></script>
-<script src="src/core/utils.js?v=116"></script>
-<script src="src/core/workout.js?v=116"></script>
-<script src="src/core/ticket.js?v=116"></script>
-<script src="src/ui/game_common.js?v=116"></script>
-<script src="src/ui/home.js?v=116"></script>
-<script src="src/ui/result.js?v=116"></script>
-<script src="src/ui/leaderboard.js?v=116"></script>
-<script src="src/games/math.js?v=116"></script>
-<script src="src/games/memory.js?v=116"></script>
-<script src="src/games/sequence.js?v=116"></script>
-<script src="src/games/stroop.js?v=116"></script>
-<script src="src/games/reaction.js?v=116"></script>
-<script src="src/games/word.js?v=116"></script>
-<script src="src/games/pattern.js?v=116"></script>
-<script src="src/games/focus.js?v=116"></script>
-<script src="src/games/rotate.js?v=116"></script>
-<script src="src/games/reverse.js?v=116"></script>
-<script src="src/games/numtouch.js?v=116"></script>
-<script src="src/games/rhythm.js?v=116"></script>
-<script src="src/games/rps.js?v=116"></script>
-<script src="src/games/oddone.js?v=116"></script>
-<script src="src/games/compare.js?v=116"></script>
-<script src="src/games/bulb.js?v=116"></script>
-<script src="src/games/colormix.js?v=116"></script>
-<script src="src/games/wordcomp.js?v=116"></script>
-<script src="src/games/timing.js?v=116"></script>
-<script src="src/games/matchpair.js?v=116"></script>
-<script src="src/games/headcount.js?v=116"></script>
-<script src="src/games/pyramid.js?v=116"></script>
-<script src="src/games/maxnum.js?v=116"></script>
-<script src="src/games/signfind.js?v=116"></script>
-<script src="src/games/coincount.js?v=116"></script>
-<script src="src/games/clock.js?v=116"></script>
-<script src="src/games/wordmem.js?v=116"></script>
-<script src="src/games/blockcount.js?v=116"></script>
-<script src="src/games/flanker.js?v=116"></script>
-<script src="src/games/memgrid.js?v=116"></script>
-<script src="src/games/nback.js?v=116"></script>
-<script src="src/games/scramble.js?v=116"></script>
-<script src="src/games/serial.js?v=116"></script>
-<script src="src/games/leftright.js?v=116"></script>
-<script src="src/games/calccomp.js?v=116"></script>
-<script src="src/games/flash.js?v=116"></script>
-<script src="src/games/sort.js?v=116"></script>
-<script src="src/games/mirror.js?v=116"></script>
+<script src="src/core/ait.js?v=117"></script>
+<script src="src/core/config.js?v=117"></script>
+<script src="src/core/utils.js?v=117"></script>
+<script src="src/core/workout.js?v=117"></script>
+<script src="src/core/ticket.js?v=117"></script>
+<script src="src/ui/game_common.js?v=117"></script>
+<script src="src/ui/home.js?v=117"></script>
+<script src="src/ui/result.js?v=117"></script>
+<script src="src/ui/leaderboard.js?v=117"></script>
+<script src="src/games/math.js?v=117"></script>
+<script src="src/games/memory.js?v=117"></script>
+<script src="src/games/sequence.js?v=117"></script>
+<script src="src/games/stroop.js?v=117"></script>
+<script src="src/games/reaction.js?v=117"></script>
+<script src="src/games/word.js?v=117"></script>
+<script src="src/games/pattern.js?v=117"></script>
+<script src="src/games/focus.js?v=117"></script>
+<script src="src/games/rotate.js?v=117"></script>
+<script src="src/games/reverse.js?v=117"></script>
+<script src="src/games/numtouch.js?v=117"></script>
+<script src="src/games/rhythm.js?v=117"></script>
+<script src="src/games/rps.js?v=117"></script>
+<script src="src/games/oddone.js?v=117"></script>
+<script src="src/games/compare.js?v=117"></script>
+<script src="src/games/bulb.js?v=117"></script>
+<script src="src/games/colormix.js?v=117"></script>
+<script src="src/games/wordcomp.js?v=117"></script>
+<script src="src/games/timing.js?v=117"></script>
+<script src="src/games/matchpair.js?v=117"></script>
+<script src="src/games/headcount.js?v=117"></script>
+<script src="src/games/pyramid.js?v=117"></script>
+<script src="src/games/maxnum.js?v=117"></script>
+<script src="src/games/signfind.js?v=117"></script>
+<script src="src/games/coincount.js?v=117"></script>
+<script src="src/games/clock.js?v=117"></script>
+<script src="src/games/wordmem.js?v=117"></script>
+<script src="src/games/blockcount.js?v=117"></script>
+<script src="src/games/flanker.js?v=117"></script>
+<script src="src/games/memgrid.js?v=117"></script>
+<script src="src/games/nback.js?v=117"></script>
+<script src="src/games/scramble.js?v=117"></script>
+<script src="src/games/serial.js?v=117"></script>
+<script src="src/games/leftright.js?v=117"></script>
+<script src="src/games/calccomp.js?v=117"></script>
+<script src="src/games/flash.js?v=117"></script>
+<script src="src/games/sort.js?v=117"></script>
+<script src="src/games/mirror.js?v=117"></script>
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {

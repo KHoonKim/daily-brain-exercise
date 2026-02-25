@@ -24,7 +24,7 @@ let _pendingTicketGame=null;
 function showTicketModal(gameId){
   _pendingTicketGame=gameId;
   const modal = document.getElementById('ticketModal');
-  if(modal) modal.style.display='flex';
+  if(modal) modal.classList.add('active');
   const adBtn = document.getElementById('ticketAdBtn');
   if(adBtn) {
     adBtn.onclick=()=>{
@@ -68,7 +68,7 @@ function ticketAdRefill(){
 }
 function closeTicketModal(){
   const modal = document.getElementById('ticketModal');
-  if(modal) modal.style.display='none';
+  if(modal) modal.classList.remove('active');
   _pendingTicketGame=null;
 }
 
