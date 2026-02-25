@@ -13,6 +13,7 @@
 body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden;user-select:none;-webkit-user-select:none}
 .app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh}
 
+/* Toast */
 /* TDS Toast */
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(25,31,40,.9);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.32,.72,0,1);white-space:nowrap;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.12)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -25,36 +26,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .home-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .home-header h1{font-size:22px;font-weight:800}
 .home-header-r{display:flex;align-items:center;gap:8px}
-
-.ticket-badge{background:var(--p-light);color:var(--p);padding:6px 12px;border-radius:var(--r-full);font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.streak{background:var(--p);color:#fff;padding:4px 12px;border-radius:var(--r-full);font-size:13px;font-weight:700}
 
 /* Profile Card */
-.profile-card{background:var(--card);border-radius:var(--r16);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
-.pc-content{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.pc-label{font-size:12px;color:var(--sub);margin-bottom:4px}
-.pc-value{font-size:32px;font-weight:900}
-.pc-value.purple{color:var(--purple)}
-.pc-rank-next{font-size:11px;color:var(--p);font-weight:600}
+.profile-card{background:linear-gradient(135deg,#3182F6,#8B5CF6);border-radius:var(--r20);padding:20px;color:#fff;margin-bottom:16px;box-shadow:0 4px 16px rgba(49,130,246,.25);position:relative;overflow:hidden}
+.profile-card::after{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.pc-rank{display:flex;align-items:center;gap:8px}
+.pc-rank-badge{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px}
+.pc-rank-info .pc-rank-name{font-size:16px;font-weight:700}
+.pc-rank-info .pc-rank-next{font-size:11px;opacity:.7;margin-top:2px}
+.pc-score-big{text-align:right}
+.pc-score-big .label{font-size:11px;opacity:.7}
+.pc-score-big .val{font-size:36px;font-weight:800;line-height:1.1}
+/* XP Bar */
+/* TDS ProgressBar */
+.xp-bar{margin-top:12px}
+.xp-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:6px}
+.xp-bar-track{height:4px;border-radius:2px;background:rgba(25,31,40,.06);overflow:hidden}
+.xp-bar-fill{height:100%;border-radius:2px;background:#3182F6;transition:width .5s cubic-bezier(.32,.72,0,1)}
+/* Category mini chart */
+.pc-cats{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.pc-cat{background:rgba(255,255,255,.15);padding:3px 8px;border-radius:6px;font-size:10px;display:flex;align-items:center;gap:3px}
 
-.xp-progress-container{margin-top:12px}
-.xp-label{display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:6px}
-.progress-track{height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:var(--p);transition:width .5s cubic-bezier(.32,.72,0,1)}
-
-/* Point Section */
-.point-section{background:var(--card);border-radius:var(--r16);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
-.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.section-title-sm{font-size:14px;font-weight:800}
-.point-val{font-size:14px;font-weight:800;color:var(--p)}
-.progress-track-sm{height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden;margin-bottom:8px}
-.progress-fill-blue{height:100%;background:var(--p);transition:width .5s ease}
-.point-hint{font-size:12px;color:var(--sub);margin-bottom:12px}
-
-/* Section Title */
+/* ===== DAILY MISSIONS ===== */
 .section-title{font-size:18px;font-weight:800;margin:20px 0 10px;display:flex;align-items:center;gap:6px}
-.st-sub{font-size:12px;color:var(--sub);font-weight:400;margin-left:auto}
+.section-title .st-sub{font-size:12px;color:var(--sub);font-weight:400;margin-left:auto}
 
-/* Mission Card */
 .mission-card{background:var(--card);border-radius:var(--r16);padding:14px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
 .mission-icon{width:40px;height:40px;border-radius:var(--r12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .mission-info{flex:1}
@@ -62,19 +60,71 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .mission-desc{font-size:12px;color:var(--sub);margin-top:1px}
 .mission-prog{height:4px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden}
 .mission-prog-fill{height:100%;border-radius:2px;transition:width .3s}
-.mission-check{width:20px;height:20px}
-.mission-reward{font-size:11px;font-weight:700;color:var(--p)}
+/* TDS Badge */
+.tds-badge{display:inline-flex;align-items:center;justify-content:center;font-weight:700;border-radius:6px;white-space:nowrap;line-height:1}
+.tds-badge-xs{font-size:10px;padding:2px 6px;border-radius:4px}
+.tds-badge-sm{font-size:11px;padding:3px 8px}
+.tds-badge-md{font-size:13px;padding:4px 10px}
+.tds-badge-fill-blue{background:#3182F6;color:#fff}
+.tds-badge-fill-green{background:#1FC58E;color:#fff}
+.tds-badge-fill-red{background:#F04452;color:#fff}
+.tds-badge-fill-teal{background:#00B8D9;color:#fff}
+.tds-badge-fill-yellow{background:var(--ok);color:#fff}
+.tds-badge-weak-blue{background:rgba(49,130,246,.08);color:#3182F6}
+.tds-badge-weak-green{background:rgba(31,197,142,.08);color:#1FC58E}
+.tds-badge-weak-red{background:rgba(240,68,82,.08);color:#F04452}
+.tds-badge-weak-yellow{background:rgba(48,176,110,.08);color:var(--ok)}
+.tds-badge-weak-elephant{background:rgba(25,31,40,.06);color:#8B95A1}
+.mission-reward{font-size:12px;font-weight:700;color:var(--p);white-space:nowrap}
+.mission-check{font-size:20px}
 
-/* Game Grid */
-.grid-category-title{font-size:13px;font-weight:700;color:var(--sub);margin:16px 0 8px}
+/* ===== STREAK CALENDAR ===== */
+.streak-card{background:var(--card);border-radius:var(--r16);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.streak-title{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.streak-days{display:flex;gap:4px;justify-content:center}
+.streak-day{width:36px;text-align:center}
+.streak-day .sd-label{font-size:10px;color:var(--sub);margin-bottom:4px}
+.streak-day .sd-dot{width:28px;height:28px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--border)}
+.streak-day .sd-dot.done{background:var(--ok);color:#fff}
+.streak-day .sd-dot.today{background:var(--p);color:#fff;box-shadow:0 2px 8px rgba(49,130,246,.3)}
+.streak-day .sd-dot.bonus{background:var(--ok);color:#fff;box-shadow:0 2px 8px rgba(48,176,110,.3)}
+.streak-reward{text-align:center;margin-top:10px;font-size:12px;color:var(--sub)}
+.streak-reward b{color:var(--ok)}
+
+/* ===== WEEKLY CHART ===== */
+.chart-card{background:var(--card);border-radius:var(--r16);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.chart-bars{display:flex;align-items:flex-end;justify-content:space-between;height:80px;padding:0 8px;gap:4px}
+.chart-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.chart-bar .cb-bar{width:100%;border-radius:4px 4px 0 0;background:var(--p-light);min-height:4px;transition:height .5s ease;position:relative}
+.chart-bar .cb-bar.today{background:var(--p)}
+.chart-bar .cb-val{font-size:10px;font-weight:600;color:var(--p)}
+.chart-bar .cb-label{font-size:10px;color:var(--sub)}
+
+/* ===== DAILY PICK ===== */
+.daily-pick{background:var(--card);border-radius:var(--r16);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.daily-games{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+.daily-games::-webkit-scrollbar{display:none}
+.daily-game{flex:0 0 80px;text-align:center;cursor:pointer}
+.daily-game:active{transform:scale(.95)}
+.daily-game .dg-icon{width:52px;height:52px;border-radius:var(--r16);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 4px}
+.daily-game .dg-name{font-size:11px;font-weight:600}
+.daily-game .dg-cat{font-size:10px;color:var(--sub)}
+
+/* ===== GAME GRID ===== */
 .game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.game-card{background:var(--card);border-radius:var(--r16);padding:14px;cursor:pointer;transition:transform .1s;position:relative;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px}
+.game-card{background:var(--card);border-radius:var(--r16);padding:14px;cursor:pointer;transition:transform .1s;position:relative;box-shadow:var(--shadow)}
 .game-card:active{transform:scale(.97)}
-.game-card .gc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.game-card .gc-icon svg{width:22px;height:22px}
-.game-card .gc-info{flex:1;min-width:0}
-.game-card .gc-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.game-card .gc-best{font-size:11px;color:var(--sub)}
+.game-card .gc-icon{margin-bottom:8px}.game-card .gc-icon svg{width:100%;height:100%}
+.game-card .gc-name{font-size:14px;font-weight:700;margin-bottom:1px}
+.game-card .gc-desc{font-size:11px;color:var(--sub);margin-bottom:6px}
+.game-card .gc-best{font-size:11px;color:var(--p);font-weight:600}
+.game-card .gc-best .tds-badge{margin-right:4px;vertical-align:1px}
+.game-card .gc-new{position:absolute;top:8px;right:8px;background:var(--no);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:var(--r-full)}
+.game-card.locked{opacity:.4;pointer-events:none}
+.game-card.locked::after{content:'';position:absolute;top:10px;right:10px;width:14px;height:14px;background:var(--sub);-webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0110 0v4' fill='none' stroke='currentColor' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0110 0v4' fill='none' stroke='currentColor' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat}
+.rank-badge{display:inline-flex;width:32px;height:32px;border-radius:50%;align-items:center;justify-content:center}
+.rank-badge svg{width:20px;height:20px}
+.game-card .gc-unlock{font-size:10px;color:var(--sub)}
 
 /* ===== GAME COMMON ===== */
 .screen{display:none}
@@ -95,58 +145,68 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .goal-bar .gb-label{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);padding:4px 2px}
 .goal-bar .gb-label .gb-target{font-weight:700;color:var(--p)}
 
-/* Hearts */
-.hearts{display:flex;gap:2px;align-items:center}
-.heart{color:#F04452;transition:all .2s;display:inline-flex}
-.heart.lost{opacity:.2;transform:scale(.8)}
-.heart-shake{animation:heartShake .4s ease}
-@keyframes heartShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
-.heart-break{animation:heartBreak .5s ease forwards}
-@keyframes heartBreak{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);color:var(--no)}100%{transform:scale(.5);opacity:.2}}
-
-/* ===== RESULT UI ===== */
+/* ===== RESULT OVERLAY ===== */
 .overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;align-items:flex-start;justify-content:center;overflow-y:auto}
 .overlay.active{display:flex}
 .result-sheet{background:var(--bg);padding:28px 24px max(24px,env(safe-area-inset-bottom));text-align:center;width:100%;max-width:480px;min-height:100vh;min-height:100dvh;animation:fadeIn .3s ease forwards}
+@keyframes sheetUp{to{transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.result-card{background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
-.result-card h3{font-size:18px;margin-bottom:2px}
-.r-score{font-size:40px;font-weight:800;color:var(--p);margin:6px 0}
-.r-cat{font-size:13px;color:var(--sub);margin-bottom:4px}
-.r-badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.r-badge{padding:4px 12px;border-radius:6px;font-size:13px;font-weight:700;color:#fff}
-.r-badge-xp{background:var(--p)}
-.r-badge-pt{background:var(--purple)}
+.result-sheet .r-handle{display:none}
+/* r-emoji removed */
+.result-sheet h3{font-size:18px;margin-bottom:2px}
+.result-sheet .r-score{font-size:40px;font-weight:800;color:var(--p);margin:6px 0}
+.result-sheet .r-record{color:var(--ok);font-weight:700;font-size:14px;margin-bottom:2px}
+.result-sheet .r-cat{font-size:13px;color:var(--sub);margin-bottom:4px}
+/* XP gain in result */
+.r-xp{display:inline-flex;align-items:center;gap:4px;background:var(--p);color:#fff;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:700;margin-bottom:12px;animation:xpPop .4s ease}
+@keyframes xpPop{0%{transform:scale(0)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+/* Mission complete in result */
+.r-mission{background:var(--ok-bg);border:1px solid var(--ok);border-radius:var(--r12);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--ok);font-weight:600;display:flex;align-items:center;gap:6px}
 .r-stats{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
 .r-stat{background:var(--bg);padding:8px 14px;border-radius:var(--r12);text-align:center}
 .r-stat .rs-val{font-size:16px;font-weight:700;color:var(--p)}
 .r-stat .rs-label{font-size:10px;color:var(--sub)}
-
-/* TDS Button Styles */
+/* TDS Button System */
 .btn{width:100%;padding:16px;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:var(--font);transition:all .2s ease;position:relative;overflow:hidden}
 .btn:active{opacity:.8;transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:active{transform:none;opacity:.4}
+/* fill + primary (주요 액션) */
 .btn-primary{background:var(--p);color:#fff}
+.btn-primary:active{background:var(--p-dark)}
+/* fill + dark */
+.btn-dark{background:var(--text);color:#fff}
+/* fill + danger */
+.btn-danger{background:var(--no);color:#fff}
+/* weak + primary (보조 액션) */
 .btn-weak{background:rgba(49,130,246,.08);color:var(--p)}
+.btn-weak:active{background:rgba(49,130,246,.15)}
+/* weak + dark (홈으로 등) */
 .btn-home{background:rgba(25,31,40,.06);color:var(--text)}
-.btn-lg{padding:16px;font-size:17px}
-.btn-md{padding:12px;font-size:14px}
+.btn-home:active{background:rgba(25,31,40,.12)}
+/* weak + danger */
+.btn-danger-weak{background:rgba(240,68,82,.08);color:var(--no)}
+/* combo (포인트, 보상 등) */
+.btn-combo{background:var(--ok);color:#fff}
+.btn-combo:active{background:#28965D}
+.btn-combo:disabled{background:var(--border);color:var(--sub);opacity:1}
 
-/* ===== LEVEL UP ===== */
+/* ===== LEVEL UP OVERLAY ===== */
 .levelup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
 .levelup-overlay.active{display:flex}
 .levelup-card{background:#fff;border-radius:var(--r20);padding:32px;text-align:center;width:85%;max-width:320px;animation:lvlPop .4s cubic-bezier(.32,.72,0,1)}
 @keyframes lvlPop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
-.lu-badge{font-size:64px;margin-bottom:12px}
-.lu-title{font-size:20px;font-weight:800;margin-bottom:4px}
-.lu-desc{font-size:14px;color:var(--sub);margin-bottom:16px}
-.lu-unlock{background:var(--p-light);border-radius:var(--r12);padding:10px;font-size:13px;color:var(--p);font-weight:600;margin-bottom:16px}
+.levelup-card .lu-badge{font-size:64px;margin-bottom:12px}
+.levelup-card .lu-title{font-size:20px;font-weight:800;margin-bottom:4px}
+.levelup-card .lu-desc{font-size:14px;color:var(--sub);margin-bottom:16px}
+.levelup-card .lu-unlock{background:var(--p-light);border-radius:var(--r12);padding:10px;font-size:13px;color:var(--p);font-weight:600;margin-bottom:16px}
 
-/* ===== GAME CSS ===== */
+/* ===== GAME CSS (same as before) ===== */
 .math-problem{display:flex;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--card);border-radius:var(--r20);transition:background .15s;margin-bottom:14px;box-shadow:var(--shadow)}
 .math-problem.ok{background:var(--ok-bg)}.math-problem.no{background:var(--no-bg)}
-.m-num{font-size:36px;font-weight:700}
-.m-op{font-size:28px;color:var(--p)}.m-eq{font-size:28px;color:var(--sub)}
-.m-ans{font-size:36px;font-weight:700;min-width:60px;text-align:center;border-bottom:3px solid var(--p);color:var(--p);padding:2px 8px}
+.math-problem .m-num{font-size:36px;font-weight:700}
+.math-problem .m-op{font-size:28px;color:var(--p)}.math-problem .m-eq{font-size:28px;color:var(--sub)}
+.math-problem .m-ans{font-size:36px;font-weight:700;min-width:60px;text-align:center;border-bottom:3px solid var(--p);color:var(--p);padding:2px 8px}
 .combo-text{text-align:center;font-size:14px;font-weight:700;color:var(--p);min-height:20px;margin-bottom:8px}
 .numpad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:auto;padding:0 8px 12px;max-width:400px;width:100%;margin-left:auto;margin-right:auto}
 .nbtn{padding:18px 0;font-size:24px;font-weight:700;background:var(--card);border:none;border-radius:var(--r12);cursor:pointer;font-family:var(--font);box-shadow:var(--shadow);min-height:56px}
@@ -262,6 +322,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 
 /* Head Count */
 .hc-stage{position:relative;height:180px;margin:12px 0;overflow:hidden;background:linear-gradient(180deg,#E8F4FD 0%,#F0F4F8 100%);border-radius:var(--r16)}
+.hc-bldg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:140px;height:150px;z-index:2}
 .hc-counter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:32px;font-weight:900;color:var(--p);z-index:3;opacity:.12}
 .hc-person{position:absolute;bottom:12px;width:36px;height:36px;z-index:4;transition:none}
 .hc-person img{width:100%;height:100%}
@@ -318,6 +379,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .bc-opts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:0 16px}
 .bc-opt{padding:14px 0;border-radius:var(--r12);border:2px solid var(--border);background:var(--card);font-size:20px;font-weight:800;text-align:center;cursor:pointer;box-shadow:var(--shadow)}
 .bc-opt:active{transform:scale(.95)}.bc-opt.ok{border-color:var(--ok);background:var(--ok-bg)}.bc-opt.no{border-color:var(--no);background:var(--no-bg)}
+.focus-legend span{display:flex;align-items:center;gap:4px}.focus-legend .dot{width:12px;height:12px;border-radius:50%}
 
 .rotate-q{text-align:center;padding:8px;margin-bottom:8px;font-size:14px;font-weight:600}
 .rotate-original{display:flex;justify-content:center;padding:16px}
@@ -336,23 +398,74 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .rev-slot.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
 .rev-slot.no{border-color:var(--no);background:var(--no-bg);color:var(--no)}
 
-/* Leaderboard */
-.lb-container { flex: 1; overflow-y: auto; padding: 16px 20px; }
-.lb-list { background: var(--card); border-radius: var(--r16); overflow: hidden; box-shadow: var(--shadow); }
-.lb-item { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: background .2s; }
-.lb-item:active { background: #F9FAFB; }
-.lb-item:last-child { border-bottom: none; }
-.lb-rank { width: 32px; font-size: 15px; font-weight: 800; color: var(--sub); }
-.lb-name { flex: 1; font-size: 16px; font-weight: 700; color: var(--text); }
-.lb-score { font-size: 16px; font-weight: 800; color: var(--p); }
-.rank-1 .lb-rank { color: #FFD700; font-size: 20px; }
-.rank-2 .lb-rank { color: #ADB5BD; font-size: 18px; }
-.rank-3 .lb-rank { color: #D97706; font-size: 17px; }
+/* ===== DAILY WORKOUT ===== */
+.workout-card{background:var(--card);border-radius:var(--r20);padding:20px;margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.workout-card.done{border-color:var(--border);background:var(--card)}
+.wk-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.wk-title{font-size:17px;font-weight:800}
+.wk-badge{padding:3px 10px;border-radius:var(--r-full);font-size:11px;font-weight:700}
+.wk-games{display:flex;gap:8px;margin-bottom:14px}
+.wk-game{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r12);background:var(--bg);position:relative}
+.wk-game.current{background:rgba(49,130,246,.06);box-shadow:0 0 0 1.5px var(--p)}
+.wk-game.done{background:rgba(49,130,246,.04)}
+.wk-game .wk-icon{width:24px;height:24px;color:var(--p)}.wk-game .wk-icon svg{width:100%;height:100%}
+.wk-game .wk-name{font-size:10px;font-weight:600;text-align:center}
+.wk-game .wk-check{position:absolute;top:-4px;right:-4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.wk-progress{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:14px}
+.wk-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--p),var(--purple));transition:width .5s ease}
+.wk-start{width:100%;padding:14px;border:none;border-radius:var(--r12);font-size:16px;font-weight:700;cursor:pointer;font-family:var(--font);background:var(--p);color:#fff;transition:transform .1s}
+.wk-start:active{transform:scale(.97)}
+.wk-start.completed{background:var(--ok)}
+.wk-bonus{text-align:center;font-size:12px;color:var(--sub);margin-top:8px}
+.wk-bonus b{color:var(--ok)}
+/* Workout transition screen */
+.wk-transition{display:none;position:fixed;inset:0;background:var(--bg);z-index:90;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.wk-transition.active{display:flex}
+.wk-transition .wkt-progress{font-size:14px;color:var(--sub);font-weight:600}
+.wk-transition .wkt-next{width:48px;height:48px;margin:8px auto}.wk-transition .wkt-next svg{width:100%;height:100%}
+.wk-transition .wkt-name{font-size:20px;font-weight:800}
+.wk-transition .wkt-desc{font-size:14px;color:var(--sub)}
 
-/* Overlays */
-.heart-overlay, .levelup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
-.heart-overlay.active, .levelup-overlay.active{display:flex}
-.heart-card, .levelup-card{background:var(--card);border-radius:28px;padding:32px 24px;text-align:center;width:100%;max-width:320px;box-shadow:0 20px 48px rgba(0,0,0,0.2);animation:pop .4s cubic-bezier(0.18, 0.89, 0.32, 1.28)}
-@keyframes pop{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+/* ===== HEART SYSTEM ===== */
+.hearts{display:flex;gap:2px;align-items:center}
+.heart{color:#F04452;transition:all .2s;display:inline-flex}
+.heart.lost{opacity:.2;transform:scale(.8)}
+.heart-shake{animation:heartShake .4s ease}
+@keyframes heartShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+.heart-break{animation:heartBreak .5s ease forwards}
+@keyframes heartBreak{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);color:var(--no)}100%{transform:scale(.5);opacity:.2}}
+/* Heart refill overlay */
+.heart-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;align-items:center;justify-content:center}
+.heart-overlay.active{display:flex}
+.heart-card{background:#fff;border-radius:var(--r20);padding:28px 24px;text-align:center;width:85%;max-width:320px;animation:lvlPop .4s cubic-bezier(.32,.72,0,1)}
+.heart-card .hc-hearts{font-size:40px;margin-bottom:12px;letter-spacing:4px}
+.heart-card .hc-title{font-size:18px;font-weight:800;margin-bottom:4px}
+.heart-card .hc-desc{font-size:14px;color:var(--sub);margin-bottom:16px}
+.heart-card .hc-timer{font-size:13px;color:var(--sub);margin-bottom:12px}
+.btn-heart{background:linear-gradient(135deg,#F04452,#E91E63);color:#fff}
+
+/* ===== COIN SYSTEM ===== */
+.coin-badge{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;padding:4px 12px;border-radius:var(--r-full);font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(255,168,0,.25)}
+.r-coin{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:12px}
+.r-coin-amount{font-size:24px;font-weight:800;color:#FFA000;animation:coinBounce .5s ease}
+.r-coin-label{font-size:13px;color:var(--sub)}
+.r-coin-new{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;padding:6px 16px;border-radius:var(--r-full);font-size:14px;font-weight:700;animation:xpPop .4s ease;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px}
+@keyframes coinBounce{0%{transform:scale(0)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+.btn-coin{background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px}
+.coin-milestones{background:var(--card);border-radius:var(--r16);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.cm-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.cm-item:last-child{border:none}
+.cm-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.cm-info{flex:1}
+.cm-name{font-size:13px;font-weight:600}
+.cm-desc{font-size:11px;color:var(--sub)}
+.cm-prog{height:4px;border-radius:2px;background:var(--border);margin-top:4px;overflow:hidden}
+.cm-prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#FFD700,#FFA000);transition:width .3s}
+.cm-status{font-size:11px;font-weight:700;white-space:nowrap}
+.cm-status.done{color:var(--ok)}
+.cm-status.locked{color:var(--sub)}
+/* Floating coin animation */
+.coin-float{position:fixed;font-size:24px;z-index:800;pointer-events:none;animation:coinFly 1s ease-out forwards}
+@keyframes coinFly{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(.5)}}
 
 .hide{display:none!important}

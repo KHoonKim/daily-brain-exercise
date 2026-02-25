@@ -11,21 +11,7 @@
 <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="src/styles/main.css?v=125">
-</head>
-<body>
-<div class="app" id="app">
-
-<div class="toast" id="toast"></div>
-<div class="snackbar" id="snackbar"><div class="snackbar-inner" id="snackbar-inner"></div></div>
-
-<!-- ===== HOME ===== -->
-<div id="homeScreen" class="home screen active">
-  <div class="home-header">
-    <h1><img src="icon-192.png" style="width:28px;height:28px;vertical-align:-6px;border-radius:6px"> 매일매일 두뇌운동</h1>
-    <div class="home-header-r">
-      <div id="streakBadge" style="display:none"></div>
-      <span id="pointDisplay" style="display:none"></span>
-      <span id="ticketCount" class="ticket-badge" onclick="showTicketShop()"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:16px;height:16px"><span id="ticketNum">5</span></span>
+      <span id="ticketCount" class="tds-badge tds-badge-sm tds-badge-fill-blue" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer" onclick="showTicketShop()"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:13px;height:13px"><span id="ticketNum"></span></span>
     </div>
   </div>
 
@@ -33,22 +19,22 @@
   <div id="dailyWorkout"></div>
 
   <!-- Point Progress -->
-  <div class="point-section" style="background:var(--card);border-radius:var(--r16);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
-    <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+  <div style="background:var(--card);border-radius:var(--r16);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="font-size:14px;font-weight:800">두뇌점수 모으기</div>
-      <div class="point-val" id="pointProgress" style="font-size:14px;font-weight:800;color:#3182F6">0 / 100점</div>
+      <div style="font-size:14px;font-weight:800;color:#3182F6" id="pointProgress">0 / 100점</div>
     </div>
-    <div class="progress-track-sm" style="height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden">
-      <div id="pointBar" class="progress-fill-blue" style="height:100%;background:#3182F6;border-radius:2px;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%"></div>
+    <div style="height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden">
+      <div id="pointBar" style="height:100%;background:#3182F6;border-radius:2px;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%"></div>
     </div>
     <div id="streakLabel" style="display:none"></div>
-    <div class="point-hint" style="font-size:12px;color:var(--sub);margin-top:4px">100점이 모이면 100원으로 교환할 수 있어요</div>
-    <button class="btn btn-primary" id="exchangeBtn" onclick="exchangePoints()" disabled style="width:100%;margin-top:10px;padding:12px;font-size:15px;font-weight:700">100원 받기</button>
+    <div style="font-size:12px;color:var(--sub);margin-top:4px">100점이 모이면 100원으로 교환할 수 있어요</div>
+    <button class="btn btn-combo" id="exchangeBtn" onclick="exchangePoints()" disabled style="margin:10px 0 0">100원 받기</button>
   </div>
   <div id="streakDays" style="display:none"></div>
 
-  <!-- Profile Summary -->
-  <div class="profile-card" style="background:var(--card);border-radius:var(--r16);padding:20px 16px 14px;margin-bottom:12px;box-shadow:var(--shadow)">
+  <!-- Profile Summary (Compact - below workout) -->
+  <div style="background:var(--card);border-radius:var(--r16);padding:20px 16px 14px;margin-bottom:12px;box-shadow:var(--shadow)">
     <div style="display:flex;align-items:center;margin-bottom:12px">
       <div style="flex:1;text-align:center">
         <div style="font-size:12px;color:var(--sub);margin-bottom:4px">나의 두뇌 나이</div>
@@ -60,129 +46,25 @@
         <div style="font-size:36px;font-weight:900;color:var(--purple)" id="overallPct">--%</div>
       </div>
     </div>
-    <div class="xp-bar" style="margin-top:12px">
-      <div class="xp-bar-label" style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:6px"><span id="xpCur">0 XP</span><span id="xpMax">200 XP</span></div>
-      <div class="xp-bar-track" style="height:4px;border-radius:2px;background:rgba(25,31,40,.06);overflow:hidden"><div class="xp-bar-fill" id="xpFill" style="height:100%;border-radius:2px;background:#3182F6;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%"></div></div>
+    <div class="xp-bar">
+      <div class="xp-bar-label"><span id="xpCur">0 XP</span><span id="xpMax">200 XP</span></div>
+      <div class="xp-bar-track"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
     </div>
-    <div id="rankNext" style="display:none"></div>
+    <div id="rankNext" style="display:none"></div><div id="rankBadge" style="display:none"></div>
   </div>
 
   <!-- Missions -->
   <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg" style="width:16px;height:16px;vertical-align:-3px"> 오늘의 챌린지 <span class="st-sub" id="missionCount">0/5</span></div>
   <div id="missionList"></div>
 
-  <!-- Free Training -->
+  <!-- Individual Games (Secondary) -->
   <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg" style="width:16px;height:16px;vertical-align:-3px"> 자유 훈련</div>
   <div id="gameGrid"></div>
-</div>
 
-<!-- ===== LEADERBOARD SCREEN ===== -->
-<div class="screen" id="leaderboardScreen">
-  <div class="g-hdr">
-    <button class="back" onclick="goHome()">←</button>
-    <span class="g-title" id="lb-title">순위</span>
-    <div style="width:24px"></div>
-  </div>
-  <div class="lb-container">
-    <div class="lb-list" id="lb-list"></div>
-  </div>
-</div>
+  <div id="pointExchangeVal" style="display:none"></div>
 
-<!-- ===== TICKET SHOP ===== -->
-<div class="screen" id="ticketShop">
-  <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span></div>
-  <div class="g-body" style="padding:24px 20px;text-align:center">
-    <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:72px;height:72px"></div>
-    <div style="font-size:14px;color:var(--sub);margin-bottom:4px">보유 티켓</div>
-    <div id="ts-count" style="font-size:40px;font-weight:800;color:var(--p);margin-bottom:24px">0장</div>
-    <button class="btn btn-primary" onclick="ticketAdRefill()" id="ts-ad-btn" style="width:100%;font-size:16px;padding:16px;margin-bottom:20px">
-      <span style="display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px">광고 보고 3~5장 받기</span>
-    </button>
-    <div style="background:var(--card);border-radius:var(--r16);padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px">
-      <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:32px;height:32px;flex-shrink:0">
-      <div style="text-align:left"><div style="font-size:15px;font-weight:700">매일 오전 9시 자동 충전</div><div style="font-size:12px;color:var(--sub);margin-top:2px">5장 미만이면 5장으로 채워져요</div></div>
-    </div>
-    <div style="font-size:12px;color:var(--sub)">최대 99장까지 보유 가능</div>
-  </div>
+  <!-- (coins removed) -->
 </div>
-
-<div class="heart-overlay" id="ticketModal">
-  <div class="heart-card">
-    <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:48px;height:48px"></div>
-    <div style="font-size:18px;font-weight:800;margin-bottom:6px">티켓을 모두 사용했어요</div>
-    <div style="font-size:14px;color:var(--sub);margin-bottom:20px">광고를 보고 바로 시작할 수도 있어요!</div>
-    <button class="btn btn-primary" id="ticketAdBtn">광고보고 바로 시작하기</button>
-    <button class="btn btn-home" onclick="closeTicketModal()">돌아가기</button>
-  </div>
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="result-sheet">
-    <div class="r-handle"></div>
-    <div style="height:20px"></div>
-    <div style="background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)">
-      <h3 id="r-title">훈련 완료!</h3>
-      <div class="r-score" id="r-score">0</div>
-      <div id="r-bonus" class="hide" style="text-align:center;margin:4px 0;transition:all .5s"></div>
-      <div class="r-cat" id="r-cat"></div>
-      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><div class="r-xp hide" id="r-xp">+0 XP</div><div class="r-xp hide" id="r-pt" style="background:var(--p)">+0 두뇌점수</div></div>
-      <div class="r-stats" id="r-stats"></div>
-    </div>
-    <div id="r-science" style="background:var(--card);border-radius:var(--r12);padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px" id="r-sci-title">두뇌 상식</div>
-      <div style="font-size:12px;color:var(--sub);line-height:1.5" id="r-sci-desc"></div>
-    </div>
-    <button class="btn btn-primary" id="r-main-btn" onclick="replayGame()" style="width:100%;font-size:17px;padding:16px;font-weight:800;margin-bottom:12px">광고보고 한 번 더 도전하기</button>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <button class="btn btn-weak" onclick="shareScore()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px">공유</button>
-      <button class="btn btn-weak" onclick="AIT.openLeaderboard()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px">리더보드</button>
-    </div>
-    <button class="btn btn-home" onclick="goHomeFromResult()" style="margin-top:0">홈으로</button>
-  </div>
-</div>
-
-<div class="wk-transition" id="wkTransition">
-  <div class="wkt-progress" id="wkt-progress">1 / 3</div>
-  <div class="wkt-next" id="wkt-icon">🧮</div>
-  <div class="wkt-name" id="wkt-name">암산 챌린지</div>
-  <div class="wkt-desc" id="wkt-desc">준비되셨나요?</div>
-  <button class="btn btn-primary" onclick="wkStartNext()" style="width:200px;margin-top:12px">시작하기</button>
-</div>
-
-<!-- ===== HEART & TIME OVERLAYS ===== -->
-<div class="heart-overlay" id="timeExtendOverlay">
-  <div class="heart-card">
-    <div style="font-size:18px;font-weight:800;margin-bottom:20px">시간 종료!<br>광고를 보고 5초 더 도전하세요</div>
-    <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:72px;height:72px"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-home" onclick="timeExtendQuit()" style="flex:1;margin:0">그만두기</button>
-      <button class="btn btn-primary" onclick="timeExtendAccept()" style="flex:1;margin:0">계속하기</button>
-    </div>
-  </div>
-</div>
-
-<div class="heart-overlay" id="heartOverlay">
-  <div class="heart-card">
-    <div style="font-size:18px;font-weight:800;margin-bottom:20px">잠깐 광고를 보면<br>하트를 하나 더 드려요</div>
-    <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u2764.svg" style="width:72px;height:72px"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-home" onclick="heartQuit()" style="flex:1;margin:0">그만두기</button>
-      <button class="btn btn-primary" onclick="refillHearts()" style="flex:1;margin:0">계속하기</button>
-    </div>
-  </div>
-</div>
-
-<div class="levelup-overlay" id="levelupOverlay">
-  <div class="levelup-card">
-    <div class="lu-badge" id="lu-badge" style="font-size:48px"></div>
-    <div class="lu-title" id="lu-title">실버 승급!</div>
-    <div class="lu-desc" id="lu-desc">두뇌 훈련을 꾸준히 하고 계시네요!</div>
-    <div class="lu-unlock hide" id="lu-unlock"></div>
-    <button class="btn btn-primary" onclick="closeLevelUp()">확인</button>
-  </div>
-</div>
-
-<div id="pointExchangeVal" style="display:none"></div>
 
 <!-- ===== GAME SCREENS ===== -->
 <div class="screen" id="game-math">
@@ -300,19 +182,26 @@
   <div class="g-body"><div class="g-score" id="mp-score">0점</div><div class="seq-msg">한자어와 뜻을 연결하세요</div><div class="mp-cols" id="mp-cols"><div class="mp-col" id="mp-left"></div><div class="mp-col" id="mp-right"></div></div></div>
 </div>
 
+<!-- ===== NINTENDO-STYLE GAMES ===== -->
 <div class="screen" id="game-headcount">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">인원 세기</span><span class="g-timer" id="hc-round">1/10</span></div>
   <div class="g-body"><div class="g-score" id="hc-score">0점</div>
     <div class="hc-stage" id="hc-stage">
       <svg class="hc-bldg" viewBox="0 0 140 150" fill="none">
+        <!-- Building body -->
         <rect x="20" y="40" width="100" height="110" rx="6" fill="#fff" stroke="#E5E8EB" stroke-width="2"/>
+        <!-- Roof -->
         <path d="M10 44L70 8L130 44" fill="#3182F6" stroke="#1B64DA" stroke-width="2" stroke-linejoin="round"/>
+        <!-- Windows row 1 -->
         <rect x="34" y="56" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5"/>
         <rect x="86" y="56" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5"/>
+        <!-- Windows row 2 -->
         <rect x="34" y="86" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5"/>
         <rect x="86" y="86" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5"/>
+        <!-- Door -->
         <rect x="55" y="112" width="30" height="38" rx="4" fill="#3182F6" opacity=".15" stroke="#3182F6" stroke-width="2"/>
         <circle cx="79" cy="132" r="2.5" fill="#3182F6"/>
+        <!-- Chimney -->
         <rect x="95" y="16" width="14" height="28" rx="2" fill="#8B95A1" opacity=".3"/>
       </svg>
       <div class="hc-counter" id="hc-counter"></div>
@@ -386,6 +275,7 @@
   </div>
 </div>
 
+<!-- 29. FLANKER -->
 <div class="screen" id="game-flanker">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">방향 맞추기</span><div class="hearts" id="fk-hearts"></div><span class="g-timer" id="fk-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="fk-score">0점</div>
@@ -398,7 +288,7 @@
     </div>
   </div>
 </div>
-
+<!-- 30. MEMGRID -->
 <div class="screen" id="game-memgrid">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">격자 기억</span><div class="hearts" id="mg-hearts"></div><span class="g-timer" id="mg-level">Lv.1</span></div>
   <div class="g-body"><div class="g-score" id="mg-score">0점</div>
@@ -406,7 +296,7 @@
     <div id="mg-grid" style="display:grid;gap:6px;margin:16px auto;width:fit-content"></div>
   </div>
 </div>
-
+<!-- 31. NBACK -->
 <div class="screen" id="game-nback">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">같거나 다르거나</span><span class="g-timer" id="nb-round">1/20</span></div>
   <div class="g-body"><div class="g-score" id="nb-score">0점</div>
@@ -415,7 +305,7 @@
     <div style="display:flex;gap:12px;justify-content:center;padding:16px"><button class="btn btn-primary" onclick="nbPick(true)" style="width:120px;font-size:22px;padding:14px">같다 O</button><button class="btn btn-danger-weak" onclick="nbPick(false)" style="width:120px;font-size:22px;padding:14px">다르다 X</button></div>
   </div>
 </div>
-
+<!-- 32. SCRAMBLE -->
 <div class="screen" id="game-scramble">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">글자 섞기</span><div class="hearts" id="sc-hearts"></div><span class="g-timer" id="sc-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="sc-score">0점</div>
@@ -425,7 +315,7 @@
     <div id="sc-opts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px"></div>
   </div>
 </div>
-
+<!-- 33. SERIAL -->
 <div class="screen" id="game-serial">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">연속 빼기</span><span class="g-timer" id="sr-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="sr-score">0점</div>
@@ -434,7 +324,7 @@
     <div id="sr-opts" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px"></div>
   </div>
 </div>
-
+<!-- 34. LEFTRIGHT -->
 <div class="screen" id="game-leftright">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">좌우 판단</span><div class="hearts" id="lr-hearts"></div><span class="g-timer" id="lr-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="lr-score">0점</div>
@@ -444,7 +334,7 @@
     <div style="display:flex;gap:12px;justify-content:center;padding:16px"><button class="btn btn-weak" onclick="lrPick('left')" style="width:120px;font-size:18px;padding:14px">왼손</button><button class="btn btn-weak" onclick="lrPick('right')" style="width:120px;font-size:18px;padding:14px">오른손</button></div>
   </div>
 </div>
-
+<!-- 35. CALCCOMP -->
 <div class="screen" id="game-calccomp">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">계산 비교</span><div class="hearts" id="cc2-hearts"></div><span class="g-timer" id="cc2-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="cc2-score">0점</div>
@@ -457,7 +347,7 @@
     </div>
   </div>
 </div>
-
+<!-- 36. FLASH -->
 <div class="screen" id="game-flash">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">순간 포착</span><div class="hearts" id="fl-hearts"></div><span class="g-timer" id="fl-level">Lv.1</span></div>
   <div class="g-body"><div class="g-score" id="fl-score">0점</div>
@@ -466,7 +356,7 @@
     <div id="fl-input" style="text-align:center;padding:8px"></div>
   </div>
 </div>
-
+<!-- 37. SORT -->
 <div class="screen" id="game-sort">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">카테고리 분류</span><span class="g-timer" id="st-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="st-score">0점</div>
@@ -475,7 +365,7 @@
     <div style="display:flex;gap:12px;justify-content:center;padding:16px"><button class="btn btn-weak" id="st-btn1" onclick="stPick(0)" style="width:120px;padding:14px;font-size:16px"></button><button class="btn btn-danger-weak" id="st-btn2" onclick="stPick(1)" style="width:120px;padding:14px;font-size:16px"></button></div>
   </div>
 </div>
-
+<!-- 38. MIRROR -->
 <div class="screen" id="game-mirror">
   <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">거울 문자</span><div class="hearts" id="mr-hearts"></div><span class="g-timer" id="mr-timer">30s</span></div>
   <div class="g-body"><div class="g-score" id="mr-score">0점</div>
@@ -485,90 +375,261 @@
   </div>
 </div>
 
-<div id="levelupOverlay" class="levelup-overlay">
+<!-- ===== TICKET SHOP ===== -->
+<div class="screen" id="ticketShop">
+  <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span></div>
+  <div class="g-body" style="padding:24px 20px;text-align:center">
+    <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:72px;height:72px"></div>
+    <div style="font-size:14px;color:var(--sub);margin-bottom:4px">보유 티켓</div>
+    <div id="ts-count" style="font-size:40px;font-weight:800;color:var(--p);margin-bottom:24px">0장</div>
+
+    <button class="btn btn-primary" onclick="ticketAdRefill()" id="ts-ad-btn" style="width:100%;font-size:16px;padding:16px;margin-bottom:20px">
+      <span style="display:flex;align-items:center;justify-content:center;gap:8px"><img src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px">광고 보고 3~5장 받기</span>
+    </button>
+
+    <div style="background:var(--card);border-radius:var(--r16);padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px">
+      <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:32px;height:32px;flex-shrink:0">
+      <div style="text-align:left"><div style="font-size:15px;font-weight:700">매일 오전 9시 자동 충전</div><div style="font-size:12px;color:var(--sub);margin-top:2px">5장 미만이면 5장으로 채워져요</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--sub)">최대 99장까지 보유 가능</div>
+
+    <!-- 배너 광고 영역 -->
+    <div id="ts-banner" style="margin-top:24px;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<!-- Ticket Modal -->
+<div class="overlay" id="ticketModal" style="display:none;z-index:1001">
+  <div style="background:var(--card);border-radius:var(--r20);padding:28px 24px;margin:auto;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15)">
+    <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:48px;height:48px"></div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px">티켓을 모두 사용했어요</div>
+    <div style="font-size:14px;color:var(--sub);margin-bottom:6px">오전 9시에 티켓이 충전됩니다</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:20px">광고를 보고 바로 시작할 수도 있어요!</div>
+    <button class="btn btn-primary" id="ticketAdBtn" style="width:100%;margin-bottom:10px;font-size:16px;padding:14px">잠깐 광고보고 시작하기</button>
+    <button class="btn btn-home" onclick="closeTicketModal()" style="width:100%;font-size:14px;padding:12px">돌아가기</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="result-sheet">
+    <div class="r-handle"></div>
+    <div style="height:20px"></div>
+    <div style="background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)">
+      <h3 id="r-title">훈련 완료!</h3>
+      <div class="r-score" id="r-score">0</div>
+      <div id="r-bonus" class="hide" style="text-align:center;margin:4px 0;transition:all .5s"></div>
+      <div class="r-cat" id="r-cat"></div>
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><div class="r-xp hide" id="r-xp">+0 XP</div><div class="r-xp hide" id="r-pt" style="background:var(--p)">+0 두뇌점수</div></div>
+      <div class="r-mission hide" id="r-mission"></div>
+      <div class="r-stats" id="r-stats"></div>
+    </div>
+    <div id="r-percentile" class="hide" style="text-align:center;margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,var(--p-light),#F3E8FF);border-radius:var(--r12);border:1px solid var(--border)"><div style="font-size:12px;color:var(--sub);margin-bottom:2px">전체 플레이어 중</div><div id="r-pct-val" style="font-size:24px;font-weight:800;color:var(--purple)">상위 10%</div><div id="r-pct-players" style="font-size:11px;color:var(--sub);margin-top:2px"></div></div>
+    <div id="r-science" style="background:var(--card);border-radius:var(--r12);padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px" id="r-sci-title"></div>
+      <div style="font-size:12px;color:var(--sub);line-height:1.5" id="r-sci-desc"></div>
+    </div>
+    <!-- Brain Age Card -->
+    <!-- brain age removed: rank = brain age -->
+    <!-- 재도전 (최우선) -->
+    <div id="r-retry-msg" class="hide" style="text-align:center;font-size:13px;font-weight:600;color:var(--p);padding:8px 16px;margin-bottom:6px;background:var(--p)10;border-radius:var(--r12)"></div>
+    <button class="btn btn-primary" id="r-main-btn" onclick="replayGame()" style="width:100%;font-size:17px;padding:16px;font-weight:800;margin-bottom:12px">광고보고 한 번 더 도전하기</button>
+
+    <!-- Share & Leaderboard -->
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn btn-weak" id="r-share-btn" onclick="shareScore()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F4E4.svg" style="width:16px;height:16px">공유</button>
+      <button class="btn btn-weak" id="r-lb-btn" onclick="AIT.openLeaderboard()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F3C6.svg" style="width:16px;height:16px">리더보드</button>
+      <button class="btn btn-weak" id="r-invite-btn" onclick="inviteFriend()" style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img src="https://static.toss.im/2d-emojis/svg/u1F44B.svg" style="width:16px;height:16px">초대</button>
+    </div>
+
+    <button class="btn btn-home" onclick="goHomeFromResult()" style="margin-top:0">홈으로</button>
+  </div>
+</div>
+
+<!-- ===== WORKOUT TRANSITION ===== -->
+<div class="wk-transition" id="wkTransition">
+  <div class="wkt-progress" id="wkt-progress">1 / 3</div>
+  <div class="wkt-next" id="wkt-icon">🧮</div>
+  <div class="wkt-name" id="wkt-name">암산 챌린지</div>
+  <div class="wkt-desc" id="wkt-desc">준비되셨나요?</div>
+  <button class="btn btn-primary" onclick="wkStartNext()" style="width:200px;margin-top:12px">시작하기</button>
+</div>
+
+<!-- ===== HEART REFILL ===== -->
+<!-- Time Extend Overlay -->
+<div class="heart-overlay" id="timeExtendOverlay">
+  <div class="heart-card">
+    <div style="font-size:18px;font-weight:800;line-height:1.5;margin-bottom:20px">시간 종료!<br>광고를 보고 5초 더 도전하세요</div>
+    <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:72px;height:72px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-home" onclick="timeExtendQuit()" style="flex:1;margin:0">그만두기</button>
+      <button class="btn btn-primary" onclick="timeExtendAccept()" style="flex:1;margin:0">5초 더 하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="heart-overlay" id="heartOverlay">
+  <div class="heart-card">
+    <div style="font-size:18px;font-weight:800;line-height:1.5;margin-bottom:20px">잠깐 광고를 보면<br>하트를 하나 더 드려요</div>
+    <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u2764.svg" style="width:72px;height:72px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-home" onclick="heartQuit()" style="flex:1;margin:0">그만두기</button>
+      <button class="btn btn-primary" onclick="refillHearts()" style="flex:1;margin:0">계속하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LEVEL UP ===== -->
+<div class="levelup-overlay" id="levelupOverlay">
   <div class="levelup-card">
-    <div id="lu-badge" class="lu-badge"></div>
-    <div id="lu-title" class="lu-title"></div>
-    <div id="lu-desc" class="lu-desc"></div>
-    <div id="lu-unlock" class="lu-unlock hide"></div>
+    <div class="lu-badge" id="lu-badge" style="font-size:48px"></div>
+    <div class="lu-title" id="lu-title">실버 승급!</div>
+    <div class="lu-desc" id="lu-desc">두뇌 훈련을 꾸준히 하고 계시네요!</div>
+    <div class="lu-unlock hide" id="lu-unlock"></div>
     <button class="btn btn-primary" onclick="closeLevelUp()">확인</button>
   </div>
 </div>
 
-<div id="heartOverlay" class="heart-overlay">
-  <div class="heart-card">
-    <div class="hc-hearts">❤️</div>
-    <div class="hc-title">하트가 부족해요</div>
-    <div class="hc-desc">광고를 보고 하트를 채워<br>계속 도전하시겠어요?</div>
-    <button class="btn btn-primary" onclick="refillHearts()">광고 보고 하트 채우기</button>
-    <button class="btn btn-home" onclick="heartQuit()">그만두기</button>
-  </div>
 </div>
-
-<div id="timeExtendOverlay" class="heart-overlay">
-  <div class="heart-card">
-    <div class="hc-hearts">⏰</div>
-    <div class="hc-title">시간 종료!</div>
-    <div class="hc-desc">광고를 보고 5초 더<br>도전하시겠어요?</div>
-    <button class="btn btn-primary" onclick="timeExtendAccept()">5초 더 하기</button>
-    <button class="btn btn-home" onclick="timeExtendQuit()">그만두기</button>
-  </div>
-</div>
-
-</div>
-
-<script src="src/core/ait.js?v=125"></script>
-<script src="src/core/config.js?v=125"></script>
-<script src="src/core/utils.js?v=125"></script>
-<script src="src/core/workout.js?v=125"></script>
-<script src="src/core/ticket.js?v=125"></script>
-<script src="src/ui/game_common.js?v=125"></script>
-<script src="src/ui/home.js?v=125"></script>
-<script src="src/ui/result.js?v=125"></script>
-<script src="src/ui/leaderboard.js?v=125"></script>
-<script src="src/games/math.js?v=125"></script>
-<script src="src/games/memory.js?v=125"></script>
-<script src="src/games/sequence.js?v=125"></script>
-<script src="src/games/stroop.js?v=125"></script>
-<script src="src/games/reaction.js?v=125"></script>
-<script src="src/games/word.js?v=125"></script>
-<script src="src/games/pattern.js?v=125"></script>
-<script src="src/games/focus.js?v=125"></script>
-<script src="src/games/rotate.js?v=125"></script>
-<script src="src/games/reverse.js?v=125"></script>
-<script src="src/games/numtouch.js?v=125"></script>
-<script src="src/games/rhythm.js?v=125"></script>
-<script src="src/games/rps.js?v=125"></script>
-<script src="src/games/oddone.js?v=125"></script>
-<script src="src/games/compare.js?v=125"></script>
-<script src="src/games/bulb.js?v=125"></script>
-<script src="src/games/colormix.js?v=125"></script>
-<script src="src/games/wordcomp.js?v=125"></script>
-<script src="src/games/timing.js?v=125"></script>
-<script src="src/games/matchpair.js?v=125"></script>
-<script src="src/games/headcount.js?v=125"></script>
-<script src="src/games/pyramid.js?v=125"></script>
-<script src="src/games/maxnum.js?v=125"></script>
-<script src="src/games/signfind.js?v=125"></script>
-<script src="src/games/coincount.js?v=125"></script>
-<script src="src/games/clock.js?v=125"></script>
-<script src="src/games/wordmem.js?v=125"></script>
-<script src="src/games/blockcount.js?v=125"></script>
-<script src="src/games/flanker.js?v=125"></script>
-<script src="src/games/memgrid.js?v=125"></script>
-<script src="src/games/nback.js?v=125"></script>
-<script src="src/games/scramble.js?v=125"></script>
-<script src="src/games/serial.js?v=125"></script>
-<script src="src/games/leftright.js?v=125"></script>
-<script src="src/games/calccomp.js?v=125"></script>
-<script src="src/games/flash.js?v=125"></script>
-<script src="src/games/sort.js?v=125"></script>
-<script src="src/games/mirror.js?v=125"></script>
 
 <script>
-window.addEventListener('DOMContentLoaded', () => {
-  renderHome();
-});
-</script>
-</body>
-</html>
+// ===== APPINTOSS SDK WRAPPER =====
+// Detects Toss WebView environment and provides unified API
+// When running outside Toss app, falls back to mock/web behavior
+const AIT = (() => {
+  const isToss = typeof window !== 'undefined' && (window.__granite__ || window.__ait__ || navigator.userAgent.includes('TossApp'));
+  let _userHash = null;
+  let _adLoaded = { interstitial: false, rewarded: false };
+
+  // ── Config (플레이스홀더 — 콘솔 발급 후 교체) ──
+  const CONFIG = {
+    AD_INTERSTITIAL_ID: 'ait-ad-test-interstitial-id',  // TODO: 실제 광고 그룹 ID로 교체
+    AD_REWARDED_ID: 'ait-ad-test-rewarded-id',           // TODO: 실제 광고 그룹 ID로 교체
+    LEADERBOARD_ID: 'PLACEHOLDER_LEADERBOARD_ID',        // TODO: 게임센터 리더보드 ID
+    PROMO_CODE: 'PLACEHOLDER_PROMO_CODE',                // TODO: 프로모션 코드 (레거시)
+    PROMO_AMOUNT: 100,
+    // 4 Promotions (IDs filled after approval)
+    PROMO_FIRST_LOGIN: 'PLACEHOLDER_PROMO_FIRST_LOGIN',
+    PROMO_BRAIN_AGE_50: 'PLACEHOLDER_PROMO_BRAIN_AGE_50',
+    PROMO_POINT_100: 'PLACEHOLDER_PROMO_POINT_100',
+    PROMO_FIRST_WORKOUT: 'PLACEHOLDER_PROMO_FIRST_WORKOUT',
+    SHARE_MODULE_ID: 'PLACEHOLDER_SHARE_MODULE_ID',      // TODO: 공유 리워드 모듈 ID
+  };
+
+  // ── User Key ──
+  async function getUserHash() {
+    if (_userHash) return _userHash;
+    if (!isToss) { _userHash = 'web_' + (localStorage.getItem('bf-uid') || (() => { const id = crypto.randomUUID(); localStorage.setItem('bf-uid', id); return id; })()); return _userHash; }
+    try {
+      // @apps-in-toss/web-framework의 getUserKeyForGame() 호출
+      const result = await window.__granite__?.getUserKeyForGame?.();
+      if (result?.type === 'HASH') { _userHash = result.hash; return _userHash; }
+    } catch (e) { console.warn('AIT getUserKeyForGame failed:', e); }
+    _userHash = 'toss_anonymous';
+    return _userHash;
+  }
+
+  // ── Ads ──
+  function preloadAd(type) {
+    if (!isToss) return;
+    const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
+    try {
+      window.__granite__?.loadAppsInTossAdMob?.({
+        options: { adGroupId: id },
+        onEvent: (e) => { if (e === 'adLoaded') _adLoaded[type] = true; },
+        onError: () => { _adLoaded[type] = false; }
+      });
+    } catch (e) { console.warn('AIT ad preload failed:', e); }
+  }
+
+  async function showAd(type) {
+    if (!isToss) { console.log(`[Mock] ${type} ad shown`); return { success: true, mock: true }; }
+    const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
+    return new Promise((resolve) => {
+      try {
+        window.__granite__?.showAppsInTossAdMob?.({
+          options: { adUnitId: id },
+          onEvent: (event) => {
+            if (event === 'userEarnedReward' || event === 'adDismissed') {
+              _adLoaded[type] = false;
+              preloadAd(type); // 다음 광고 미리 로드
+              resolve({ success: true, event });
+            }
+          },
+          onError: (err) => { resolve({ success: false, error: err }); }
+        });
+      } catch (e) { resolve({ success: false, error: e }); }
+    });
+  }
+
+  // ── Game Center ──
+  async function submitScore(score) {
+    if (!isToss) return { mock: true };
+    try {
+      return await window.__granite__?.submitGameCenterLeaderBoardScore?.({ score: String(score) });
+    } catch (e) { return { error: e }; }
+  }
+
+  async function openLeaderboard() {
+    if (!isToss) return;
+    try { await window.__granite__?.openGameCenterLeaderboard?.(); } catch (e) { console.warn('AIT leaderboard failed:', e); }
+  }
+
+  async function getProfile() {
+    if (!isToss) return null;
+    try { return await window.__granite__?.getGameCenterGameProfile?.(); } catch (e) { return null; }
+  }
+
+  // ── Storage (Toss native or localStorage fallback) ──
+  async function storageGet(key) {
+    if (!isToss) return localStorage.getItem(key);
+    try { return await window.__granite__?.getItem?.(key); } catch (e) { return localStorage.getItem(key); }
+  }
+
+  async function storageSet(key, value) {
+    if (!isToss) { localStorage.setItem(key, value); return; }
+    try { await window.__granite__?.setItem?.(key, value); } catch (e) { localStorage.setItem(key, value); }
+  }
+
+  // ── Haptic ──
+  function haptic(type = 'light') {
+    if (!isToss) return;
+    try { window.__granite__?.generateHapticFeedback?.({ type }); } catch (e) {}
+  }
+
+  // ── Promotion Reward ──
+  async function grantPromoReward(code, amount) {
+    if (!isToss) return { mock: true };
+    try {
+      return await window.__granite__?.grantPromotionRewardForGame?.({ params: { promotionCode: code || CONFIG.PROMO_CODE, amount: amount || CONFIG.PROMO_AMOUNT } });
+    } catch (e) { return { error: e }; }
+  }
+
+  // ── Share (친구초대/공유) ──
+  function shareInvite(moduleId) {
+    if (!isToss) { console.log('[Mock] share invite'); return () => {}; }
+    try {
+      return window.__granite__?.contactsViral?.({
+        options: { moduleId: moduleId || CONFIG.SHARE_MODULE_ID },
+        onEvent: (e) => { console.log('AIT share event:', e); },
+        onError: (e) => { console.warn('AIT share error:', e); }
+      }) || (() => {});
+    } catch (e) { return () => {}; }
+  }
+
+  // ── Simple Share ──
+  async function shareMessage(msg) {
+    if (!isToss) { if (navigator.share) await navigator.share({ text: msg }); return; }
+    try { await window.__granite__?.share?.({ message: msg }); } catch (e) {}
+  }
+
+  // ── Event Log (분석) ──
+  async function log(name, params = {}) {
+    if (!isToss) { console.log(`[AIT Log] ${name}`, params); return; }
+    try { await window.__granite__?.eventLog?.({ log_name: name, params }); } catch (e) {}
+  }
+
+  // ── Screen Awake (게임 중 화면 꺼짐 방지) ──
+  async function setScreenAwake(enabled) {
+    if (!isToss) return;
+    try { await window.__granite__?.setScreenAwakeMode?.({ enabled }); } catch (e) {}
