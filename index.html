@@ -518,6 +518,18 @@
 </div>
 
 <script>
+<!-- ===== LEADERBOARD SCREEN ===== -->
+<div class="screen" id="leaderboardScreen">
+  <div class="g-hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="g-title" id="lb-title">순위</span>
+    <div style="width:24px"></div>
+  </div>
+  <div class="lb-container">
+    <div class="lb-list" id="lb-list"></div>
+  </div>
+</div>
+
 <script src="src/core/ait.js"></script>
 <script src="src/core/config.js"></script>
 <script src="src/core/utils.js"></script>
@@ -526,6 +538,7 @@
 <script src="src/ui/game_common.js"></script>
 <script src="src/ui/home.js"></script>
 <script src="src/ui/result.js"></script>
+<script src="src/ui/leaderboard.js"></script>
 <script src="src/games/math.js"></script>
 <script src="src/games/memory.js"></script>
 <script src="src/games/sequence.js"></script>

@@ -208,6 +208,39 @@ app.get('/api/score/rank/:game/:userHash', (req, res) => {
   res.json({ rank, total, best: userBest.best });
 });
 
+// GET /api/score/leaderboard/:game — top 50 players for a game
+app.get('/api/score/leaderboard/:game', (req, res) => {
+  const { game } = req.params;
+  const rows = db.prepare(`
+    SELECT u.user_name, s.user_hash, MAX(s.score) as best
+    FROM scores s
+    JOIN users u ON s.user_hash = u.user_hash
+    WHERE s.game = ? AND s.user_hash IS NOT NULL
+    GROUP BY s.user_hash
+    ORDER BY best DESC
+    LIMIT 50
+  `).all(game);
+  res.json(rows);
+});
+
+// GET /api/score/overall-leaderboard — top 50 players by total points
+app.get('/api/score/overall-leaderboard', (req, res) => {
+  const rows = db.prepare(`
+    SELECT u.user_name, s.user_hash, SUM(s.max_score) as total_points
+    FROM (
+      SELECT user_hash, game, MAX(score) as max_score
+      FROM scores
+      WHERE user_hash IS NOT NULL
+      GROUP BY user_hash, game
+    ) s
+    JOIN users u ON s.user_hash = u.user_hash
+    GROUP BY s.user_hash
+    ORDER BY total_points DESC
+    LIMIT 50
+  `).all();
+  res.json(rows);
+});
+
 // GET /api/score/health
 app.get('/api/score/health', (req, res) => {
   const { count } = db.prepare('SELECT COUNT(*) as count FROM scores').get();
