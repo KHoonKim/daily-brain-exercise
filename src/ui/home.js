@@ -59,7 +59,7 @@ function renderHome(){
           <div class="mission-desc">목표 ${m.target}점 · 최고 ${best}점</div>
           ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:var(--p)"></div></div>`}
         </div>
-        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:24px;height:24px"></div>':`<div class="mission-reward"><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
+        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:24px;height:24px"></div>':`<div class="mission-reward" style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><span class="tds-badge-xs tds-badge-weak-blue">+20 XP</span><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
       </div>`}).join('');
   }
 
