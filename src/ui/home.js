@@ -1,11 +1,17 @@
-// ===== HOME RENDERING =====
+// ===== HOME RENDERING (ORIGINAL DESIGN RESTORED) =====
 function renderHome(){
   const xp=getXP();const rank=getRank(xp);const next=getNextRank(xp);
   const{streak,playedToday}=getStreak();
 
+  // Streak badge
+  const streakEl = document.getElementById('streakLabel');
+  if(streakEl) streakEl.textContent=(streak||0)>0?(streak+'일 연속 출석중'):'오늘 첫 출석을 해보세요!';
+
+  // Rank card
   const rankNameEl = document.getElementById('rankName');
   if(rankNameEl) {
     rankNameEl.textContent=rank.name;
+    rankNameEl.style.color=rank.color;
   }
   
   const xpCurEl = document.getElementById('xpCur');
@@ -40,8 +46,7 @@ function renderHome(){
   // Missions
   const missions=getTodayMissions();
   const doneCount=missions.filter(m=>m.done).length;
-  const missionCountEl = document.getElementById('missionCount');
-  if(missionCountEl) missionCountEl.textContent=doneCount+'/'+missions.length;
+  document.getElementById('missionCount').textContent=doneCount+'/'+missions.length;
   
   const missionListEl = document.getElementById('missionList');
   if(missionListEl) {
@@ -49,14 +54,15 @@ function renderHome(){
       const pct=Math.min(100,m.target>0?(m.progress/m.target*100):0);
       const best=LS.get(m.gameId+'-best',0);
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
+      // Unified Icon Style applied to Missions
       return `<div class="mission-card" onclick="startGame('${m.gameId}')">
-        <div class="mission-icon" style="background:${g.color}15;color:${g.color}">${GI[m.gameId]||'●'}</div>
+        <div class="mission-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px;flex-shrink:0">${GI[m.gameId]||''}</div>
         <div class="mission-info">
           <div class="mission-name">${m.name} <span style="font-size:11px;color:var(--sub);font-weight:400">목표 ${m.target}점 · 최고 ${best}점</span></div>
           <div class="mission-desc">${m.desc}</div>
           ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
         </div>
-        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px"></div>':`<div class="mission-reward" style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><span class="tds-badge-xs tds-badge-weak-blue">+20 XP</span><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
+        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px"></div>':`<div class="mission-reward" style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs" style="background:#FFD700;color:#fff;padding:2px 6px;border-radius:4px">+${m.xp}XP</span><span class="tds-badge tds-badge-xs" style="background:#3182F6;color:#fff;padding:2px 6px;border-radius:4px">+1점</span></div>`}
       </div>`}).join('');
   }
 
@@ -64,18 +70,16 @@ function renderHome(){
   renderTicketCount();
   if(window.renderPoints) renderPoints(true);
 
-  // Game grid
+  // Game grid grouped by category
   const cats=['기억력','집중','연산','유연성','언어','논리','공간','반응'];
   let gridHtml='';
   cats.forEach(cat=>{
     const games=GAMES.filter(g=>g.cat===cat);if(!games.length)return;
-    gridHtml+=`<div class="grid-category-title">${cat}</div>`;
+    gridHtml+=`<div class="grid-category-title" style="margin-top:16px;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--sub)">${cat}</div>`;
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}')">
-      <div class="gc-icon" style="background:${g.color}15;color:${g.color}">${GI[g.id]||''}</div>
-      <div class="gc-info">
-        <div class="gc-name">${g.name}</div>
-        <div class="gc-best">${(()=>{const b=LS.get(g.id+'-best',0);return b>0?`최고 ${b}점`:'도전하기'})()}</div>
-      </div>
+      <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
+      <div class="gc-name">${g.name}</div>
+      <div class="gc-best">${(()=>{const b=LS.get(g.id+'-best',0);return b>0?`<span class="tds-badge tds-badge-xs" style="background:rgba(49,130,246,.08);color:#3182F6;padding:2px 6px;border-radius:4px">${b}점</span>`:'도전하기'})()}</div>
     </div>`).join('')}</div>`;
   });
   const gameGridEl = document.getElementById('gameGrid');
