@@ -52,12 +52,13 @@ function renderHome(){
     missionListEl.innerHTML=missions.map(m=>{
       const pct=Math.min(100,m.target>0?(m.progress/m.target*100):0);
       const best=LS.get(m.gameId+'-best',0);
+      const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
       return `<div class="mission-card" onclick="startGame('${m.gameId}')">
-        <div class="mission-icon" style="background:var(--p-light);color:var(--p)">${GI[m.gameId]?`<div style="width:20px;height:20px">${GI[m.gameId]}</div>`:'●'}</div>
+        <div class="mission-icon" style="background:${g.color}15;color:${g.color}">${GI[m.gameId]||'●'}</div>
         <div class="mission-info">
           <div class="mission-name">${m.name}</div>
           <div class="mission-desc">목표 ${m.target}점 · 최고 ${best}점</div>
-          ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:var(--p)"></div></div>`}
+          ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
         </div>
         ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:24px;height:24px"></div>':`<div class="mission-reward" style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><span class="tds-badge-xs tds-badge-weak-blue">+20 XP</span><span class="tds-badge-xs tds-badge-weak-blue">+1 두뇌점수</span></div>`}
       </div>`}).join('');
