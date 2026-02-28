@@ -4,6 +4,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
 // .env 파일 로드 (없어도 무시)
 try {
@@ -731,23 +732,66 @@ app.post('/api/admin/recalibrate', (req, res) => {
   res.json({ updated: changes.length, changes });
 });
 
-// POST /api/score/promo/grant — 비게임 프로모션 리워드 지급 (Toss REST API 프록시)
+// mTLS 에이전트 (Toss 파트너 API용)
+let _tossAgent = null;
+function getTossAgent() {
+  if (_tossAgent) return _tossAgent;
+  try {
+    const cert = fs.readFileSync(path.join(__dirname, 'keys/toss-promo.crt'));
+    const key = fs.readFileSync(path.join(__dirname, 'keys/toss-promo.key'));
+    _tossAgent = new https.Agent({ cert, key });
+    console.log('[Toss] mTLS agent initialized');
+  } catch (e) {
+    console.warn('[Toss] mTLS cert not found, using default agent:', e.message);
+    _tossAgent = new https.Agent();
+  }
+  return _tossAgent;
+}
+
+function tossFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const reqOptions = {
+      hostname: u.hostname,
+      port: u.port || 443,
+      path: u.pathname + u.search,
+      method: options.method || 'GET',
+      headers: options.headers || {},
+      agent: getTossAgent(),
+    };
+    const req = https.request(reqOptions, (resHttp) => {
+      let data = '';
+      resHttp.on('data', chunk => { data += chunk; });
+      resHttp.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch (e) { resolve(data); }
+      });
+    });
+    req.on('error', reject);
+    if (options.body) req.write(options.body);
+    req.end();
+  });
+}
+
+// POST /api/score/promo/grant — 비게임 프로모션 리워드 지급 (Toss REST API 프록시, mTLS)
 app.post('/api/score/promo/grant', async (req, res) => {
   const { userKey, promotionCode, amount } = req.body;
   if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
   const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
   const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
   try {
-    const keyRes = await fetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers }).then(r => r.json());
+    const keyRes = await tossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers });
+    console.log('[Toss promo] get-key response:', JSON.stringify(keyRes));
     if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
     const key = keyRes.success.key;
-    const execRes = await fetch(`${BASE}/execute-promotion`, {
+    const execRes = await tossFetch(`${BASE}/execute-promotion`, {
       method: 'POST', headers,
       body: JSON.stringify({ promotionCode, key, amount })
-    }).then(r => r.json());
+    });
+    console.log('[Toss promo] execute response:', JSON.stringify(execRes));
     if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
     res.json({ key: execRes.success.key });
   } catch (e) {
+    console.error('[Toss promo] error:', e);
     res.status(500).json({ error: String(e) });
   }
 });

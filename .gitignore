@@ -7,3 +7,5 @@ server/calibration.json
 server/keys/
 dist/
 .DS_Store
+certificate_*.key
+certificate_*.crt
