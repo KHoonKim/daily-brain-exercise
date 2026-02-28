@@ -12,7 +12,7 @@
   <meta property="og:title" content="매일매일 두뇌운동">
   <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="src/styles/main.css?v=132">
+  <link rel="stylesheet" href="src/styles/main.css?v=133">
 </head>
 
 <body>
@@ -23,8 +23,62 @@
       <div class="snackbar-inner" id="snackbar-inner"></div>
     </div>
 
+    <!-- ===== INTRO SCREEN ===== -->
+    <div id="introScreen" class="screen active">
+      <!-- 메인 콘텐츠 -->
+      <div class="intro-body">
+        <!-- 앱 아이콘 -->
+        <div class="intro-icon-wrap">
+          <img src="icon-192.png" class="intro-icon" alt="매일매일 두뇌운동">
+        </div>
+
+        <!-- 헤드라인 -->
+        <h2 class="tds-t1 tds-fw-bold intro-headline">
+          하루 1분으로<br>두뇌능력을 키우고<br>포인트도 받아요.
+        </h2>
+
+        <!-- 특징 3가지 -->
+        <div class="intro-features">
+          <div class="intro-feature-item">
+            <div class="intro-feature-icon">
+              <img src="https://static.toss.im/2d-emojis/svg/u1F9EA.svg" alt="">
+            </div>
+            <div class="intro-feature-text">
+              <p class="tds-t5 tds-fw-bold tds-color-text">과학적으로 설계된 두뇌운동</p>
+              <p class="tds-t6 tds-color-sub">하루 1분으로 두뇌능력을 높여보세요.</p>
+            </div>
+          </div>
+          <div class="intro-feature-item">
+            <div class="intro-feature-icon">
+              <img src="https://static.toss.im/2d-emojis/svg/u1F4B0.svg" alt="">
+            </div>
+            <div class="intro-feature-text">
+              <p class="tds-t5 tds-fw-bold tds-color-text">포인트 교환하기</p>
+              <p class="tds-t6 tds-color-sub">두뇌점수를 모아 토스포인트로 바꿀 수 있어요.</p>
+            </div>
+          </div>
+          <div class="intro-feature-item">
+            <div class="intro-feature-icon">
+              <img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" alt="">
+            </div>
+            <div class="intro-feature-text">
+              <p class="tds-t5 tds-fw-bold tds-color-text">38가지의 두뇌운동</p>
+              <p class="tds-t6 tds-color-sub">기억력, 집중력, 논리력 등 다양한 두뇌운동이 있어요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 CTA -->
+      <div class="tds-bottom-cta">
+        <button id="introStartBtn" class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" onclick="startApp()">
+          시작하기
+        </button>
+      </div>
+    </div>
+
     <!-- ===== HOME (ORIGINAL DESIGN) ===== -->
-    <div id="homeScreen" class="home screen active">
+    <div id="homeScreen" class="home screen">
       <div class="home-header tds-top__row">
         <h1 class="tds-top__title"><img src="icon-192.png" style="width:28px;height:28px;vertical-align:-6px;border-radius:6px"> 매일매일 두뇌운동</h1>
         <div class="home-header-r tds-top__right">
@@ -84,6 +138,20 @@
         <div id="rankNext" style="display:none"></div>
       </div>
 
+      <!-- 친구 초대하기 -->
+      <div class="tds-list-row tds-list-row--card" onclick="inviteFriend()" style="margin-bottom:12px;cursor:pointer">
+        <div class="tds-list-row__left">
+          <img src="https://static.toss.im/2d-emojis/svg/u1F381.svg" style="width:36px;height:36px">
+        </div>
+        <div class="tds-list-row__contents">
+          <div class="tds-list-row__title tds-fw-semibold">친구에게 공유하고 리워드 받기</div>
+          <div class="tds-list-row__desc tds-color-sub">친구를 초대할 때마다 리워드 지급</div>
+        </div>
+        <div class="tds-list-row__right">
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style="color:var(--border)"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
       <!-- Missions -->
       <div class="section-title tds-list-header__title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg"
           style="width:16px;height:16px;vertical-align:-3px"> 오늘의 챌린지 <span class="st-sub tds-t7 tds-fw-regular tds-color-sub" id="missionCount">0/5</span>
@@ -91,16 +159,22 @@
       <div class="tds-st11 tds-color-sub" style="margin-top:1 px;margin-bottom:8px">5개 챌린지를 모두 완료하면 두뇌점수 <span class="tds-badge tds-badge-xs tds-badge-fill-blue">+2점</span> 추가 지급</div>
       <div id="missionList"></div>
 
+      <!-- 홈 배너 광고 1: 오늘의 챌린지와 자유훈련 사이 -->
+      <div id="home-banner-1" style="margin:12px 0;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>
+
       <!-- Free Training -->
       <div class="section-title tds-list-header__title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg"
           style="width:16px;height:16px;vertical-align:-3px"> 자유 훈련</div>
       <div class="tds-st11 tds-color-sub" style="margin-top:1px;margin-bottom:8px">목표점수 달성하면 두뇌점수 <span class="tds-badge tds-badge-xs tds-badge-fill-blue">+1점</span> 지급</div>
       <div id="gameGrid"></div>
+
+      <!-- 홈 배너 광고 2: 홈 최하단 -->
+      <div id="home-banner-2" style="margin:12px 0;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>
     </div>
 
     <!-- ===== OVERLAYS & SCREENS ===== -->
     <div class="screen" id="leaderboardScreen">
-      <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title" id="lb-title">순위</span>
+      <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title" id="lb-title">순위</span>
         <div style="width:24px"></div>
       </div>
       <div class="lb-container">
@@ -109,7 +183,7 @@
     </div>
 
     <div class="screen" id="ticketShop">
-      <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span></div>
+      <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span><div class="tds-nav__right"></div></div>
       <div class="g-body" style="padding:24px 20px;text-align:center">
         <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg"
             style="width:72px;height:72px"></div>
@@ -143,7 +217,7 @@
 
   <!-- 게임 화면들 생략... (이후 JS 로드 로직으로 이어짐) -->
   <div class="screen" id="game-math">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">암산</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">암산 챌린지</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="math-hearts"></div><span class="g-status-score" id="math-score">0점</span><span class="g-timer" id="math-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -166,7 +240,7 @@
   </div>
 
   <div class="screen" id="game-memory">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">기억력 카드</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">기억력 카드</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="mem-score">0점</span><span class="g-timer" id="mem-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -176,7 +250,7 @@
   </div>
 
   <div class="screen" id="game-sequence">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">순서 기억</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순서 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="seq-hearts"></div><span class="g-status-score" id="seq-score">0점</span><span class="g-timer" id="seq-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -186,18 +260,24 @@
   </div>
 
   <div class="screen" id="game-stroop">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">색깔</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">색깔 맞추기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="stroop-hearts"></div><span class="g-status-score" id="stroop-score">0점</span><span class="g-timer" id="stroop-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="stroop-q">글자의 <b>색깔</b>을 맞추세요!</div>
       <div class="stroop-word" id="stroop-word">빨강</div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="stroop-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="stroop-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
+      </div>
       <div class="stroop-opts" id="stroop-opts"></div>
     </div>
   </div>
 
   <div class="screen" id="game-reaction">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">반응속도</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">반응속도</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="react-score">준비하세요</span><span class="g-timer" id="react-round">1/5</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -208,19 +288,19 @@
   </div>
 
   <div class="screen" id="game-word">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">단어 찾기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="word-score">0점</span><span class="g-timer" id="word-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
+      <div id="word-guide" style="text-align:center;font-size:18px;color:var(--sub);padding:4px 0 2px"></div>
       <div id="word-cat" style="text-align:center;font-size:14px;font-weight:600;color:var(--p);padding:4px 0"></div>
       <div class="word-list" id="word-list"></div>
       <div class="word-board" id="word-board"></div>
-      <div style="text-align:center;font-size:12px;color:var(--sub);padding:4px">카테고리 힌트를 보고 숨은 단어를 찾으세요</div>
     </div>
   </div>
 
   <div class="screen" id="game-pattern">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">패턴</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">패턴 완성</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="pat-hearts"></div><span class="g-status-score" id="pat-score">0점</span><span class="g-timer" id="pat-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -231,7 +311,7 @@
   </div>
 
   <div class="screen" id="game-focus">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">집중력 탭</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">집중력 탭</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="focus-score">0점</span><span class="g-timer" id="focus-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -241,7 +321,7 @@
   </div>
 
   <div class="screen" id="game-rotate">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">도형</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">도형 회전</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rot-hearts"></div><span class="g-status-score" id="rot-score">0점</span><span class="g-timer" id="rot-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -252,7 +332,7 @@
   </div>
 
   <div class="screen" id="game-reverse">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">순서 뒤집기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순서 뒤집기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rev-hearts"></div><span class="g-status-score" id="rev-score">0점</span><span class="g-timer" id="rev-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -275,8 +355,8 @@
 
   <!-- ===== NEW GAMES ===== -->
   <div class="screen" id="game-numtouch">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">넘버 터치</span><div style="width:48px"></div></div>
-    <div class="g-status"><div></div><span class="g-status-score" id="nt-score">0점</span><span class="g-timer" id="nt-timer">0.0s</span></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">넘버 터치</span><div class="tds-nav__right"></div></div>
+    <div class="g-status"><div class="hearts" id="nt-hearts"></div><span class="g-status-score" id="nt-score">0점</span><span class="g-timer" id="nt-timer">0.0s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg" id="nt-msg">1부터 순서대로 터치!</div>
@@ -285,7 +365,7 @@
   </div>
 
   <div class="screen" id="game-rhythm">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">리듬 기억</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">리듬 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rhy-hearts"></div><span class="g-status-score" id="rhy-score">0점</span><span class="g-timer" id="rhy-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -300,41 +380,51 @@
   </div>
 
   <div class="screen" id="game-rps">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">두뇌 가위바위보</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">두뇌 가위바위보</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rps-hearts"></div><span class="g-status-score" id="rps-score">0점</span><span class="g-timer" id="rps-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="rps-q" id="rps-q">이기는 것을 내세요!</div>
       <div class="rps-enemy" id="rps-enemy">바위</div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="rps-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="rps-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
+      </div>
       <div class="rps-opts" id="rps-opts"><button class="rps-btn" onclick="rpsPick(0)">바위</button><button
           class="rps-btn" onclick="rpsPick(1)">보</button><button class="rps-btn" onclick="rpsPick(2)">가위</button></div>
     </div>
   </div>
 
   <div class="screen" id="game-oddone">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">다른 글자 찾기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">다른 글자 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="odd-hearts"></div><span class="g-status-score" id="odd-score">0점</span><span class="g-timer" id="odd-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg">다른 글자를 찾으세요!</div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="odd-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="odd-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="odd-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="odd-grid" id="odd-grid"></div>
     </div>
   </div>
 
   <div class="screen" id="game-compare">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">크다작다</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">크다작다</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cmp-hearts"></div><span class="g-status-score" id="cmp-score">0점</span><span class="g-timer" id="cmp-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="cmp-q" id="cmp-q" style="text-align:center;font-size:18px;font-weight:800;color:var(--p);padding:8px">
       </div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="cmp-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="cmp-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="cmp-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="cmp-nums"><span class="cmp-n" id="cmp-a" onclick="cmpPick('left')"
           style="cursor:pointer">0</span><span class="cmp-vs">vs</span><span class="cmp-n" id="cmp-b"
@@ -344,7 +434,7 @@
   </div>
 
   <div class="screen" id="game-bulb">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">전구 기억</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">전구 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="bulb-hearts"></div><span class="g-status-score" id="bulb-score">0점</span><span class="g-timer" id="bulb-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -354,36 +444,40 @@
   </div>
 
   <div class="screen" id="game-colormix">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">색깔 조합</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">색깔 조합</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cmx-hearts"></div><span class="g-status-score" id="cmx-score">0점</span><span class="g-timer" id="cmx-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="cmx-q" id="cmx-q"></div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="cmx-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="cmx-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="cmx-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="cmx-opts" id="cmx-opts"></div>
     </div>
   </div>
 
   <div class="screen" id="game-wordcomp">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">단어 완성</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 완성</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="wc-hearts"></div><span class="g-status-score" id="wc-score">0점</span><span class="g-timer" id="wc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="wc-word" id="wc-word"></div>
       <div class="wc-hint" id="wc-hint"></div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="wc-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="wc-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="wc-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="wc-opts" id="wc-opts"></div>
     </div>
   </div>
 
   <div class="screen" id="game-timing">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">타이밍</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">타이밍</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="tm-score">0점</span><span class="g-timer" id="tm-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -396,8 +490,8 @@
   </div>
 
   <div class="screen" id="game-matchpair">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">짝 맞추기</span><div style="width:48px"></div></div>
-    <div class="g-status"><div></div><span class="g-status-score" id="mp-score">0점</span><span class="g-timer" id="mp-timer">30s</span></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">짝 맞추기</span><div class="tds-nav__right"></div></div>
+    <div class="g-status"><div class="hearts" id="mp-hearts"></div><span class="g-status-score" id="mp-score">0점</span><span class="g-timer" id="mp-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg">한자어와 뜻을 연결하세요</div>
@@ -410,29 +504,12 @@
 
   <!-- ===== NINTENDO-STYLE GAMES ===== -->
   <div class="screen" id="game-headcount">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">인원 세기</span><div style="width:48px"></div></div>
-    <div class="g-status"><div></div><span class="g-status-score" id="hc-score">0점</span><span class="g-timer" id="hc-round">1/10</span></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">인원 세기</span><div class="tds-nav__right"></div></div>
+    <div class="g-status"><div class="hearts" id="hc-hearts"></div><span class="g-status-score" id="hc-score">0점</span><span class="g-timer" id="hc-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="hc-stage" id="hc-stage">
-        <svg class="hc-bldg" viewBox="0 0 140 150" fill="none">
-          <!-- Building body -->
-          <rect x="20" y="40" width="100" height="110" rx="6" fill="#fff" stroke="#E5E8EB" stroke-width="2" />
-          <!-- Roof -->
-          <path d="M10 44L70 8L130 44" fill="#3182F6" stroke="#1B64DA" stroke-width="2" stroke-linejoin="round" />
-          <!-- Windows row 1 -->
-          <rect x="34" y="56" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5" />
-          <rect x="86" y="56" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5" />
-          <!-- Windows row 2 -->
-          <rect x="34" y="86" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5" />
-          <rect x="86" y="86" width="20" height="18" rx="3" fill="#EBF3FE" stroke="#B4D5FE" stroke-width="1.5" />
-          <!-- Door -->
-          <rect x="55" y="112" width="30" height="38" rx="4" fill="#3182F6" opacity=".15" stroke="#3182F6"
-            stroke-width="2" />
-          <circle cx="79" cy="132" r="2.5" fill="#3182F6" />
-          <!-- Chimney -->
-          <rect x="95" y="16" width="14" height="28" rx="2" fill="#8B95A1" opacity=".3" />
-        </svg>
+        <img src="home.png" class="hc-bldg" />
         <div class="hc-counter" id="hc-counter"></div>
       </div>
       <div class="hc-log" id="hc-log"></div>
@@ -442,45 +519,55 @@
   </div>
 
   <div class="screen" id="game-pyramid">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">피라미드 연산</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">피라미드 연산</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="pyr-hearts"></div><span class="g-status-score" id="pyr-score">0점</span><span class="g-timer" id="pyr-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg">인접한 수의 합 = 윗칸</div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="pyr-qbar" style="height:100%;background:var(--p);border-radius:2px;width:0%"></div>
+        </div>
+        <span id="pyr-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
+      </div>
       <div class="pyr-grid" id="pyr-grid"></div>
     </div>
   </div>
 
   <div class="screen" id="game-maxnum">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">수 찾기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">수 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mn-hearts"></div><span class="g-status-score" id="mx-score">0점</span><span class="g-timer" id="mx-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg" id="mx-msg">가장 큰 수를 터치!</div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="mn-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="mn-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="mn-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="mx-grid" id="mx-grid"></div>
     </div>
   </div>
 
   <div class="screen" id="game-signfind">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">부호 찾기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">부호 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="sf-hearts"></div><span class="g-status-score" id="sf-score">0점</span><span class="g-timer" id="sf-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="sf-eq" id="sf-eq"></div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="sf-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="sf-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="sf-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="sf-opts" id="sf-opts"></div>
     </div>
   </div>
 
   <div class="screen" id="game-coincount">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">동전 세기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">동전 세기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cc-hearts"></div><span class="g-status-score" id="cc-score">0점</span><span class="g-timer" id="cc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -491,14 +578,16 @@
   </div>
 
   <div class="screen" id="game-clock">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">시계 읽기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">시계 읽기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="clk-hearts"></div><span class="g-status-score" id="clk-score">0점</span><span class="g-timer" id="clk-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <canvas id="clk-canvas" width="240" height="240" style="display:block;margin:16px auto"></canvas>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="clk-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="clk-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="clk-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div class="seq-msg">지금 몇 시 몇 분?</div>
       <div class="clk-opts" id="clk-opts"></div>
@@ -506,7 +595,7 @@
   </div>
 
   <div class="screen" id="game-wordmem">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">단어 암기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 암기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="wm-hearts"></div><span class="g-status-score" id="wm-score">0점</span><span class="g-timer" id="wm-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -517,23 +606,30 @@
   </div>
 
   <div class="screen" id="game-blockcount">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">블록 세기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">블록 세기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="bc-hearts"></div><span class="g-status-score" id="bc-score">0점</span><span class="g-timer" id="bc-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <canvas id="bc-canvas" width="280" height="240" style="display:block;margin:16px auto"></canvas>
       <div class="seq-msg">블록이 몇 개?</div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="bc-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="bc-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
+      </div>
       <div class="bc-opts" id="bc-opts"></div>
     </div>
   </div>
 
   <!-- 29. FLANKER -->
   <div class="screen" id="game-flanker">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">방향 맞추기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">방향 맞추기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="fk-hearts"></div><span class="g-status-score" id="fk-score">0점</span><span class="g-timer" id="fk-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
-      <div class="seq-msg" id="fk-msg">가운데 큰 화살표의 방향은?</div>
+      <div class="seq-msg" id="fk-msg">가운데 비행기가 바라보고 있는 방향은?</div>
+      <div id="fk-qbar-wrap" style="width:calc(100% - 32px);margin:4px 16px 0;height:6px;background:var(--border);border-radius:4px;overflow:hidden"><div id="fk-qbar" style="height:100%;width:100%;background:#3182F6;border-radius:4px;transition:width 0.05s linear"></div></div>
       <div id="fk-display"
         style="text-align:center;padding:20px 0;user-select:none;display:flex;align-items:center;justify-content:center;gap:4px">
       </div>
@@ -553,7 +649,7 @@
   </div>
   <!-- 30. MEMGRID -->
   <div class="screen" id="game-memgrid">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">격자 기억</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">격자 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mg-hearts"></div><span class="g-status-score" id="mg-score">0점</span><span class="g-timer" id="mg-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -563,11 +659,17 @@
   </div>
   <!-- 31. NBACK -->
   <div class="screen" id="game-nback">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">같거나 다르거나</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">같거나 다르거나</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="nb-score">0점</span><span class="g-timer" id="nb-round">1/20</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg" id="nb-msg">이전 카드와 같으면 O, 다르면 X</div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="nb-qbar" style="height:100%;background:var(--p);border-radius:2px;width:0%"></div>
+        </div>
+        <span id="nb-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
+      </div>
       <div id="nb-card"
         style="width:120px;height:120px;margin:16px auto;border-radius:var(--r16);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;background:var(--card);box-shadow:var(--shadow);border:3px solid var(--border)">
       </div>
@@ -579,14 +681,16 @@
   </div>
   <!-- 32. SCRAMBLE -->
   <div class="screen" id="game-scramble">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">글자 섞기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">글자 섞기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="sc-hearts"></div><span class="g-status-score" id="sc-score">0점</span><span class="g-timer" id="sc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg">섞인 글자를 올바른 순서로!</div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="sc-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="sc-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="sc-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div id="sc-scrambled"
         style="display:flex;gap:8px;justify-content:center;padding:16px;font-size:32px;font-weight:800"></div>
@@ -595,7 +699,7 @@
   </div>
   <!-- 33. SERIAL -->
   <div class="screen" id="game-serial">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">연속 빼기</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">연속 빼기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="sr-score">0점</span><span class="g-timer" id="sr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -606,15 +710,17 @@
   </div>
   <!-- 34. LEFTRIGHT -->
   <div class="screen" id="game-leftright">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">좌우 판단</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">좌우 판단</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="lr-hearts"></div><span class="g-status-score" id="lr-score">0점</span><span class="g-timer" id="lr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div id="lr-hand" style="font-size:100px;text-align:center;padding:16px 0;user-select:none"></div>
       <div class="seq-msg" id="lr-msg">이 손은?</div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="lr-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="lr-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="lr-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div style="display:flex;gap:12px;justify-content:center;padding:16px"><button class="btn btn-weak"
           onclick="lrPick('left')" style="width:120px;font-size:18px;padding:14px">왼손</button><button
@@ -624,14 +730,16 @@
   </div>
   <!-- 35. CALCCOMP -->
   <div class="screen" id="game-calccomp">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">계산 비교</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">계산 비교</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cc2-hearts"></div><span class="g-status-score" id="cc2-score">0점</span><span class="g-timer" id="cc2-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg" id="cc2-msg">더 큰 쪽을 터치!</div>
-      <div
-        style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
-        <div id="cc2-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="cc2-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="cc2-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div style="display:flex;gap:12px;justify-content:center;align-items:center;padding:20px 16px">
         <div id="cc2-a" onclick="cc2Pick('left')"
@@ -646,7 +754,7 @@
   </div>
   <!-- 36. FLASH -->
   <div class="screen" id="game-flash">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">순간 포착</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순간 포착</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="fl-hearts"></div><span class="g-status-score" id="fl-score">0점</span><span class="g-timer" id="fl-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -659,34 +767,34 @@
   </div>
   <!-- 37. SORT -->
   <div class="screen" id="game-sort">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">카테고리 분류</span><div style="width:48px"></div></div>
-    <div class="g-status"><div></div><span class="g-status-score" id="st-score">0점</span><span class="g-timer" id="st-timer">30s</span></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">카테고리 분류</span><div class="tds-nav__right"></div></div>
+    <div class="g-status"><div class="hearts" id="st-hearts"></div><span class="g-status-score" id="st-score">0점</span><span class="g-timer" id="st-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
-      <div style="display:flex;gap:8px;justify-content:center;padding:8px 16px">
-        <div id="st-cat1"
-          style="flex:1;padding:10px;text-align:center;font-size:14px;font-weight:700;border-radius:var(--r12);background:var(--p);color:#fff">
-        </div>
-        <div id="st-cat2"
-          style="flex:1;padding:10px;text-align:center;font-size:14px;font-weight:700;border-radius:var(--r12);background:#F43F5E;color:#fff">
-        </div>
-      </div>
-      <div id="st-word" style="text-align:center;font-size:36px;font-weight:900;padding:24px 0"></div>
-      <div style="display:flex;gap:12px;justify-content:center;padding:16px"><button class="btn btn-weak" id="st-btn1"
-          onclick="stPick(0)" style="width:120px;padding:14px;font-size:16px"></button><button
+      <div style="text-align:center;font-size:15px;color:var(--sub);padding:12px 16px 0">어떤 카테고리에 속하는지 선택하세요</div>
+      <div id="st-word" style="text-align:center;font-size:36px;font-weight:900;padding:20px 0 16px"></div>
+      <div style="margin:0 16px 20px;height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div id="st-qtimer-fill" style="height:100%;border-radius:3px;background:var(--p);width:100%;transition:width 0.1s linear"></div></div>
+      <div style="display:flex;gap:12px;justify-content:center;padding:0 16px"><button class="btn btn-weak" id="st-btn1"
+          onclick="stPick(0)" style="flex:1;padding:14px;font-size:16px"></button><button
           class="btn btn-danger-weak" id="st-btn2" onclick="stPick(1)"
-          style="width:120px;padding:14px;font-size:16px"></button></div>
+          style="flex:1;padding:14px;font-size:16px"></button></div>
     </div>
   </div>
   <!-- 38. MIRROR -->
   <div class="screen" id="game-mirror">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">거울 문자</span><div style="width:48px"></div></div>
+    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">거울 문자</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mr-hearts"></div><span class="g-status-score" id="mr-score">0점</span><span class="g-timer" id="mr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
       <div class="seq-msg">뒤집힌 글자를 읽으세요!</div>
       <div id="mr-char"
         style="text-align:center;font-size:80px;font-weight:900;padding:20px 0;transform:scaleX(-1);user-select:none">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;width:80%;max-width:240px;margin:0 auto 8px">
+        <div style="flex:1;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
+          <div id="mr-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
+        </div>
+        <span id="mr-q-time" style="font-size:12px;font-weight:600;color:var(--sub);min-width:28px;text-align:right"></span>
       </div>
       <div id="mr-opts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 16px"></div>
     </div>
@@ -774,7 +882,13 @@
   <!-- Time Extend Overlay -->
   <div class="heart-overlay" id="timeExtendOverlay">
     <div class="heart-card">
-      <div style="font-size:18px;font-weight:800;line-height:1.5;margin-bottom:20px">시간 종료!<br>광고를 보고 5초 더 도전하세요</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:6px">목표가 코 앞이에요!</div>
+      <div style="font-size:14px;color:var(--sub);margin-bottom:16px">광고를 보고 5초 더 도전하세요</div>
+      <div style="display:flex;justify-content:center;gap:20px;margin-bottom:16px;padding:12px 16px;background:var(--bg);border-radius:12px;font-size:14px">
+        <span>현재 점수 <strong id="timeExtendCurScore" style="color:var(--tds-blue)">0점</strong></span>
+        <span style="color:var(--border)">|</span>
+        <span>목표 점수 <strong id="timeExtendGoalScore">0점</strong></span>
+      </div>
       <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u23F0.svg"
           style="width:72px;height:72px"></div>
       <div style="display:flex;gap:8px">
@@ -786,7 +900,13 @@
 
   <div class="heart-overlay" id="heartOverlay">
     <div class="heart-card">
-      <div style="font-size:18px;font-weight:800;line-height:1.5;margin-bottom:20px">잠깐 광고를 보면<br>하트를 하나 더 드려요</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:6px">목표가 코 앞이에요!</div>
+      <div style="font-size:14px;color:var(--sub);margin-bottom:16px">잠깐 광고를 보면 하트를 하나 더 드려요</div>
+      <div style="display:flex;justify-content:center;gap:20px;margin-bottom:16px;padding:12px 16px;background:var(--bg);border-radius:12px;font-size:14px">
+        <span>현재 점수 <strong id="heartCurScore" style="color:var(--tds-blue)">0점</strong></span>
+        <span style="color:var(--border)">|</span>
+        <span>목표 점수 <strong id="heartGoalScore">0점</strong></span>
+      </div>
       <div style="margin-bottom:24px"><img src="https://static.toss.im/2d-emojis/svg/u2764.svg"
           style="width:72px;height:72px"></div>
       <div style="display:flex;gap:8px">
@@ -815,6 +935,7 @@
   <script src="src/core/workout.js?v=132"></script>
   <script src="src/core/ticket.js?v=132"></script>
   <script src="src/ui/game_common.js?v=132"></script>
+  <script src="src/ui/intro.js?v=1"></script>
   <script src="src/ui/home.js?v=132"></script>
   <script src="src/ui/result.js?v=132"></script>
   <script src="src/ui/leaderboard.js?v=132"></script>
