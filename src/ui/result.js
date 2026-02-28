@@ -65,7 +65,9 @@ function showResult(score, name, stats, extra = {}) {
     catEl.style.color = 'var(--p)';
   }
 
-  document.getElementById('r-xp').textContent = `+${xpGain} XP`;
+  const xpEl = document.getElementById('r-xp');
+  xpEl.textContent = `+${xpGain} XP`;
+  xpEl.classList.remove('hide');
   let ptGain = completed.length;
   const ptEl = document.getElementById('r-pt');
   if (ptGain > 0) {
