@@ -11,7 +11,6 @@ const AIT = (() => {
     AD_BANNER_ID: 'ait.v2.live.47d7aeae54c14818',        // 배너형: 게임 결과 페이지
     AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',  // 전면형: 하트 더받기, 5초 더하기, 한판 더하기
     AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
-    LEADERBOARD_ID: 'PLACEHOLDER_LEADERBOARD_ID',        // TODO: 게임센터 리더보드 ID
     PROMO_CODE: 'PLACEHOLDER_PROMO_CODE',                // TODO: 프로모션 코드 (레거시)
     PROMO_AMOUNT: 100,
     // 4 Promotions
@@ -72,7 +71,7 @@ const AIT = (() => {
   function loadBannerAd(containerId) {
     if (!isToss) {
       const el = document.getElementById(containerId);
-      if (el) { el.style.background = 'var(--border)'; el.textContent = '광고 영역'; }
+      if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
       return;
     }
     try {
@@ -80,7 +79,11 @@ const AIT = (() => {
         options: { adGroupId: CONFIG.AD_BANNER_ID },
         containerId,
         onEvent: (e) => { console.log('Banner ad event:', e); },
-        onError: (e) => { console.warn('Banner ad error:', e); }
+        onError: (e) => {
+          console.warn('Banner ad error:', e);
+          const el = document.getElementById(containerId);
+          if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
+        }
       });
     } catch (e) { console.warn('Banner ad load failed:', e); }
   }
