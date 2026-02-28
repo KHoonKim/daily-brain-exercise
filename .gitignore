@@ -4,5 +4,6 @@ server/scores.db
 server/scores.db-shm
 server/scores.db-wal
 server/calibration.json
+server/keys/
 dist/
 .DS_Store

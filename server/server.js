@@ -274,6 +274,18 @@ app.get('/api/score/health', (req, res) => {
 const TOSS_API = 'https://apps-in-toss-api.toss.im';
 const tossKeys = JSON.parse(fs.readFileSync(path.join(__dirname, 'keys/toss-login.json'), 'utf8'));
 
+// mTLS: 토스 API 호출 시 클라이언트 인증서 사용
+const { Agent } = require('undici');
+const tossAgent = new Agent({
+  connect: {
+    cert: fs.readFileSync(path.join(__dirname, 'keys/certificate_public.crt')),
+    key: fs.readFileSync(path.join(__dirname, 'keys/certificate_private.key')),
+  }
+});
+function tossFetch(url, options = {}) {
+  return fetch(url, { ...options, dispatcher: tossAgent });
+}
+
 function decryptToss(encryptedText) {
   const decoded = Buffer.from(encryptedText, 'base64');
   const IV_LENGTH = 12;
@@ -293,7 +305,7 @@ app.post('/api/score/toss/token', async (req, res) => {
   try {
     const { authorizationCode, referrer } = req.body;
     if (!authorizationCode || !referrer) return res.status(400).json({ error: 'authorizationCode and referrer required' });
-    const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
+    const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authorizationCode, referrer })
@@ -311,7 +323,7 @@ app.post('/api/score/toss/refresh', async (req, res) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) return res.status(400).json({ error: 'refreshToken required' });
-    const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/refresh-token`, {
+    const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/refresh-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken })
@@ -331,7 +343,7 @@ app.post('/api/score/toss/login', async (req, res) => {
     if (!authorizationCode || !referrer) return res.status(400).json({ error: 'authorizationCode and referrer required' });
 
     // 1. 토큰 발급
-    const tokenResp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
+    const tokenResp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authorizationCode, referrer })
@@ -346,7 +358,7 @@ app.post('/api/score/toss/login', async (req, res) => {
     const { accessToken, refreshToken } = tokenData.success;
 
     // 2. 유저 정보 조회
-    const meResp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/login-me`, {
+    const meResp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/login-me`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
     const meData = await meResp.json();
@@ -507,7 +519,7 @@ app.post('/api/score/toss/message', async (req, res) => {
     if (!userKey || !templateSetCode) {
       return res.status(400).json({ error: 'userKey and templateSetCode required' });
     }
-    const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
+    const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -531,7 +543,7 @@ app.post('/api/score/toss/message/test', async (req, res) => {
     if (!userKey || !templateSetCode) {
       return res.status(400).json({ error: 'userKey and templateSetCode required' });
     }
-    const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-test-message`, {
+    const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-test-message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -559,7 +571,7 @@ app.post('/api/score/toss/message/broadcast', async (req, res) => {
     
     for (const user of users) {
       try {
-        const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
+        const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -604,7 +616,7 @@ app.post('/api/score/toss/message/inactive', async (req, res) => {
     
     for (const user of inactiveUsers) {
       try {
-        const resp = await fetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
+        const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
