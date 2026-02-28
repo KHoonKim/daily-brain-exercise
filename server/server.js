@@ -140,7 +140,7 @@ app.post('/api/score', (req, res) => {
   } else {
     // Blend: weight real data proportionally
     const est = estimatedPercentile(game, score);
-    if (count >= 10) {
+    if (count >= 5) {
       const real = realPercentile(game, score);
       const w = count / 100;
       percentile = Math.round(real * w + est * (1 - w));
