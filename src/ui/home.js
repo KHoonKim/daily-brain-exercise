@@ -93,7 +93,7 @@ function renderHome(){
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
-      <div class="gc-best">${(()=>{const b=LS.get(g.id+'-best',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점</span><span style="font-size:11px;color:#999">목표 ${Math.round(b*1.05)}점</span></div>`:'도전하기'})()}</div>
+      <div class="gc-best">${(()=>{const b=LS.get(g.id+'-best',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:'도전하기'})()}</div>
     </div>`).join('')}</div>`;
   });
   const gameGridEl = document.getElementById('gameGrid');

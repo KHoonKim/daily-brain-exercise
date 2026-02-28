@@ -37,6 +37,8 @@ function showResult(score, name, stats, extra = {}) {
   }
   curScore = score;
   const best = LS.get(curGame + '-best', 0), isNew = score > best;
+  const freeTarget = best > 0 ? Math.round(best * 1.05) : 0;
+  const freeBonus = best > 0 && score >= freeTarget;
   if (isNew) LS.set(curGame + '-best', score);
   recordPlay();
 
@@ -49,6 +51,8 @@ function showResult(score, name, stats, extra = {}) {
 
   const completed = updateMission(curGame, score, extra);
   completed.forEach(m => addXP(m.xp));
+
+  if (freeBonus) { addPoints(1); toast('목표점수 달성! 두뇌점수 +1점 획득!'); }
 
   // Update UI elements
   document.getElementById('r-title').textContent = name + ' 완료!';
@@ -68,7 +72,7 @@ function showResult(score, name, stats, extra = {}) {
   const xpEl = document.getElementById('r-xp');
   xpEl.textContent = `+${xpGain} XP`;
   xpEl.classList.remove('hide');
-  let ptGain = completed.length;
+  let ptGain = completed.length + (freeBonus ? 1 : 0);
   const ptEl = document.getElementById('r-pt');
   if (ptGain > 0) {
     ptEl.textContent = `+${ptGain} 두뇌점수`;
