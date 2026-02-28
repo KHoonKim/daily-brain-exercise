@@ -358,26 +358,22 @@ window.AIT = (() => {
   const _promoGranted = {};
   let _promoLock = {};
   async function triggerPromo(promoType, promoCode, amount) {
-    alert(`[DBG1] triggerPromo 시작\n타입: ${promoType}\nisToss: ${isToss}\ngranted: ${_promoGranted[promoType]}\nlock: ${_promoLock[promoType]}`);
     if (promoType !== 'POINT_100' && _promoGranted[promoType]) return;
     if (_promoLock[promoType]) return;
     _promoLock[promoType] = true;
     try {
       const uh = await getUserHash();
-      alert(`[DBG2] getUserHash 완료\nuh: ${uh}`);
       if (promoType !== 'POINT_100') {
         try {
           const chk = await fetch(`${API_BASE}/api/score/promo/check/${uh}/${promoType}`).then(r=>r.json());
-          alert(`[DBG3] promo check 결과\n${JSON.stringify(chk)}`);
           if (chk.granted) { _promoGranted[promoType] = true; return; }
-        } catch(e) { alert(`[DBG3-ERR] promo check 실패\n${e}`); }
+        } catch(e) { console.warn('[AIT] promo check failed:', e); }
       }
-      let bridgeOk = !isToss; // 토스 환경 아니면 mock 성공으로 처리
+      let bridgeOk = !isToss;
       if (isToss) {
         const result = await grantPromoReward(promoCode, amount);
-        bridgeOk = result && result.key; // key가 있으면 성공
-        alert(`[프로모션 디버그]\n타입: ${promoType}\n결과: ${bridgeOk ? '✅성공' : '❌실패'}\n응답: ${JSON.stringify(result)}`);
-        console.log('[AIT] triggerPromo bridge result ok:', bridgeOk, result);
+        bridgeOk = result && result.key;
+        console.log('[AIT] triggerPromo result:', promoType, bridgeOk, result);
         if (bridgeOk) log('promo_granted', { type: promoType, amount });
       }
       if (bridgeOk && promoType !== 'POINT_100') {
