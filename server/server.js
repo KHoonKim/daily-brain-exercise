@@ -100,6 +100,18 @@ const ESTIMATED = {
   mirror:     [70,  28],   // isTimer, goal=70,  std=70×0.40
 };
 
+// Load persisted calibration if exists (overrides ESTIMATED defaults)
+const CALIBRATION_PATH = path.join(__dirname, 'calibration.json');
+try {
+  if (fs.existsSync(CALIBRATION_PATH)) {
+    const saved = JSON.parse(fs.readFileSync(CALIBRATION_PATH, 'utf8'));
+    Object.assign(ESTIMATED, saved);
+    console.log(`[calibration] Loaded ${Object.keys(saved).length} game overrides`);
+  }
+} catch (e) {
+  console.warn('[calibration] Failed to load calibration.json:', e.message);
+}
+
 // Normal CDF approximation
 function normalCDF(x) {
   const t = 1 / (1 + 0.2316419 * Math.abs(x));
@@ -625,6 +637,50 @@ app.post('/api/score/disconnect', (req, res) => {
   const { userKey, referrer } = req.body;
   if (userKey) handleDisconnect(userKey, referrer);
   res.json({ status: 'ok' });
+});
+
+// POST /api/admin/recalibrate — recalibrate ESTIMATED from real data
+// Requires header: x-admin-secret matching ADMIN_SECRET env var
+app.post('/api/admin/recalibrate', (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return res.status(503).json({ error: 'Admin not configured' });
+  if (req.headers['x-admin-secret'] !== secret) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const MIN_SAMPLES = 30;
+  const changes = [];
+
+  for (const game of Object.keys(ESTIMATED)) {
+    const row = db.prepare(`
+      SELECT COUNT(*) as cnt,
+             AVG(score) as mean,
+             AVG((score * score)) - (AVG(score) * AVG(score)) as variance
+      FROM scores WHERE game = ?
+    `).get(game);
+
+    if (!row || row.cnt < MIN_SAMPLES) continue;
+
+    const newMean = Math.round(row.mean);
+    const newStd  = Math.round(Math.sqrt(Math.max(row.variance || 1, 1)));
+    if (newStd < 5) continue;
+
+    const before = [...ESTIMATED[game]];
+    ESTIMATED[game] = [newMean, newStd];
+    changes.push({ game, before, after: [newMean, newStd], samples: row.cnt });
+  }
+
+  if (changes.length > 0) {
+    const toSave = {};
+    for (const { game, after } of changes) toSave[game] = after;
+    try {
+      fs.writeFileSync(CALIBRATION_PATH, JSON.stringify(toSave, null, 2));
+    } catch (e) {
+      console.warn('[calibration] Failed to save:', e.message);
+    }
+  }
+
+  res.json({ updated: changes.length, changes });
 });
 
 app.listen(PORT, '127.0.0.1', () => {
