@@ -60,44 +60,44 @@ app.use(express.json());
 //   others: std = mean × 0.40
 // These are overridden by calibration.json when real data accumulates.
 const ESTIMATED = {
-  math:       [200, 80],   // isTimer, goal=200
-  memory:     [120, 48],   // default, goal=120
-  reaction:   [400, 140],  // special, goal=400
-  stroop:     [150, 60],   // isTimer, goal=150
-  sequence:   [100, 45],   // isLevel, goal=100
-  word:       [120, 48],   // default, goal=120
-  pattern:    [120, 48],   // isTimer, goal=120
-  focus:      [200, 80],   // isTimer, goal=200
-  rotate:     [120, 48],   // isTimer, goal=120
-  reverse:    [80,  36],   // isLevel, goal=80
-  numtouch:   [100, 35],   // special, goal=100
-  rhythm:     [80,  36],   // isLevel, goal=80
-  rps:        [120, 48],   // isTimer, goal=120
-  oddone:     [150, 60],   // isTimer, goal=150
-  compare:    [120, 48],   // isTimer, goal=120
-  bulb:       [80,  36],   // isLevel, goal=80
-  colormix:   [100, 40],   // isTimer, goal=100
-  wordcomp:   [120, 48],   // isTimer, goal=120
-  timing:     [100, 35],   // special, goal=100
-  matchpair:  [120, 48],   // isTimer, goal=120
-  headcount:  [120, 54],   // isTimer+isLevel → isLevel 우선, goal=120
-  pyramid:    [120, 48],   // isTimer, goal=120
-  maxnum:     [150, 60],   // isTimer, goal=150
-  signfind:   [120, 48],   // isTimer, goal=120
-  coincount:  [120, 48],   // isTimer, goal=120
-  clock:      [100, 40],   // isTimer, goal=100
-  wordmem:    [80,  36],   // isLevel, goal=80
-  blockcount: [120, 48],   // isTimer, goal=120
-  flanker:    [120, 48],   // isTimer, goal=120
-  memgrid:    [80,  36],   // isLevel, goal=80
-  nback:      [150, 60],   // isTimer, goal=150
-  scramble:   [120, 48],   // default, goal=120
-  serial:     [150, 60],   // isTimer, goal=150
-  leftright:  [120, 48],   // isTimer, goal=120
-  calccomp:   [120, 48],   // isTimer, goal=120
-  flash:      [80,  36],   // isLevel, goal=80
-  sort:       [150, 60],   // isTimer, goal=150
-  mirror:     [120, 48],   // isTimer, goal=120
+  math:       [150, 60],   // isTimer, goal=150, std=150×0.40
+  memory:     [80,  32],   // default, goal=80,  std=80×0.40
+  reaction:   [300, 105],  // special, goal=300, std=300×0.35
+  stroop:     [130, 52],   // isTimer, goal=130, std=130×0.40
+  sequence:   [80,  36],   // isLevel, goal=80,  std=80×0.45
+  word:       [70,  28],   // default, goal=70,  std=70×0.40
+  pattern:    [100, 40],   // isTimer, goal=100, std=100×0.40
+  focus:      [150, 60],   // isTimer, goal=150, std=150×0.40
+  rotate:     [70,  28],   // isTimer, goal=70,  std=70×0.40
+  reverse:    [60,  27],   // isLevel, goal=60,  std=60×0.45
+  numtouch:   [80,  28],   // special, goal=80,  std=80×0.35
+  rhythm:     [80,  36],   // isLevel, goal=80,  std=80×0.45
+  rps:        [120, 48],   // isTimer, goal=120, std=120×0.40
+  oddone:     [170, 68],   // isTimer, goal=170, std=170×0.40
+  compare:    [140, 56],   // isTimer, goal=140, std=140×0.40
+  bulb:       [80,  36],   // isLevel, goal=80,  std=80×0.45
+  colormix:   [70,  28],   // isTimer, goal=70,  std=70×0.40
+  wordcomp:   [90,  36],   // isTimer, goal=90,  std=90×0.40
+  timing:     [70,  25],   // special, goal=70,  std=70×0.35
+  matchpair:  [150, 60],   // isTimer, goal=150, std=150×0.40
+  headcount:  [70,  32],   // isTimer+isLevel→isLevel 우선, goal=70, std=70×0.45
+  pyramid:    [60,  24],   // isTimer, goal=60,  std=60×0.40
+  maxnum:     [130, 52],   // isTimer, goal=130, std=130×0.40
+  signfind:   [90,  36],   // isTimer, goal=90,  std=90×0.40
+  coincount:  [70,  28],   // isTimer, goal=70,  std=70×0.40
+  clock:      [60,  24],   // isTimer, goal=60,  std=60×0.40
+  wordmem:    [70,  32],   // isLevel, goal=70,  std=70×0.45
+  blockcount: [70,  28],   // isTimer, goal=70,  std=70×0.40
+  flanker:    [120, 48],   // isTimer, goal=120, std=120×0.40
+  memgrid:    [60,  27],   // isLevel, goal=60,  std=60×0.45
+  nback:      [80,  32],   // isTimer, goal=80,  std=80×0.40
+  scramble:   [70,  28],   // default, goal=70,  std=70×0.40
+  serial:     [100, 40],   // isTimer, goal=100, std=100×0.40
+  leftright:  [120, 48],   // isTimer, goal=120, std=120×0.40
+  calccomp:   [90,  36],   // isTimer, goal=90,  std=90×0.40
+  flash:      [70,  32],   // isLevel, goal=70,  std=70×0.45
+  sort:       [120, 48],   // isTimer, goal=120, std=120×0.40
+  mirror:     [70,  28],   // isTimer, goal=70,  std=70×0.40
 };
 
 // Normal CDF approximation
