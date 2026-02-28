@@ -55,6 +55,7 @@ app.use(cors({
     'https://littlesunnydays.com',
     /\.apps\.tossmini\.com$/,
     /\.private-apps\.tossmini\.com$/,
+    /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/,
   ],
   credentials: true,
 }));
