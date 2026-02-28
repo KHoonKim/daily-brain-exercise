@@ -3,5 +3,6 @@ server/node_modules/
 server/scores.db
 server/scores.db-shm
 server/scores.db-wal
+server/calibration.json
 dist/
 .DS_Store
