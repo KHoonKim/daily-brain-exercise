@@ -6,16 +6,9 @@ function initGoalBar(id){
   const best=LS.get(id+'-best',0);
   const gameMeta = GAMES.find(g => g.id === id);
   curGoal=best>0?Math.ceil(best*0.9):(gameMeta?.goalDefault||60);goalReached=false;
-  const scoreEl=document.querySelector('#game-'+id+' .g-score');
-  if(!scoreEl)return;
-  let bar=scoreEl.parentElement.querySelector('.goal-bar');
-  if(!bar){bar=document.createElement('div');bar.className='goal-bar';
-    bar.innerHTML='<div class="gb-label"><span class="gb-cur">0점</span><span class="gb-target">목표 0점</span></div><div class="gb-track"><div class="gb-fill"></div></div>';
-    scoreEl.after(bar)}
-  bar.querySelector('.gb-target').textContent='목표 '+curGoal+'점';
-  bar.querySelector('.gb-cur').textContent='0점';
-  bar.querySelector('.gb-fill').style.width='0';
-  bar.querySelector('.gb-fill').className='gb-fill';
+  const progressEl=document.querySelector('#game-'+id+' .g-progress');
+  if(!progressEl)return;
+  progressEl.innerHTML='<span class="gp-cur">0점</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'점</span>';
 }
 
 function setScore(elId,score){
@@ -27,12 +20,14 @@ function setScore(elId,score){
 }
 
 function updateGoal(score,gameId){
-  const bar=document.querySelector('#game-'+gameId+' .goal-bar');if(!bar)return;
+  const progressEl=document.querySelector('#game-'+gameId+' .g-progress');if(!progressEl)return;
   const pct=Math.min(100,Math.round(score/curGoal*100));
-  bar.querySelector('.gb-cur').textContent=score+'점';
-  const fill=bar.querySelector('.gb-fill');fill.style.width=pct+'%';
-  if(!goalReached&&score>=curGoal){goalReached=true;fill.className='gb-fill done';toast('목표 달성!')}
-  else if(pct>=80)fill.className='gb-fill hot';
+  const curEl=progressEl.querySelector('.gp-cur');if(curEl)curEl.textContent=score+'점';
+  const fill=progressEl.querySelector('.gp-fill');if(!fill)return;
+  fill.style.width=pct+'%';
+  if(!goalReached&&score>=curGoal){goalReached=true;fill.className='gp-fill done';toast('목표 달성!')}
+  else if(pct>=80)fill.className='gp-fill hot';
+  else fill.className='gp-fill';
 }
 
 // ===== NEXT QUESTION SCHEDULING =====
