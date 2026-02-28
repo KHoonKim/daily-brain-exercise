@@ -45,8 +45,8 @@ mirror:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=
 // missionDefault: 미션 목표 점수 기본값 (utils.js getTodayMissions)
 const GAMES=[
   {id:'math',      name:'암산 챌린지',    cat:'연산',  desc:'빠른 사칙연산',           color:'#3182F6',unlockXp:0, isTimer:true,  isLevel:false, goalDefault:150, missionDefault:170},
-  {id:'memory',    name:'기억력 카드',    cat:'기억력',desc:'같은 카드 쌍 찾기',        color:'#8B5CF6',unlockXp:0, isTimer:false, isLevel:false, goalDefault:80,  missionDefault:100},
-  {id:'reaction',  name:'반응속도',       cat:'반응',  desc:'빨리 터치!',              color:'#10B981',unlockXp:0, isTimer:false, isLevel:false, goalDefault:300, missionDefault:340},
+  {id:'memory',    name:'기억력 카드',    cat:'기억력',desc:'같은 카드 쌍 찾기',        color:'#8B5CF6',unlockXp:0, isTimer:true,  isLevel:false, goalDefault:80,  missionDefault:100},
+  {id:'reaction',  name:'반응속도',       cat:'반응',  desc:'빨리 터치!',              color:'#10B981',unlockXp:0, isTimer:false, isLevel:false, goalDefault:2000, goalUnit:'ms', missionDefault:340},
   {id:'stroop',    name:'색깔 맞추기',    cat:'유연성',desc:'스트룹 테스트',            color:'#F59E0B',unlockXp:0, isTimer:true,  isLevel:false, goalDefault:130, missionDefault:150},
   {id:'sequence',  name:'순서 기억',      cat:'기억력',desc:'순서 따라하기',            color:'#EC4899',unlockXp:0, isTimer:false, isLevel:true,  goalDefault:80,  missionDefault:100},
   {id:'word',      name:'단어 찾기',      cat:'언어',  desc:'숨은 단어 찾기',           color:'#6366F1',unlockXp:0, isTimer:false, isLevel:false, goalDefault:70,  missionDefault:80},
@@ -84,14 +84,44 @@ const GAMES=[
   {id:'mirror',    name:'거울 문자',      cat:'공간',  desc:'뒤집힌 글자 읽기',         color:'#A78BFA',unlockXp:0, isTimer:true,  isLevel:false, goalDefault:70,  missionDefault:90},
 ];
 
-const RANKS=[
-  {name:'100세',minXp:0,color:'#CD7F32',label:'100',age:100},
-  {name:'90세',minXp:500,color:'#C0C0C0',label:'90',age:90},
-  {name:'80세',minXp:2000,color:'#9E9E9E',label:'80',age:80},
-  {name:'70세',minXp:5000,color:'#FFD700',label:'70',age:70},
-  {name:'60세',minXp:10000,color:'#FFA726',label:'60',age:60},
-  {name:'50세',minXp:18000,color:'#66BB6A',label:'50',age:50},
-  {name:'40세',minXp:30000,color:'#4DD0E1',label:'40',age:40},
-  {name:'30세',minXp:50000,color:'#42A5F5',label:'30',age:30},
-  {name:'20세',minXp:80000,color:'#E040FB',label:'20',age:20},
-];
+function _hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+function _rgbToHex(r,g,b){
+  return '#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+}
+function _interpolateColor(age,anchors){
+  for(let i=0;i<anchors.length-1;i++){
+    const a=anchors[i],b=anchors[i+1];
+    if(age<=a.age&&age>=b.age){
+      const t=(a.age-age)/(a.age-b.age);
+      const [r1,g1,b1]=_hexToRgb(a.color);
+      const [r2,g2,b2]=_hexToRgb(b.color);
+      return _rgbToHex(r1+(r2-r1)*t,g1+(g2-g1)*t,b1+(b2-b1)*t);
+    }
+  }
+  return anchors[anchors.length-1].color;
+}
+function generateRanks(){
+  const k=0.0615,C=590;
+  const COLOR_ANCHORS=[
+    {age:100,color:'#CD7F32'},
+    {age:90, color:'#C0C0C0'},
+    {age:80, color:'#9E9E9E'},
+    {age:70, color:'#FFD700'},
+    {age:60, color:'#FFA726'},
+    {age:50, color:'#66BB6A'},
+    {age:40, color:'#4DD0E1'},
+    {age:30, color:'#42A5F5'},
+    {age:20, color:'#E040FB'},
+  ];
+  const ranks=[];
+  for(let age=100;age>=20;age--){
+    const minXp=age===100?0:Math.round(C*(Math.exp(k*(100-age))-1));
+    const color=_interpolateColor(age,COLOR_ANCHORS);
+    ranks.push({name:`${age}세`,minXp,color,label:String(age),age});
+  }
+  return ranks;
+}
+const RANKS=generateRanks();
