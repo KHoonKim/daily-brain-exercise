@@ -1,5 +1,6 @@
 // ===== STATE =====
 let curGame=null,curTimer=null,curScore=0,replayCount=0;
+let curGameContext='free'; // 'workout' | 'challenge' | 'free'
 let _lastRenderedPoints=null;
 let _exchangeLock=false;
 
@@ -19,7 +20,15 @@ const LS={
 };
 
 function getXP(){return LS.get('xp',0)}
-function addXP(n){const xp=getXP()+n;LS.set('xp',xp);if(window.AIT && AIT.checkPromoBrainAge50)AIT.checkPromoBrainAge50(xp);return xp}
+function addXP(n){
+  const xp=getXP()+n;
+  LS.set('xp',xp);
+  if(window.AIT){
+    if(AIT.checkPromoBrainAge50)AIT.checkPromoBrainAge50(xp);
+    AIT.submitScore(xp);
+  }
+  return xp;
+}
 function getRank(xp){let r=RANKS[0];for(const rank of RANKS)if(xp>=rank.minXp)r=rank;return r}
 function getNextRank(xp){for(const r of RANKS)if(xp<r.minXp)return r;return null}
 
@@ -107,8 +116,8 @@ function animatePointsFrom(from){
 
 // ===== TOAST & SNACKBAR =====
 let toastT;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2000)}
-let snackT;function snackbar(html,dur=2500){const el=document.getElementById('snackbar');document.getElementById('snackbar-inner').innerHTML=html;el.classList.add('show');clearTimeout(snackT);snackT=setTimeout(()=>el.classList.remove('show'),dur)}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),500)}
+let snackT;function snackbar(html,dur=500){const el=document.getElementById('snackbar');document.getElementById('snackbar-inner').innerHTML=html;el.classList.add('show');clearTimeout(snackT);snackT=setTimeout(()=>el.classList.remove('show'),dur)}
 
 // ===== STREAK =====
 function getStreak(){
