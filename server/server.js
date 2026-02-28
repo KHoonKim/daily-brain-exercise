@@ -274,16 +274,38 @@ app.get('/api/score/health', (req, res) => {
 const TOSS_API = 'https://apps-in-toss-api.toss.im';
 const tossKeys = JSON.parse(fs.readFileSync(path.join(__dirname, 'keys/toss-login.json'), 'utf8'));
 
-// mTLS: 토스 API 호출 시 클라이언트 인증서 사용
-const { Agent } = require('undici');
-const tossAgent = new Agent({
-  connect: {
-    cert: fs.readFileSync(path.join(__dirname, 'keys/certificate_public.crt')),
-    key: fs.readFileSync(path.join(__dirname, 'keys/certificate_private.key')),
-  }
+// mTLS: 토스 API 호출 시 클라이언트 인증서 사용 (https 내장 모듈)
+const https = require('https');
+const tossAgent = new https.Agent({
+  cert: fs.readFileSync(path.join(__dirname, 'keys/certificate_public.crt')),
+  key: fs.readFileSync(path.join(__dirname, 'keys/certificate_private.key')),
 });
 function tossFetch(url, options = {}) {
-  return fetch(url, { ...options, dispatcher: tossAgent });
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const body = options.body || null;
+    const reqOpts = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: options.method || 'GET',
+      headers: { ...(options.headers || {}) },
+      agent: tossAgent,
+    };
+    if (body) reqOpts.headers['Content-Length'] = Buffer.byteLength(body);
+    const req = https.request(reqOpts, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        ok: res.statusCode >= 200 && res.statusCode < 300,
+        text: () => Promise.resolve(data),
+        json: () => Promise.resolve(JSON.parse(data)),
+      }));
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
 }
 
 function decryptToss(encryptedText) {
