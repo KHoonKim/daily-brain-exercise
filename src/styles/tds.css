@@ -271,8 +271,8 @@
 .tds-nav {
   display: flex;
   align-items: center;
-  height: calc(56px + env(safe-area-inset-top));
-  padding: env(safe-area-inset-top) 4px 0;
+  height: calc(56px + var(--toss-safe-top, env(safe-area-inset-top)));
+  padding: var(--toss-safe-top, env(safe-area-inset-top)) 4px 0;
   background: var(--tds-card);
   border-bottom: 1px solid var(--tds-border);
   position: sticky;
@@ -317,7 +317,7 @@
 
 /* ===== PHASE 5: TOP ===== */
 .tds-top {
-  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
+  padding: calc(16px + var(--toss-safe-top, env(safe-area-inset-top))) 20px 12px;
 }
 .tds-top__row {
   display: flex;
