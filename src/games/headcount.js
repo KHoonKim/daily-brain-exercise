@@ -1,6 +1,6 @@
 // ===== 21. HEAD COUNT - 인원 세기 =====
 let hcScore,hcRound,hcCount,hcAnim,hcTime;
-const HC_CHAR='<img src="char-40.png" style="width:100%;height:100%">';
+const HC_CHAR='<img src="character.png" style="width:100%;height:100%">';
 function initHeadcount(){hcScore=0;hcRound=0;document.getElementById('hc-score').textContent='0점';
 document.getElementById('hc-round').textContent='Lv.1';document.getElementById('hc-round').className='g-timer';
 initHearts('hc');hcNext()}
@@ -20,8 +20,8 @@ let i=0;hcAnim=setInterval(()=>{
 if(i<events.length){const e=events[i];const p=document.createElement('div');
 p.className='hc-person';p.innerHTML=HC_CHAR;
 stage.appendChild(p);
-if(e>0){p.classList.add('enter');document.getElementById('hc-log').textContent='입장';document.getElementById('hc-log').style.color='var(--ok)'}
-else{p.classList.add('exit');document.getElementById('hc-log').textContent='퇴장';document.getElementById('hc-log').style.color='var(--no)'}
+if(e>0){p.classList.add('enter')}
+else{p.classList.add('exit')}
 setTimeout(()=>p.remove(),750);
 i++}else{clearInterval(hcAnim);
 document.getElementById('hc-log').textContent='';document.getElementById('hc-msg').textContent='건물 안에 몇 명?';
@@ -34,4 +34,4 @@ function hcPick(el,n,ans){if(el.classList.contains('ok')||el.classList.contains(
 document.querySelectorAll('.hc-opt').forEach(o=>o.style.pointerEvents='none');
 if(n===ans){el.classList.add('ok');hcScore+=10+hcRound*2;setScore('hc-score',hcScore);toast('정답!');scheduleNextQuestion(hcNext,800)}
 else{el.classList.add('no');document.querySelectorAll('.hc-opt').forEach(o=>{if(+o.textContent===ans)o.classList.add('ok')});
-curScore=hcScore;if(loseHeart('hc'))return;scheduleNextQuestion(hcNext,800)}}
+curScore=hcScore;setHeartResumeCallback(hcNext);if(loseHeart('hc'))return;scheduleNextQuestion(hcNext,800)}}

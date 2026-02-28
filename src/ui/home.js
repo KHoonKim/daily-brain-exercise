@@ -40,7 +40,7 @@ function renderHome(){
   // Real overall rank from server
   if (window.AIT) {
     AIT.getUserHash().then(uh => {
-      fetch(`/api/score/overall-rank/${uh}`)
+      fetch(`${API_BASE}/api/score/overall-rank/${uh}`)
         .then(r => r.json())
         .then(d => {
           if (d.percentile !== undefined) {
@@ -63,7 +63,7 @@ function renderHome(){
       const best=LS.get(m.gameId+'-best',0);
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
       // TDS ListRow — Mission Card
-      return `<div class="tds-list-row tds-list-row--card" onclick="startGame('${m.gameId}')">
+      return `<div class="tds-list-row tds-list-row--card" onclick="startGame('${m.gameId}', false, 'challenge')">
         <div class="tds-list-row__left">
           <div class="tds-asset-icon tds-asset-icon--sm" style="background:${g.color}18;color:${g.color};padding:7px">${GI[m.gameId]||''}</div>
         </div>
@@ -85,19 +85,36 @@ function renderHome(){
   if(window.renderPoints) renderPoints(true);
 
   // Game grid grouped by category
-  const cats=['기억력','집중','연산','유연성','언어','논리','공간','반응'];
+  const CAT_INFO={
+    '기억력':{desc:'해마와 전전두엽의 협응을 강화해 정보를 부호화·저장·인출하는 능력을 키워요.'},
+    '집중력':{desc:'전전두엽의 억제 제어 시스템을 단련해 방해 요소를 차단하고 목표에 주의를 유지하는 능력을 키워요.'},
+    '수리력':{desc:'전두엽·두정엽의 수리 네트워크를 활성화해 수치 정보를 빠르고 정확하게 처리하는 능력을 키워요.'},
+    '전환력':{desc:'전전두엽의 인지 제어 회로를 단련해 규칙과 관점 사이를 유연하게 전환하는 인지적 유연성을 키워요.'},
+    '언어력':{desc:'브로카·베르니케 언어 네트워크를 자극해 단어 인출, 의미 처리, 언어적 추론 능력을 높여요.'},
+    '논리력':{desc:'전두엽 연합 피질의 분석 회로를 강화해 패턴과 규칙에서 결론을 도출하는 추론 능력을 키워요.'},
+    '공간지각력':{desc:'두정-후두 피질의 시공간 처리 영역을 활성화해 3차원 공간 정보를 머릿속에서 조작하는 능력을 키워요.'},
+    '반응력':{desc:'감각-운동 피질의 신경 전달 효율을 높여 자극을 인식하고 신속·정확하게 반응하는 처리 속도를 키워요.'},
+  };
+  const cats=['기억력','집중력','수리력','전환력','언어력','논리력','공간지각력','반응력'];
   let gridHtml='';
   cats.forEach(cat=>{
     const games=GAMES.filter(g=>g.cat===cat);if(!games.length)return;
-    gridHtml+=`<div class="grid-category-title" class="tds-t7 tds-fw-bold tds-color-sub" style="margin-top:16px;margin-bottom:8px">${cat}</div>`;
-    gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}')">
+    const info=CAT_INFO[cat]||{desc:''};
+    gridHtml+=`<div style="margin-top:20px;margin-bottom:4px"><div class="tds-t6 tds-fw-bold">${cat}</div><div class="tds-st12 tds-color-sub" style="margin-top:3px;margin-bottom:10px;line-height:1.5">${info.desc}</div></div>`;
+    gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}', false, 'free')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
-      <div class="gc-best">${(()=>{const b=LS.get(g.id+'-best',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:'도전하기'})()}</div>
+      <div class="gc-best">${(()=>{if(g.goalUnit==='ms'){const b=LS.get(g.id+'-best-ms',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}ms</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:'도전하기'}const b=LS.get(g.id+'-best',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:'도전하기'})()}</div>
     </div>`).join('')}</div>`;
   });
   const gameGridEl = document.getElementById('gameGrid');
   if(gameGridEl) gameGridEl.innerHTML=gridHtml;
+
+  if(window.AIT) {
+    AIT.loadBannerAd('home-banner-1');
+    AIT.loadBannerAd('home-banner-2');
+  }
+
 }
 
 function goHome(){
@@ -111,4 +128,19 @@ function goHome(){
   const overlay = document.getElementById('overlay');
   if(overlay) overlay.classList.remove('active');
   renderHome();
+}
+
+async function debugReset() {
+  if (!confirm('모든 데이터를 초기화할까요?\n(XP, 두뇌점수, 티켓, 미션 + 서버 DB 전부 삭제)')) return;
+  Object.keys(localStorage).filter(k => k.startsWith('bf-')).forEach(k => localStorage.removeItem(k));
+  await AIT.storageSet('toss_userKey', '');
+  await AIT.storageSet('toss_name', '');
+  try {
+    await fetch('/api/admin/reset-db', {
+      method: 'POST',
+      headers: { 'x-debug-token': 'brain-debug-reset-2026' }
+    });
+  } catch (e) {}
+  toast('초기화 완료! 앱을 다시 시작해주세요.');
+  setTimeout(() => location.reload(), 1500);
 }

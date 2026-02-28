@@ -1,19 +1,41 @@
 // ===== 38. MIRROR - 거울 문자 =====
-let mrScore,mrTime,mrAns,mrLevel=0;
+let mrScore,mrTime,mrAns,mrLevel=0,mrQTimer=null,mrQLimitMs=3000;
 const MR_CHARS='가나다라마바사아자차카타파하거너더러머버서어저커터퍼허고노도로모보소오조코토포호구누두루무부수우주쿠투푸후'.split('');
-function initMirror(){mrScore=0;mrTime=30;mrLevel=0;document.getElementById('mr-score').textContent='0점';initHearts('mr');
+function initMirror(){mrScore=0;mrTime=30;mrLevel=0;mrQLimitMs=3000;document.getElementById('mr-score').textContent='0점';initHearts('mr');
 document.getElementById('mr-timer').textContent='30s';document.getElementById('mr-timer').className='g-timer';
-clearInterval(curTimer);setTickFn(mrTick);curTimer=setInterval(mrTick,1000);mrGen()}
-function mrTick(){mrTime--;document.getElementById('mr-timer').textContent=mrTime+'s';if(mrTime<=10)document.getElementById('mr-timer').className='g-timer urgent';if(mrTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{mrTime=s;document.getElementById('mr-timer').textContent=mrTime+'s';document.getElementById('mr-timer').className='g-timer';curTimer=setInterval(mrTick,1000);mrGen()});showResult(mrScore,'거울 문자',[], {_isTimerEnd:true})}}
+clearInterval(curTimer);clearInterval(mrQTimer);setTickFn(mrTick);curTimer=setInterval(mrTick,1000);mrGen()}
+function mrTick(){mrTime--;document.getElementById('mr-timer').textContent=mrTime+'s';if(mrTime<=10)document.getElementById('mr-timer').className='g-timer urgent';if(mrTime<=0){clearInterval(curTimer);clearInterval(mrQTimer);setTimeExtendResumeCallback((s)=>{mrTime=s;document.getElementById('mr-timer').textContent=mrTime+'s';document.getElementById('mr-timer').className='g-timer';curTimer=setInterval(mrTick,1000);mrGen()});showResult(mrScore,'거울 문자',[], {_isTimerEnd:true})}}
+function mrStartQTimer(level){
+  clearInterval(mrQTimer);
+  mrQLimitMs=Math.max(1000,3000-level*100);
+  let elapsed=0;
+  const bar=document.getElementById('mr-qbar'),timeEl=document.getElementById('mr-q-time');
+  if(bar)bar.style.width='100%';
+  if(timeEl)timeEl.textContent=(mrQLimitMs/1000).toFixed(1)+'s';
+  mrQTimer=setInterval(()=>{
+    elapsed+=50;
+    const left=mrQLimitMs-elapsed;
+    if(bar)bar.style.width=Math.max(0,left/mrQLimitMs*100)+'%';
+    if(timeEl)timeEl.textContent=Math.max(0,left/1000).toFixed(1)+'s';
+    if(left<=0){
+      clearInterval(mrQTimer);
+      document.querySelectorAll('#mr-opts .bc-opt').forEach(o=>{if(o.textContent===mrAns)o.classList.add('ok')});
+      curScore=mrScore;setHeartResumeCallback(mrGen);if(loseHeart('mr'))return;
+      scheduleNextQuestion(mrGen,400);
+    }
+  },50);
+}
 function mrGen(){mrAns=MR_CHARS[~~(Math.random()*MR_CHARS.length)];
 const ch=document.getElementById('mr-char');ch.textContent=mrAns;
 const transforms=['scaleX(-1)','scaleY(-1)','scaleX(-1) scaleY(-1)','rotate(180deg)','scaleX(-1) rotate(90deg)'];
 const maxT=mrLevel<3?1:mrLevel<6?3:5;
-ch.style.transform=transforms[~~(Math.random()*maxT)];mrLevel++;
+ch.style.transform=transforms[~~(Math.random()*maxT)];
+const currLevel=mrLevel;mrLevel++;
 const opts=new Set([mrAns]);while(opts.size<4){opts.add(MR_CHARS[~~(Math.random()*MR_CHARS.length)])}
-document.getElementById('mr-opts').innerHTML=[...opts].sort(()=>Math.random()-.5).map(c=>
-`<div class="bc-opt" onclick="mrPick(this,'\${c}')" style="font-size:24px;padding:16px">\${c}</div>`).join('')}
+document.getElementById('mr-opts').innerHTML=[...opts].sort(()=>Math.random()-.5).map(c=>`<div class="bc-opt" onclick="mrPick(this,'${c}')" style="font-size:24px;padding:16px">${c}</div>`).join('');
+mrStartQTimer(currLevel)}
 function mrPick(el,c){if(el.classList.contains('ok')||el.classList.contains('no'))return;
+clearInterval(mrQTimer);
 if(c===mrAns){el.classList.add('ok');mrScore+=10;setScore('mr-score',mrScore);toast('정답!')}
 else{el.classList.add('no');document.querySelectorAll('#mr-opts .bc-opt').forEach(o=>{if(o.textContent===mrAns)o.classList.add('ok')});
 curScore=mrScore;setHeartResumeCallback(mrGen);if(loseHeart('mr'))return}

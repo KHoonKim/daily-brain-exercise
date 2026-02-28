@@ -26,4 +26,4 @@ if(correct){el.classList.add('ok');wmFound++;wmScore+=10;setScore('wm-score',wmS
 document.getElementById('wm-msg').textContent=`있었던 단어를 모두 고르세요 (${wmFound}/${wmTarget})`;
 if(wmFound>=wmTarget){wmLv++;wmScore+=wmLv*5;setScore('wm-score',wmScore);
 document.getElementById('wm-level').textContent='Lv.'+wmLv;toast('완벽!');scheduleNextQuestion(wmNewRound,800)}}
-else{el.classList.add('no');curScore=wmScore;if(loseHeart('wm'))return}}
+else{el.classList.add('no');curScore=wmScore;setHeartResumeCallback(wmNewRound);if(loseHeart('wm'))return}}

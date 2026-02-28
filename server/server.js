@@ -443,9 +443,9 @@ app.get('/api/score/user/:userHash', (req, res) => {
 
 // Promotion config (IDs will be filled after approval)
 const PROMOTIONS = {
-  FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
-  POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
-  FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT'
+  FIRST_LOGIN: 'TEST_01KJ8A3HFMP24HQ5743KD6Q9GK',
+  POINT_100: 'TEST_01KJ8BCF26T648AQ1QCKYMS4TZ',
+  FIRST_WORKOUT: 'TEST_01KJ8B95RPCGDQV9NZSCQ418VT'
 };
 
 // Promotion grant table (track per user to prevent duplicates)
@@ -729,6 +729,39 @@ app.post('/api/admin/recalibrate', (req, res) => {
   }
 
   res.json({ updated: changes.length, changes });
+});
+
+// POST /api/score/promo/grant — 비게임 프로모션 리워드 지급 (Toss REST API 프록시)
+app.post('/api/score/promo/grant', async (req, res) => {
+  const { userKey, promotionCode, amount } = req.body;
+  if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
+  const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
+  const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
+  try {
+    const keyRes = await fetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers }).then(r => r.json());
+    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    const key = keyRes.success.key;
+    const execRes = await fetch(`${BASE}/execute-promotion`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ promotionCode, key, amount })
+    }).then(r => r.json());
+    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+    res.json({ key: execRes.success.key });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+// POST /api/admin/reset-db — 테스트용 전체 DB 초기화
+app.post('/api/admin/reset-db', (req, res) => {
+  if (req.headers['x-debug-token'] !== 'brain-debug-reset-2026') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  db.prepare('DELETE FROM scores').run();
+  db.prepare('DELETE FROM users').run();
+  db.prepare('DELETE FROM promotion_grants').run();
+  db.prepare('DELETE FROM point_exchanges').run();
+  res.json({ ok: true });
 });
 
 app.listen(PORT, '127.0.0.1', () => {

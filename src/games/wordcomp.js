@@ -109,8 +109,8 @@ document.getElementById('wc-hint').textContent='힌트: '+q.hint;
 const ans=q.opts[0];const opts=[...q.opts].sort(()=>Math.random()-.5);
 document.getElementById('wc-opts').innerHTML=opts.map(o=>`<div class="wc-opt" onclick="wcPick(this,'${o}','${ans}','${q.full}')">${o}</div>`).join('');
 wcQLimit=Math.max(1.5,3.0-wcTotal*0.06);wcQTime=wcQLimit;clearInterval(wcQTimer);
-const wcbar=document.getElementById('wc-qbar');if(wcbar){wcbar.style.transition='none';wcbar.style.width='100%';wcbar.offsetWidth;wcbar.style.transition=`width ${wcQLimit}s linear`;wcbar.style.width='0%'}
-wcQTimer=setInterval(()=>{wcQTime-=0.1;if(wcQTime<=0){clearInterval(wcQTimer);wcTotal++;curScore=wcScore;setHeartResumeCallback(wcGen);if(loseHeart('wc'))return;scheduleNextQuestion(wcGen,300)}},100)}
+const wcbar=document.getElementById('wc-qbar');if(wcbar){wcbar.style.transition='none';wcbar.style.width='100%';wcbar.offsetWidth;wcbar.style.transition=`width ${wcQLimit}s linear`;wcbar.style.width='0%'}const wcqt=document.getElementById('wc-q-time');if(wcqt)wcqt.textContent=wcQLimit.toFixed(1)+'s';
+wcQTimer=setInterval(()=>{wcQTime-=0.1;document.getElementById('wc-q-time').textContent=Math.max(0,wcQTime).toFixed(1)+'s';if(wcQTime<=0){clearInterval(wcQTimer);wcTotal++;curScore=wcScore;setHeartResumeCallback(wcGen);if(loseHeart('wc'))return;scheduleNextQuestion(wcGen,300)}},100)}
 function wcPick(el,picked,answer,full){if(el.classList.contains('ok')||el.classList.contains('no'))return;clearInterval(wcQTimer);wcTotal++;
 if(picked===answer){el.classList.add('ok');const pct=wcQTime/wcQLimit;const bonus=pct>.75?5:pct>.5?3:1;wcScore+=10+bonus;setScore('wc-score',wcScore);document.getElementById('wc-word').textContent=full}
 else{el.classList.add('no');document.querySelectorAll('.wc-opt').forEach(o=>{if(o.textContent===answer)o.classList.add('ok')});document.getElementById('wc-word').textContent=full;curScore=wcScore;setHeartResumeCallback(wcGen);if(loseHeart('wc'))return}

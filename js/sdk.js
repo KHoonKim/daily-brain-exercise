@@ -15,7 +15,7 @@
         PROMO_BRAIN_AGE_50: 'PLACEHOLDER_PROMO_BRAIN_AGE_50',
         PROMO_POINT_100: 'PLACEHOLDER_PROMO_POINT_100',
         PROMO_FIRST_WORKOUT: 'PLACEHOLDER_PROMO_FIRST_WORKOUT',
-        SHARE_MODULE_ID: 'PLACEHOLDER_SHARE_MODULE_ID',      // TODO: 공유 리워드 모듈 ID
+        SHARE_MODULE_ID: '12a10659-c8aa-407a-a090-38f3c5dd4639',
       };
 
       // ── User Key ──
@@ -109,12 +109,22 @@
 
       // ── Share (친구초대/공유) ──
       function shareInvite(moduleId) {
-        if (!isToss) { console.log('[Mock] share invite'); return () => { }; }
+        if (!isToss) { console.log('[Mock] share invite'); if (typeof toast === 'function') toast('친구 초대 기능은 토스 앱에서만 사용할 수 있어요'); return () => { }; }
         try {
           return window.__granite__?.contactsViral?.({
             options: { moduleId: moduleId || CONFIG.SHARE_MODULE_ID },
-            onEvent: (e) => { console.log('AIT share event:', e); },
-            onError: (e) => { console.warn('AIT share error:', e); }
+            onEvent: (e) => {
+              if (e && e.type === 'sendViral') {
+                if (typeof addPoints === 'function') addPoints(1);
+                if (typeof toast === 'function') toast('🎉 두뇌점수 +1점 지급 완료!');
+                log('share_invite_rewarded', { ...(e.data || {}) });
+              } else if (e && e.type === 'close') {
+                const { sentRewardsCount } = e.data || {};
+                if (sentRewardsCount > 0 && typeof toast === 'function') toast(`총 ${sentRewardsCount}명에게 공유 완료!`);
+                log('share_invite_close', { ...(e.data || {}) });
+              }
+            },
+            onError: (e) => { console.warn('AIT share error:', e); log('share_invite_error', { error: String(e) }); }
           }) || (() => { });
         } catch (e) { return () => { }; }
       }

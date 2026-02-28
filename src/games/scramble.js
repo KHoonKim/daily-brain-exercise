@@ -25,8 +25,8 @@ const opts=[word,...decoys].sort(()=>Math.random()-.5);
 document.getElementById('sc-opts').innerHTML=opts.map(o=>`<div class="sf-opt" onclick="scPick(this,'${o}','${word}')">${o}</div>`).join('');
 scQLimit=Math.max(1.5, 3.0 - scLevel*0.08);
 scQTime=scQLimit;clearInterval(scQTimer);
-const bar=document.getElementById('sc-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${scQLimit}s linear`;bar.style.width='0%'}
-scQTimer=setInterval(()=>{scQTime-=0.1;if(scQTime<=0){clearInterval(scQTimer);curScore=scScore;setHeartResumeCallback(scGen);if(loseHeart('sc'))return;scheduleNextQuestion(scGen,300)}},100)}
+const bar=document.getElementById('sc-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${scQLimit}s linear`;bar.style.width='0%'}const scqt=document.getElementById('sc-q-time');if(scqt)scqt.textContent=scQLimit.toFixed(1)+'s';
+scQTimer=setInterval(()=>{scQTime-=0.1;document.getElementById('sc-q-time').textContent=Math.max(0,scQTime).toFixed(1)+'s';if(scQTime<=0){clearInterval(scQTimer);curScore=scScore;setHeartResumeCallback(scGen);if(loseHeart('sc'))return;scheduleNextQuestion(scGen,300)}},100)}
 function scPick(el,picked,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;
 clearInterval(scQTimer);
 if(picked===ans){el.classList.add('ok');const pct=scQTime/scQLimit;const bonus=pct>.75?5:pct>.5?3:1;scScore+=10+bonus;setScore('sc-score',scScore)}

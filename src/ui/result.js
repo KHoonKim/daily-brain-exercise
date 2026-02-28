@@ -27,6 +27,7 @@ function showResult(score, name, stats, extra = {}) {
   const curGameMeta = GAMES.find(g => g.id === curGame);
 
   if (!timeExtendUsed && curGameMeta?.isTimer && !extra._fromTimeExtend && isTimerEnd) {
+    curScore = score;
     _showResultArgs = [score, name, stats, extra];
     showTimeExtend(() => {
       const a = _showResultArgs;
@@ -37,7 +38,7 @@ function showResult(score, name, stats, extra = {}) {
   }
   curScore = score;
   const best = LS.get(curGame + '-best', 0), isNew = score > best;
-  const freeTarget = best > 0 ? Math.round(best * 1.05) : 0;
+  const freeTarget = best > 0 ? Math.round(best * (curGame === 'reaction' ? 1.01 : 1.05)) : 0;
   const freeBonus = best > 0 && score >= freeTarget;
   if (isNew) LS.set(curGame + '-best', score);
   recordPlay();
@@ -56,17 +57,28 @@ function showResult(score, name, stats, extra = {}) {
 
   // Update UI elements
   document.getElementById('r-title').textContent = name + ' 완료!';
-  document.getElementById('r-score').textContent = score;
+  const isMsGame = curGame === 'reaction';
+  document.getElementById('r-score').textContent = isMsGame ? (extra.avg || 0) + 'ms' : score;
 
   const catEl = document.getElementById('r-cat');
-  if (isNew && score > 0) { catEl.textContent = '새로운 최고기록!'; catEl.style.color = 'var(--ok)' }
-  else if (best > 0) {
-    const pct = Math.round(score / best * 100);
-    catEl.textContent = `최고기록 ${best}점 대비 ${pct}%`;
-    catEl.style.color = 'var(--sub-text)';
+  if (isMsGame) {
+    const bestMs = LS.get('reaction-best-ms', 0);
+    if (extra.isNewMs) { catEl.textContent = '새로운 최고기록!'; catEl.style.color = 'var(--ok)'; }
+    else if (bestMs > 0 && extra.avg > 0) {
+      const diff = extra.avg - bestMs;
+      catEl.textContent = diff > 0 ? `최고기록 ${bestMs}ms보다 ${diff}ms 느림` : `최고기록 ${bestMs}ms보다 ${-diff}ms 빠름`;
+      catEl.style.color = 'var(--sub-text)';
+    } else { catEl.textContent = '첫 기록을 세웠어요!'; catEl.style.color = 'var(--p)'; }
   } else {
-    catEl.textContent = '첫 기록을 세웠어요!';
-    catEl.style.color = 'var(--p)';
+    if (isNew && score > 0) { catEl.textContent = '새로운 최고기록!'; catEl.style.color = 'var(--ok)' }
+    else if (best > 0) {
+      const pct = Math.round(score / best * 100);
+      catEl.textContent = `최고기록 ${best}점 대비 ${pct}%`;
+      catEl.style.color = 'var(--sub-text)';
+    } else {
+      catEl.textContent = '첫 기록을 세웠어요!';
+      catEl.style.color = 'var(--p)';
+    }
   }
 
   const xpEl = document.getElementById('r-xp');
@@ -144,7 +156,7 @@ function showResult(score, name, stats, extra = {}) {
   if (pctEl) pctEl.classList.add('hide');
   if (score > 0) {
     AIT.getUserHash()
-      .then(uh => fetch('/api/score', {
+      .then(uh => fetch(`${API_BASE}/api/score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ game: curGame, score, userHash: uh })
@@ -174,7 +186,7 @@ function showResult(score, name, stats, extra = {}) {
   }
 
   document.getElementById('overlay').classList.add('active');
-  if (window.AIT?.loadBannerAd) AIT.loadBannerAd('r-banner');
+  AIT.loadBannerAd('r-banner');
 
   if (newRank !== oldRank) {
     setTimeout(() => showLevelUp(newRank, newXP), 600);

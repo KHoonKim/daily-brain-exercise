@@ -87,15 +87,14 @@ function showWkTransition(){
   document.getElementById('wkt-progress').textContent=totalDone+' / '+WK_SIZE;
   document.getElementById('wkt-icon').innerHTML=GI[g.id]||'';document.getElementById('wkt-icon').style.color=g.color;
   document.getElementById('wkt-name').textContent=g.name;
-  const best=LS.get(g.id+'-best',0);
-  const target=best>0?Math.ceil(best*0.9):10;
-  document.getElementById('wkt-desc').textContent=`목표 ${target}점 · 최고 ${best}점`;
+  if(g.goalUnit==='ms'){const bestMs=LS.get(g.id+'-best-ms',0);const targetMs=bestMs>0?Math.round(bestMs*1.1):(g.goalDefault||300);document.getElementById('wkt-desc').textContent=bestMs>0?`목표 ${targetMs}ms · 최고 ${bestMs}ms`:`목표 ${targetMs}ms`;}
+  else{const best=LS.get(g.id+'-best',0);const target=best>0?Math.ceil(best*0.9):(g.goalDefault||10);document.getElementById('wkt-desc').textContent=`목표 ${target}점 · 최고 ${best}점`;}
   document.getElementById('wkTransition').classList.add('active');
 }
 
 function wkStartNext(){
   document.getElementById('wkTransition').classList.remove('active');
-  startGame(wkGames[wkIdx]);
+  startGame(wkGames[wkIdx], false, 'workout');
 }
 
 function wkOnGameEnd(gameId,score){
@@ -108,11 +107,7 @@ function wkOnGameEnd(gameId,score){
 
 function wkContinue(){
   if(wkIdx<wkGames.length){
-    if(window.AIT && AIT.showAd){
-      AIT.showAd('interstitial').then(()=>showWkTransition());
-    } else {
-      showWkTransition();
-    }
+    showWkTransition();
   }else{
     finishWorkout();
   }

@@ -12,7 +12,7 @@
   <meta property="og:title" content="매일매일 두뇌운동">
   <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="src/styles/main.css?v=133">
+  <link rel="stylesheet" href="src/styles/main.css?v=145">
 </head>
 
 <body>
@@ -144,8 +144,8 @@
           <img src="https://static.toss.im/2d-emojis/svg/u1F381.svg" style="width:36px;height:36px">
         </div>
         <div class="tds-list-row__contents">
-          <div class="tds-list-row__title tds-fw-semibold">친구에게 공유하고 리워드 받기</div>
-          <div class="tds-list-row__desc tds-color-sub">친구를 초대할 때마다 리워드 지급</div>
+          <div class="tds-list-row__title tds-fw-semibold">친구에게 공유하고 두뇌점수 받기</div>
+          <div class="tds-list-row__desc tds-color-sub">친구를 초대할 때마다 두뇌점수 지급</div>
         </div>
         <div class="tds-list-row__right">
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style="color:var(--border)"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -170,6 +170,11 @@
 
       <!-- 홈 배너 광고 2: 홈 최하단 -->
       <div id="home-banner-2" style="margin:12px 0;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>
+
+      <!-- 디버그: 데이터 초기화 버튼 -->
+      <div style="text-align:center;padding:8px 0 24px">
+        <button onclick="debugReset()" style="font-size:11px;color:var(--sub);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer">🔄 데이터 초기화 (테스트용)</button>
+      </div>
     </div>
 
     <!-- ===== OVERLAYS & SCREENS ===== -->
@@ -929,54 +934,54 @@
 
   </div>
 
-  <script src="src/core/ait.js?v=132"></script>
-  <script src="src/core/config.js?v=132"></script>
-  <script src="src/core/utils.js?v=132"></script>
-  <script src="src/core/workout.js?v=132"></script>
-  <script src="src/core/ticket.js?v=132"></script>
-  <script src="src/ui/game_common.js?v=132"></script>
-  <script src="src/ui/intro.js?v=1"></script>
-  <script src="src/ui/home.js?v=132"></script>
-  <script src="src/ui/result.js?v=132"></script>
-  <script src="src/ui/leaderboard.js?v=132"></script>
-  <script src="src/games/math.js?v=132"></script>
-  <script src="src/games/memory.js?v=132"></script>
-  <script src="src/games/sequence.js?v=132"></script>
-  <script src="src/games/stroop.js?v=132"></script>
-  <script src="src/games/reaction.js?v=132"></script>
-  <script src="src/games/word.js?v=132"></script>
-  <script src="src/games/pattern.js?v=132"></script>
-  <script src="src/games/focus.js?v=132"></script>
-  <script src="src/games/rotate.js?v=132"></script>
-  <script src="src/games/reverse.js?v=132"></script>
-  <script src="src/games/numtouch.js?v=132"></script>
-  <script src="src/games/rhythm.js?v=132"></script>
-  <script src="src/games/rps.js?v=132"></script>
-  <script src="src/games/oddone.js?v=132"></script>
-  <script src="src/games/compare.js?v=132"></script>
-  <script src="src/games/bulb.js?v=132"></script>
-  <script src="src/games/colormix.js?v=132"></script>
-  <script src="src/games/wordcomp.js?v=132"></script>
-  <script src="src/games/timing.js?v=132"></script>
-  <script src="src/games/matchpair.js?v=132"></script>
-  <script src="src/games/headcount.js?v=132"></script>
-  <script src="src/games/pyramid.js?v=132"></script>
-  <script src="src/games/maxnum.js?v=132"></script>
-  <script src="src/games/signfind.js?v=132"></script>
-  <script src="src/games/coincount.js?v=132"></script>
-  <script src="src/games/clock.js?v=132"></script>
-  <script src="src/games/wordmem.js?v=132"></script>
-  <script src="src/games/blockcount.js?v=132"></script>
-  <script src="src/games/flanker.js?v=132"></script>
-  <script src="src/games/memgrid.js?v=132"></script>
-  <script src="src/games/nback.js?v=132"></script>
-  <script src="src/games/scramble.js?v=132"></script>
-  <script src="src/games/serial.js?v=132"></script>
-  <script src="src/games/leftright.js?v=132"></script>
-  <script src="src/games/calccomp.js?v=132"></script>
-  <script src="src/games/flash.js?v=132"></script>
-  <script src="src/games/sort.js?v=132"></script>
-  <script src="src/games/mirror.js?v=132"></script>
+  <script src="src/core/ait.js?v=145"></script>
+  <script src="src/core/config.js?v=145"></script>
+  <script src="src/core/utils.js?v=145"></script>
+  <script src="src/core/workout.js?v=145"></script>
+  <script src="src/core/ticket.js?v=145"></script>
+  <script src="src/ui/game_common.js?v=145"></script>
+  <script src="src/ui/intro.js?v=145"></script>
+  <script src="src/ui/home.js?v=145"></script>
+  <script src="src/ui/result.js?v=145"></script>
+  <script src="src/ui/leaderboard.js?v=145"></script>
+  <script src="src/games/math.js?v=145"></script>
+  <script src="src/games/memory.js?v=145"></script>
+  <script src="src/games/sequence.js?v=145"></script>
+  <script src="src/games/stroop.js?v=145"></script>
+  <script src="src/games/reaction.js?v=145"></script>
+  <script src="src/games/word.js?v=145"></script>
+  <script src="src/games/pattern.js?v=145"></script>
+  <script src="src/games/focus.js?v=145"></script>
+  <script src="src/games/rotate.js?v=145"></script>
+  <script src="src/games/reverse.js?v=145"></script>
+  <script src="src/games/numtouch.js?v=145"></script>
+  <script src="src/games/rhythm.js?v=145"></script>
+  <script src="src/games/rps.js?v=145"></script>
+  <script src="src/games/oddone.js?v=145"></script>
+  <script src="src/games/compare.js?v=145"></script>
+  <script src="src/games/bulb.js?v=145"></script>
+  <script src="src/games/colormix.js?v=145"></script>
+  <script src="src/games/wordcomp.js?v=145"></script>
+  <script src="src/games/timing.js?v=145"></script>
+  <script src="src/games/matchpair.js?v=145"></script>
+  <script src="src/games/headcount.js?v=145"></script>
+  <script src="src/games/pyramid.js?v=145"></script>
+  <script src="src/games/maxnum.js?v=145"></script>
+  <script src="src/games/signfind.js?v=145"></script>
+  <script src="src/games/coincount.js?v=145"></script>
+  <script src="src/games/clock.js?v=145"></script>
+  <script src="src/games/wordmem.js?v=145"></script>
+  <script src="src/games/blockcount.js?v=145"></script>
+  <script src="src/games/flanker.js?v=145"></script>
+  <script src="src/games/memgrid.js?v=145"></script>
+  <script src="src/games/nback.js?v=145"></script>
+  <script src="src/games/scramble.js?v=145"></script>
+  <script src="src/games/serial.js?v=145"></script>
+  <script src="src/games/leftright.js?v=145"></script>
+  <script src="src/games/calccomp.js?v=145"></script>
+  <script src="src/games/flash.js?v=145"></script>
+  <script src="src/games/sort.js?v=145"></script>
+  <script src="src/games/mirror.js?v=145"></script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {

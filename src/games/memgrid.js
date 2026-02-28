@@ -12,4 +12,4 @@ function mgTap(c){if(mgPhase!=='input')return;const i=+c.dataset.i;
 if(mgCells.includes(i)){c.style.background='var(--ok)';c.onclick=null;mgCells=mgCells.filter(x=>x!==i);mgScore+=10;
 setScore('mg-score',mgScore);
 if(mgCells.length===0){mgLv++;document.getElementById('mg-level').textContent='Lv.'+mgLv;toast('레벨 업!');setTimeout(mgRound,500)}}
-else{c.style.background='var(--no)';curScore=mgScore;if(loseHeart('mg'))return;setTimeout(mgRound,800)}}
+else{curScore=mgScore;setHeartResumeCallback(mgRound);if(loseHeart('mg'))return;mgPhase='wrong';const allCells=document.querySelectorAll('.mg-cell');allCells.forEach(cell=>cell.style.background='#ff3b30');document.getElementById('mg-msg').textContent='틀렸어요! 다시 시작!';setTimeout(()=>allCells.forEach(cell=>cell.style.background='var(--border)'),600);setTimeout(mgRound,800)}}

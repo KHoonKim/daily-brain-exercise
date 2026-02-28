@@ -19,8 +19,8 @@ if(aEl) { aEl.textContent=cmpA; aEl.style.opacity='1'; }
 if(bEl) { bEl.textContent=cmpB; bEl.style.opacity='1'; }
 cmpQLimit=Math.max(1.0, 2.0 - cmpTotal*0.05);
 cmpQTime=cmpQLimit;clearInterval(cmpQTimer);
-const bar=document.getElementById('cmp-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${cmpQLimit}s linear`;bar.style.width='0%'}
-cmpQTimer=setInterval(()=>{cmpQTime-=0.1;if(cmpQTime<=0){clearInterval(cmpQTimer);cmpTotal++;curScore=cmpScore;setHeartResumeCallback(cmpGen);if(loseHeart('cmp'))return;scheduleNextQuestion(cmpGen,300)}},100)}
+const bar=document.getElementById('cmp-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${cmpQLimit}s linear`;bar.style.width='0%'}const cmpqt=document.getElementById('cmp-q-time');if(cmpqt)cmpqt.textContent=cmpQLimit.toFixed(1)+'s';
+cmpQTimer=setInterval(()=>{cmpQTime-=0.1;document.getElementById('cmp-q-time').textContent=Math.max(0,cmpQTime).toFixed(1)+'s';if(cmpQTime<=0){clearInterval(cmpQTimer);cmpTotal++;curScore=cmpScore;setHeartResumeCallback(cmpGen);if(loseHeart('cmp'))return;scheduleNextQuestion(cmpGen,300)}},100)}
 function cmpPick(choice){clearInterval(cmpQTimer);cmpTotal++;
 const pickedBig=(choice==='left'&&cmpA>cmpB)||(choice==='right'&&cmpB>cmpA);
 const correct=(cmpMode==='big'&&pickedBig)||(cmpMode==='small'&&!pickedBig);

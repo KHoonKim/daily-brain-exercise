@@ -20,7 +20,7 @@ if (typeof window !== 'undefined' && !window.__GRANITE_NATIVE_EMITTER) {
   };
 }
 
-const AIT = (() => {
+window.AIT = (() => {
   const _bridge = (typeof window !== 'undefined') ? (window.__granite__ || window.__ait__) : null;
   const isToss = (typeof window !== 'undefined') && !!(window.ReactNativeWebView || _bridge) || (typeof navigator !== 'undefined' && navigator.userAgent.includes('TossApp'));
   let _userHash = null;
@@ -70,9 +70,9 @@ const AIT = (() => {
     AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',  // 전면형: 하트 더받기, 5초 더하기, 한판 더하기
     AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
     // 4 Promotions
-    PROMO_FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
-    PROMO_POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
-    PROMO_FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT',
+    PROMO_FIRST_LOGIN: 'TEST_01KJ8A3HFMP24HQ5743KD6Q9GK',
+    PROMO_POINT_100: 'TEST_01KJ8BCF26T648AQ1QCKYMS4TZ',
+    PROMO_FIRST_WORKOUT: 'TEST_01KJ8B95RPCGDQV9NZSCQ418VT',
     SHARE_MODULE_ID: '12a10659-c8aa-407a-a090-38f3c5dd4639', // 공유 리워드 모듈 ID
   };
 
@@ -81,9 +81,15 @@ const AIT = (() => {
     if (_userHash) return _userHash;
     if (!isToss) { _userHash = 'web_' + (localStorage.getItem('bf-uid') || (() => { const id = crypto.randomUUID(); localStorage.setItem('bf-uid', id); return id; })()); return _userHash; }
     try {
-      const result = await _bridgeCall('getUserKeyForGame');
+      const result = await Promise.race([
+        _bridgeCall('getUserKeyForGame'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]);
       if (result && result.type === 'HASH') { _userHash = result.hash; return _userHash; }
     } catch (e) { console.warn('AIT getUserKeyForGame failed:', e); }
+    // 폴백: 저장된 toss_userKey 사용
+    const storedKey = await storageGet('toss_userKey');
+    if (storedKey) { _userHash = storedKey; return _userHash; }
     _userHash = 'toss_anonymous';
     return _userHash;
   }
@@ -92,12 +98,17 @@ const AIT = (() => {
   function preloadAd(type) {
     if (!isToss) return;
     const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
+    const handleEvent = (e) => {
+      const t = typeof e === 'string' ? e : e?.type;
+      if (t === 'loaded' || t === 'adLoaded') _adLoaded[type] = true;
+    };
+    const handleError = () => { _adLoaded[type] = false; };
     try {
-      _bridge && _bridge.loadAppsInTossAdMob && _bridge.loadAppsInTossAdMob({
-        options: { adGroupId: id },
-        onEvent: (e) => { if (e === 'adLoaded') _adLoaded[type] = true; },
-        onError: () => { _adLoaded[type] = false; }
-      });
+      if (_bridge && _bridge.loadAppsInTossAdMob) {
+        _bridge.loadAppsInTossAdMob({ options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
+      } else {
+        _bridgeEvent('loadAppsInTossAdMob', { options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
+      }
     } catch (e) { console.warn('AIT ad preload failed:', e); }
   }
 
@@ -105,41 +116,91 @@ const AIT = (() => {
     if (!isToss) { console.log(`[Mock] ${type} ad shown`); return { success: true, mock: true }; }
     const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
     return new Promise((resolve) => {
+      const handleEvent = (event) => {
+        const evtType = typeof event === 'string' ? event : event?.type;
+        if (evtType === 'userEarnedReward' || evtType === 'dismissed' || evtType === 'adDismissed') {
+          _adLoaded[type] = false;
+          preloadAd(type);
+          resolve({ success: true, event: evtType });
+        }
+      };
+      const handleError = (err) => { resolve({ success: false, error: err }); };
       try {
-        _bridge && _bridge.showAppsInTossAdMob && _bridge.showAppsInTossAdMob({
-          options: { adUnitId: id },
-          onEvent: (event) => {
-            if (event === 'userEarnedReward' || event === 'adDismissed') {
-              _adLoaded[type] = false;
-              preloadAd(type); // 다음 광고 미리 로드
-              resolve({ success: true, event });
-            }
-          },
-          onError: (err) => { resolve({ success: false, error: err }); }
-        });
+        if (_bridge && _bridge.showAppsInTossAdMob) {
+          _bridge.showAppsInTossAdMob({ options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
+        } else {
+          _bridgeEvent('showAppsInTossAdMob', { options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
+        }
       } catch (e) { resolve({ success: false, error: e }); }
+      // 타임아웃: 30초 내 응답 없으면 실패 처리
+      setTimeout(() => resolve({ success: false, error: 'timeout' }), 30000);
     });
   }
 
   // ── Banner Ad ──
+  // 배너 광고는 TossAdsSpaceKit + fetchTossAd 방식 사용 (loadAppsInTossAdMob은 전면 광고 전용)
+  const _TOSS_ADS_SDK_URL = 'https://static.toss.im/ads/sdk/toss-ads-space-kit-1.3.0.js';
+  let _tossAdSdkPromise = null;
+
+  function _loadTossAdSdk() {
+    if (_tossAdSdkPromise) return _tossAdSdkPromise;
+    if (typeof window.TossAdsSpaceKit !== 'undefined') return Promise.resolve(window.TossAdsSpaceKit);
+    _tossAdSdkPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = _TOSS_ADS_SDK_URL;
+      script.async = true;
+      script.onload = () => {
+        _tossAdSdkPromise = null;
+        if (window.TossAdsSpaceKit) resolve(window.TossAdsSpaceKit);
+        else reject(new Error('TossAdsSpaceKit not found after load'));
+      };
+      script.onerror = () => { _tossAdSdkPromise = null; reject(new Error('Failed to load TossAdsSpaceKit')); };
+      document.head.appendChild(script);
+    });
+    return _tossAdSdkPromise;
+  }
+
   function loadBannerAd(containerId) {
     if (!isToss) {
       const el = document.getElementById(containerId);
       if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
       return;
     }
-    try {
-      _bridge && _bridge.loadAppsInTossAdMob && _bridge.loadAppsInTossAdMob({
-        options: { adGroupId: CONFIG.AD_BANNER_ID },
-        containerId,
-        onEvent: (e) => { console.log('Banner ad event:', e); },
-        onError: (e) => {
-          console.warn('Banner ad error:', e);
-          const el = document.getElementById(containerId);
-          if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const handleError = (e) => {
+      console.warn('Banner ad error:', e);
+      if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
+    };
+    _loadTossAdSdk().then(sdk => {
+      if (!sdk.isInitialized()) {
+        sdk.init({
+          environment: 'live',
+          customAdFetcher: async (_ctx, slotOpts) => {
+            return new Promise((res, rej) => {
+              const cleanup = _bridgeEvent('fetchTossAd', {
+                options: { adGroupId: slotOpts.spaceUnitId, sdkId: '108', availableStyleIds: ['1', '2'] },
+                onEvent: (r) => { if (cleanup) cleanup(); res(r); },
+                onError: (e) => { if (cleanup) cleanup(); rej(e); }
+              });
+            }).then(raw => {
+              const ads = Array.isArray(raw?.ads) ? raw.ads.filter(a => ['1', '2'].includes(String(a.styleId))) : [];
+              return { resultType: 'SUCCESS', success: { requestId: raw?.requestId || '', status: 'OK', ads, ext: raw?.ext } };
+            }).catch(e => ({ resultType: 'FAIL', error: { reason: String(e?.message || e) } }));
+          },
+          opener: (url) => { _bridgeCall('openURL', [url]).catch(() => {}); }
+        });
+      }
+      if (!sdk.banner) { handleError(new Error('banner not supported')); return; }
+      sdk.banner.createSlot(el, {
+        spaceId: CONFIG.AD_BANNER_ID,
+        autoLoad: true,
+        callbacks: {
+          onAdFailedToRender: (info) => handleError(info?.error),
+          onNoFill: () => console.log('[Banner] No fill:', containerId)
         }
       });
-    } catch (e) { console.warn('Banner ad load failed:', e); }
+    }).catch(handleError);
   }
 
   // ── Game Center ──
@@ -170,15 +231,27 @@ const AIT = (() => {
     try { _bridgeCall('generateHapticFeedback', [{ type }]); } catch (e) {}
   }
 
-  // ── Promotion Reward ──
+  // ── Promotion Reward (비게임: 서버 프록시 → Toss REST API) ──
   async function grantPromoReward(code, amount) {
     if (!isToss) return { mock: true };
+    const userKey = await storageGet('toss_userKey');
+    if (!userKey) return { error: 'no_userKey' };
     try {
-      return await _bridgeCall('grantPromotionRewardForGame', [{ params: { promotionCode: code, amount } }]);
-    } catch (e) { return { error: e }; }
+      const result = await fetch(`${API_BASE}/api/score/promo/grant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userKey, promotionCode: code, amount })
+      }).then(r => r.json());
+      console.log('[AIT] grantPromoReward result:', JSON.stringify(result));
+      return result;
+    } catch (e) {
+      console.warn('[AIT] grantPromoReward error:', e);
+      return { error: String(e) };
+    }
   }
 
   // ── Share (친구초대/공유) ──
+  // contactsViral: _bridgeEvent(PostMessage) 패턴으로 작동 확인됨
   function shareInvite(moduleId) {
     if (!isToss) {
       console.log('[Mock] share invite');
@@ -191,16 +264,12 @@ const AIT = (() => {
         options: { moduleId: moduleId || CONFIG.SHARE_MODULE_ID },
         onEvent: (e) => {
           if (e && e.type === 'sendViral') {
-            const { rewardAmount, rewardUnit } = e.data || {};
-            if (typeof toast === 'function' && rewardAmount) {
-              toast(`🎉 ${rewardAmount}${rewardUnit} 리워드 지급 완료!`);
-            }
-            log('share_invite_rewarded', { rewardAmount, rewardUnit });
+            if (typeof addPoints === 'function') addPoints(1);
+            if (typeof toast === 'function') toast('🎉 두뇌점수 +1점 지급 완료!');
+            log('share_invite_rewarded', { ...(e.data || {}) });
           } else if (e && e.type === 'close') {
             const { sentRewardsCount } = e.data || {};
-            if (sentRewardsCount > 0 && typeof toast === 'function') {
-              toast(`총 ${sentRewardsCount}명에게 공유 완료!`);
-            }
+            if (sentRewardsCount > 0 && typeof toast === 'function') toast(`총 ${sentRewardsCount}명에게 공유 완료!`);
             log('share_invite_close', { ...(e.data || {}) });
             cleanup();
           }
@@ -289,22 +358,29 @@ const AIT = (() => {
   const _promoGranted = {};
   let _promoLock = {};
   async function triggerPromo(promoType, promoCode, amount) {
+    alert(`[DBG1] triggerPromo 시작\n타입: ${promoType}\nisToss: ${isToss}\ngranted: ${_promoGranted[promoType]}\nlock: ${_promoLock[promoType]}`);
     if (promoType !== 'POINT_100' && _promoGranted[promoType]) return;
     if (_promoLock[promoType]) return;
     _promoLock[promoType] = true;
     try {
       const uh = await getUserHash();
+      alert(`[DBG2] getUserHash 완료\nuh: ${uh}`);
       if (promoType !== 'POINT_100') {
         try {
           const chk = await fetch(`${API_BASE}/api/score/promo/check/${uh}/${promoType}`).then(r=>r.json());
+          alert(`[DBG3] promo check 결과\n${JSON.stringify(chk)}`);
           if (chk.granted) { _promoGranted[promoType] = true; return; }
-        } catch(e) { return; }
+        } catch(e) { alert(`[DBG3-ERR] promo check 실패\n${e}`); }
       }
+      let bridgeOk = !isToss; // 토스 환경 아니면 mock 성공으로 처리
       if (isToss) {
-        await grantPromoReward(promoCode, amount);
-        log('promo_granted', { type: promoType, amount });
+        const result = await grantPromoReward(promoCode, amount);
+        bridgeOk = result && result.key; // key가 있으면 성공
+        alert(`[프로모션 디버그]\n타입: ${promoType}\n결과: ${bridgeOk ? '✅성공' : '❌실패'}\n응답: ${JSON.stringify(result)}`);
+        console.log('[AIT] triggerPromo bridge result ok:', bridgeOk, result);
+        if (bridgeOk) log('promo_granted', { type: promoType, amount });
       }
-      if (promoType !== 'POINT_100') {
+      if (bridgeOk && promoType !== 'POINT_100') {
         await fetch(`${API_BASE}/api/score/promo/record`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -321,30 +397,16 @@ const AIT = (() => {
   async function checkPromoPoint100() { triggerPromo('POINT_100', CONFIG.PROMO_POINT_100, 100); }
   async function checkPromoFirstWorkout() { triggerPromo('FIRST_WORKOUT', CONFIG.PROMO_FIRST_WORKOUT, 2); }
 
-  // ── Safe Area ──
-  function applySafeAreaInsets(insets) {
-    if (!insets) return;
-    const top = (insets.top || 0) + 'px';
-    const bottom = (insets.bottom || 0) + 'px';
-    document.documentElement.style.setProperty('--toss-safe-top', top);
-    document.documentElement.style.setProperty('--toss-safe-bottom', bottom);
-  }
-  function initSafeArea() {
-    const insets = _bridgeConst('getSafeAreaInsets');
-    applySafeAreaInsets(insets);
-    _bridgeEvent('safeAreaInsetsChange', { onEvent: applySafeAreaInsets });
-  }
-
   // ── Init ──
   async function init() {
-    if (isToss) initSafeArea();
     await getUserHash();
     if (isToss) {
+      _loadTossAdSdk().catch(() => {}); // 배너 SDK 선제 로드
       preloadAd('interstitial');
       preloadAd('rewarded');
       setScreenAwake(true);
       log('app_open', { version: 'v57' });
-      login().catch(e => console.warn('Auto login failed:', e));
+      // 자동 로그인 제거: 사용자가 시작하기 버튼 클릭 시에만 로그인
     }
   }
 

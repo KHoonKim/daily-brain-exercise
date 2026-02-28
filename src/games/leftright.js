@@ -14,8 +14,8 @@ if(hand) {
 }
 document.getElementById('lr-msg').textContent=rot===0?'이 손은?':'돌아간 이 손은?';
 lrQLimit=Math.max(1.5,5.0-lrLv*0.15);lrQTime=lrQLimit;clearInterval(lrQTimer);
-const lrbar=document.getElementById('lr-qbar');if(lrbar){lrbar.style.transition='none';lrbar.style.width='100%';lrbar.offsetWidth;lrbar.style.transition=`width ${lrQLimit}s linear`;lrbar.style.width='0%'}
-lrQTimer=setInterval(()=>{lrQTime-=0.1;if(lrQTime<=0){clearInterval(lrQTimer);setHeartResumeCallback(lrGen);curScore=lrScore;if(loseHeart('lr'))return;scheduleNextQuestion(lrGen,300)}},100)}
+const lrbar=document.getElementById('lr-qbar');if(lrbar){lrbar.style.transition='none';lrbar.style.width='100%';lrbar.offsetWidth;lrbar.style.transition=`width ${lrQLimit}s linear`;lrbar.style.width='0%'}const lrqt=document.getElementById('lr-q-time');if(lrqt)lrqt.textContent=lrQLimit.toFixed(1)+'s';
+lrQTimer=setInterval(()=>{lrQTime-=0.1;document.getElementById('lr-q-time').textContent=Math.max(0,lrQTime).toFixed(1)+'s';if(lrQTime<=0){clearInterval(lrQTimer);setHeartResumeCallback(lrGen);curScore=lrScore;if(loseHeart('lr'))return;scheduleNextQuestion(lrGen,300)}},100)}
 function lrPick(d){if(d===lrAns){clearInterval(lrQTimer);lrLv++;lrScore+=10;setScore('lr-score',lrScore);toast('정답!')}
 else{clearInterval(lrQTimer);setHeartResumeCallback(lrGen);curScore=lrScore;if(loseHeart('lr'))return}
 scheduleNextQuestion(lrGen,300)}

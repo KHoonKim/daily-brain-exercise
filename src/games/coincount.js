@@ -1,14 +1,14 @@
 // ===== 25. COIN COUNT - 동전 세기 =====
 let ccScore,ccTime,ccTotal;
-const COINS=[{val:10,color:'#B87333',label:'10'},{val:50,color:'#C0C0C0',label:'50'},{val:100,color:'#FFD700',label:'100'},{val:500,color:'#E8E8E8',label:'500'}];
+const COINS=[{val:10,color:'#B87333',label:'10',size:36},{val:50,color:'#C0C0C0',label:'50',size:46},{val:100,color:'#B8B8B8',label:'100',size:56},{val:500,color:'#D8D8D8',label:'500',size:68}];
 function initCoincount(){ccScore=0;ccTime=30;ccTotal=0;document.getElementById('cc-score').textContent='0점';initHearts('cc');
 document.getElementById('cc-timer').textContent='30s';document.getElementById('cc-timer').className='g-timer';
 clearInterval(curTimer);setTickFn(ccTick);curTimer=setInterval(ccTick,1000);ccGen()}
 function ccTick(){ccTime--;document.getElementById('cc-timer').textContent=ccTime+'s';if(ccTime<=10)document.getElementById('cc-timer').className='g-timer urgent';if(ccTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{ccTime=s;document.getElementById('cc-timer').textContent=ccTime+'s';document.getElementById('cc-timer').className='g-timer';curTimer=setInterval(ccTick,1000);ccGen()});showResult(ccScore,'동전 세기',[{val:ccTotal,label:'문제 수'}], {_isTimerEnd:true})}}
 function ccGen(){const count=Math.min(10,3+~~(ccTotal/3)+~~(Math.random()*2));const coins=Array.from({length:count},()=>COINS[~~(Math.random()*4)]);
 const total=coins.reduce((s,c)=>s+c.val,0);
-document.getElementById('cc-coins').innerHTML=coins.map(c=>`<div class="cc-coin" style="background:${c.color}">${c.label}원</div>`).join('');
-const opts=new Set([total]);while(opts.size<4){opts.add(total+~~(Math.random()*201)-100)}
+document.getElementById('cc-coins').innerHTML=coins.map(c=>`<div class="cc-coin" style="background:${c.color};width:${c.size}px;height:${c.size}px;font-size:${Math.max(9,c.size/5)}px">${c.label}</div>`).join('');
+const opts=new Set([total]);while(opts.size<4){opts.add(total+(~~(Math.random()*21)-10)*10)}
 opts.delete(total-total);if(opts.size<4)opts.add(total+50);
 const optArr=[...opts].filter(v=>v>0).slice(0,4).sort(()=>Math.random()-.5);
 if(!optArr.includes(total)){optArr[0]=total;optArr.sort(()=>Math.random()-.5)}

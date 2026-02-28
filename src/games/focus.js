@@ -10,7 +10,7 @@ const symbols={good:'○',bad:'×',bonus:'◎'};
 el.textContent=symbols[type];el.style.color='#fff';el.style.fontSize='20px';
 const size=48-~~(difficulty*12);el.style.width=size+'px';el.style.height=size+'px';
 el.style.left=~~(Math.random()*(r.width-size-8))+'px';el.style.top=~~(Math.random()*(r.height-size-8))+'px';
-el.onclick=()=>{if(type==='good'){focusScore+=10;focusHit++}else if(type==='bonus'){focusScore+=30;focusHit++;toast('◎ 보너스!')}else{focusScore=Math.max(0,focusScore-5);focusMiss++}el.style.transform='scale(0)';setTimeout(()=>el.remove(),150);setScore('focus-score',focusScore)};
+el.onclick=()=>{if(type==='good'){focusScore+=10;focusHit++}else if(type==='bonus'){focusScore+=30;focusHit++;toast('◎ 보너스!')}else{focusScore=Math.max(0,focusScore-10);focusMiss++}el.style.transform='scale(0)';setTimeout(()=>el.remove(),150);setScore('focus-score',focusScore)};
 f.appendChild(el);
 const lifespan=type==='bonus'?1200:(2200-~~(difficulty*1000));
 setTimeout(()=>{if(el.parentNode){if(type==='good')focusMiss++;el.style.opacity='0';setTimeout(()=>el.remove(),200)}},lifespan);

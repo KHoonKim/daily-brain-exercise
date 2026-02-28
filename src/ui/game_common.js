@@ -3,31 +3,70 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 
 let curGoal=0,goalReached=false;
 function initGoalBar(id){
-  const best=LS.get(id+'-best',0);
-  const gameMeta = GAMES.find(g => g.id === id);
-  curGoal=best>0?Math.ceil(best*0.9):(gameMeta?.goalDefault||60);goalReached=false;
-  const progressEl=document.querySelector('#game-'+id+' .g-progress');
-  if(!progressEl)return;
-  progressEl.innerHTML='<span class="gp-cur">0점</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'점</span>';
+  const gameMeta=GAMES.find(g=>g.id===id);
+  const isMsGame=gameMeta?.goalUnit==='ms';
+  goalReached=false;
+  if(isMsGame){
+    const bestMs=LS.get(id+'-best-ms',0);
+    const mult=curGameContext==='workout'?1.1:0.99;
+    const msDefault=gameMeta?.goalDefault||300;
+    curGoal=bestMs>0?Math.round(bestMs*mult):msDefault;
+    const progressEl=document.querySelector('#game-'+id+' .g-progress');
+    if(!progressEl)return;
+    progressEl.innerHTML='<span class="gp-cur">--ms</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'ms</span>';
+  }else{
+    const best=LS.get(id+'-best',0);
+    const mult=curGameContext==='workout'?0.9:1.05;
+    const scoreDefault=gameMeta?.goalDefault||60;
+    curGoal=best>0?Math.max(Math.ceil(best*mult),scoreDefault):scoreDefault;
+    const progressEl=document.querySelector('#game-'+id+' .g-progress');
+    if(!progressEl)return;
+    progressEl.innerHTML='<span class="gp-cur">0점</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'점</span>';
+  }
 }
 
+const _prevScore={};
 function setScore(elId,score){
   const el = document.getElementById(elId);
-  if(el) el.textContent=score+'점';
+  if(el){
+    const prev=_prevScore[elId];
+    el.textContent=score+'점';
+    if(prev!==undefined && prev!==score){
+      const delta=score-prev;
+      const fb=document.createElement('span');
+      fb.className='score-feedback '+(delta>0?'positive':'negative');
+      fb.textContent=(delta>0?'+':'')+delta+'점';
+      el.appendChild(fb);
+      setTimeout(()=>fb.remove(),900);
+    }
+    _prevScore[elId]=score;
+  }
   if(elId.includes('-score') || elId === 'r-score') {
+     curScore = score;
      updateGoal(score, curGame);
   }
 }
 
 function updateGoal(score,gameId){
   const progressEl=document.querySelector('#game-'+gameId+' .g-progress');if(!progressEl)return;
-  const pct=Math.min(100,Math.round(score/curGoal*100));
-  const curEl=progressEl.querySelector('.gp-cur');if(curEl)curEl.textContent=score+'점';
+  const gameMeta=GAMES.find(g=>g.id===gameId);
+  const isMsGame=gameMeta?.goalUnit==='ms';
   const fill=progressEl.querySelector('.gp-fill');if(!fill)return;
-  fill.style.width=pct+'%';
-  if(!goalReached&&score>=curGoal){goalReached=true;fill.className='gp-fill done';toast('목표 달성!')}
-  else if(pct>=80)fill.className='gp-fill hot';
-  else fill.className='gp-fill';
+  if(isMsGame){
+    const curEl=progressEl.querySelector('.gp-cur');if(curEl)curEl.textContent=score+'ms';
+    const pct=Math.min(100,Math.round(curGoal/score*100));
+    fill.style.width=pct+'%';
+    if(!goalReached&&score<=curGoal){goalReached=true;fill.className='gp-fill done';toast('목표 달성!')}
+    else if(pct>=80)fill.className='gp-fill hot';
+    else fill.className='gp-fill';
+  }else{
+    const pct=Math.min(100,Math.round(score/curGoal*100));
+    const curEl=progressEl.querySelector('.gp-cur');if(curEl)curEl.textContent=score+'점';
+    fill.style.width=pct+'%';
+    if(!goalReached&&score>=curGoal){goalReached=true;fill.className='gp-fill done';toast('목표 달성!')}
+    else if(pct>=80)fill.className='gp-fill hot';
+    else fill.className='gp-fill';
+  }
 }
 
 // ===== NEXT QUESTION SCHEDULING =====
@@ -75,11 +114,18 @@ function loseHeart(gameId){
     clearInterval(curTimer);
     cancelNextQuestion();
     setTimeout(()=>{
-      if(heartRefillUsed){
+      if(heartRefillUsed || timeExtendUsed){
         const gameName=GAMES.find(g=>g.id===curGame)?.name||'';
         showResult(curScore,gameName);
         return;
       }
+      if(curScore < curGoal * 0.8 || curScore >= curGoal){
+        const gameName=GAMES.find(g=>g.id===curGame)?.name||'';
+        showResult(curScore,gameName);
+        return;
+      }
+      const el1=document.getElementById('heartCurScore');if(el1)el1.textContent=curScore+'점';
+      const el2=document.getElementById('heartGoalScore');if(el2)el2.textContent=curGoal+'점';
       const overlay = document.getElementById('heartOverlay');
       if(overlay) overlay.classList.add('active');
     },600);
@@ -111,8 +157,11 @@ function resumeWithExtraTime(seconds){if(_timeExtendResumeCallback){const cb=_ti
 function showTimeExtend(callback){
   if(!curGame)return;
   if(timeExtendUsed){callback();return}
+  if(heartRefillUsed || curScore < curGoal * 0.8 || curScore >= curGoal){callback();return}
   cancelNextQuestion();
   _timeExtendCallback=callback;
+  const el1=document.getElementById('timeExtendCurScore');if(el1)el1.textContent=curScore+'점';
+  const el2=document.getElementById('timeExtendGoalScore');if(el2)el2.textContent=curGoal+'점';
   document.getElementById('timeExtendOverlay').classList.add('active');
 }
 function timeExtendQuit(){

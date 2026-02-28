@@ -5,7 +5,7 @@ function initMemory(){
   memScore=0;memTime=30;memFlipped=[];memMatched=[];memLocked=false;memPairs=0;
   document.getElementById('mem-score').textContent='0점';
   clearInterval(curTimer);document.getElementById('mem-timer').textContent='30s';document.getElementById('mem-timer').className='g-timer';
-  curTimer=setInterval(()=>{memTime--;document.getElementById('mem-timer').textContent=memTime+'s';if(memTime<=10)document.getElementById('mem-timer').className='g-timer urgent';if(memTime<=0){clearInterval(curTimer);showResult(memScore,'기억력 카드',[{val:memPairs,label:'찾은 쌍'}], {_isTimerEnd: true})}},1000);
+  curTimer=setInterval(()=>{memTime--;document.getElementById('mem-timer').textContent=memTime+'s';if(memTime<=10)document.getElementById('mem-timer').className='g-timer urgent';if(memTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{memTime=s;document.getElementById('mem-timer').textContent=memTime+'s';document.getElementById('mem-timer').className='g-timer';curTimer=setInterval(()=>{memTime--;document.getElementById('mem-timer').textContent=memTime+'s';if(memTime<=10)document.getElementById('mem-timer').className='g-timer urgent';if(memTime<=0){clearInterval(curTimer);showResult(memScore,'기억력 카드',[{val:memPairs,label:'찾은 쌍'}], {_isTimerEnd: true})}},1000)});showResult(memScore,'기억력 카드',[{val:memPairs,label:'찾은 쌍'}], {_isTimerEnd: true})}},1000);
   memGen();
 }
 function memGen(){

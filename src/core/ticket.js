@@ -33,7 +33,7 @@ function showTicketModal(gameId) {
         wkActive = false;
         curGame = gameId; curScore = 0;
         LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
-        show('game-' + gameId); initGoalBar(gameId);
+        curGameContext='free'; show('game-' + gameId); initGoalBar(gameId);
         initGameById(gameId);
         if (typeof AIT !== 'undefined') AIT.log('game_start', { game: gameId, source: 'ticket_ad' });
       });
@@ -47,22 +47,28 @@ function showTicketShop() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const tsScreen = document.getElementById('ticketShop');
   if (tsScreen) tsScreen.classList.add('active');
+  if (window.AIT) AIT.loadBannerAd('ts-banner');
 }
 function ticketAdRefill() {
-  if (typeof AIT !== 'undefined' && AIT.showAd) {
-    AIT.showAd('rewarded').then(res => {
-      if (res.success) {
-        const bonus = 3 + ~~(Math.random() * 3); // 3~5장
-        const t = getTickets();
-        t.count = Math.min(99, t.count + bonus);
-        LS.setJSON('tickets', t);
-        renderTicketCount();
-        const tsCount = document.getElementById('ts-count');
-        if (tsCount) tsCount.textContent = t.count + '장';
-        snackbar(`<img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:16px;height:16px">티켓 ${bonus}장 충전 완료!`);
-      }
-    });
-  }
+  if (typeof AIT === 'undefined' || !AIT.showAd) return;
+  const btn = document.getElementById('ts-ad-btn');
+  if (btn) btn.disabled = true;
+  snackbar('광고 불러오는 중...');
+  AIT.showAd('rewarded').then(res => {
+    if (btn) btn.disabled = false;
+    if (res.success) {
+      const bonus = 3 + ~~(Math.random() * 3); // 3~5장
+      const t = getTickets();
+      t.count = Math.min(99, t.count + bonus);
+      LS.setJSON('tickets', t);
+      renderTicketCount();
+      const tsCount = document.getElementById('ts-count');
+      if (tsCount) tsCount.textContent = t.count + '장';
+      snackbar(`<img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:16px;height:16px">티켓 ${bonus}장 충전 완료!`);
+    } else {
+      snackbar('광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  });
 }
 function closeTicketModal() {
   const modal = document.getElementById('ticketModal');
@@ -70,7 +76,7 @@ function closeTicketModal() {
   _pendingTicketGame = null;
 }
 
-function startGame(id, skipTicket = false) {
+function startGame(id, skipTicket = false, context = 'free') {
   // 운동 모드가 아닌 자유 훈련일 때 티켓 체크
   if (!wkActive && !skipTicket) {
     const t = getTickets();
@@ -82,7 +88,7 @@ function startGame(id, skipTicket = false) {
     snackbar(`<img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg" style="width:16px;height:16px">티켓 사용 · 남은 티켓 ${remaining}장`);
     renderTicketCount();
   }
-  curGame = id; curScore = 0; timeExtendUsed = false;
+  curGame = id; curScore = 0; timeExtendUsed = false; curGameContext = context;
   LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
   show('game-' + id); initGoalBar(id);
   initGameById(id);

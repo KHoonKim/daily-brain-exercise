@@ -24,7 +24,6 @@ function addXP(n){
   const xp=getXP()+n;
   LS.set('xp',xp);
   if(window.AIT){
-    if(AIT.checkPromoBrainAge50)AIT.checkPromoBrainAge50(xp);
     AIT.submitScore(xp);
   }
   return xp;
@@ -73,7 +72,7 @@ async function exchangePoints(){
   if(btn){btn.disabled=true;btn.textContent='교환 중...'}
   try {
     const uh=await AIT.getUserHash();
-    const serverRes=await fetch('/api/score/promo/exchange',{
+    const serverRes=await fetch(`${API_BASE}/api/score/promo/exchange`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({userHash:uh,points:p})

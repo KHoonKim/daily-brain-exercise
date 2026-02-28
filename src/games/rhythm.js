@@ -29,5 +29,5 @@ function rhyTap(p) {
     if (rhyShowing) return; const pad = document.querySelector(`.rhy-pad[data-p="${p}"]`); pad.classList.remove('lit'); void pad.offsetWidth; pad.classList.add('lit'); rhyBeep(p); clearTimeout(pad._litTimer); pad._litTimer = setTimeout(() => pad.classList.remove('lit'), 200);
     if (p === rhySeq[rhyIdx]) {
         rhyIdx++; if (rhyIdx === rhySeq.length) { rhyLv++; rhyScore += rhyLv * 10; setScore('rhy-score', rhyScore); document.getElementById('rhy-level').textContent = 'Lv.' + rhyLv; toast('✓ 정답!'); scheduleNextQuestion(rhyNewRound, 800) }
-    } else { curScore = rhyScore; if (loseHeart('rhy')) return; document.querySelectorAll('.rhy-pad').forEach(p => { p.classList.remove('lit'); p.classList.add('wrong'); }); document.getElementById('rhy-msg').textContent = '틀렸어요! 다시 시작!'; setTimeout(() => document.querySelectorAll('.rhy-pad').forEach(p => p.classList.remove('wrong')), 600); scheduleNextQuestion(rhyNewRound, 800) }
+    } else { curScore = rhyScore; setHeartResumeCallback(rhyNewRound); if (loseHeart('rhy')) return; document.querySelectorAll('.rhy-pad').forEach(p => { p.classList.remove('lit'); p.classList.add('wrong'); }); document.getElementById('rhy-msg').textContent = '틀렸어요! 다시 시작!'; setTimeout(() => document.querySelectorAll('.rhy-pad').forEach(p => p.classList.remove('wrong')), 600); scheduleNextQuestion(rhyNewRound, 800) }
 }
