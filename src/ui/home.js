@@ -130,6 +130,12 @@ function goHome(){
   renderHome();
 }
 
+function debugSet99Points() {
+  LS.set('bf-points', 99);
+  if(window.renderPoints) renderPoints(true);
+  toast('두뇌점수 99점으로 설정됨');
+}
+
 async function debugReset() {
   if (!confirm('모든 데이터를 초기화할까요?\n(XP, 두뇌점수, 티켓, 미션 + 서버 DB 전부 삭제)')) return;
   Object.keys(localStorage).filter(k => k.startsWith('bf-')).forEach(k => localStorage.removeItem(k));
