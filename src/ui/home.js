@@ -131,9 +131,9 @@ function goHome(){
 }
 
 function debugSet99Points() {
-  LS.set('points', 99);
-  if(window.renderPoints) renderPoints(true);
-  toast('두뇌점수 99점으로 설정됨');
+  LS.set('points', 100);
+  if(window.renderPoints) renderPoints(false);
+  toast('두뇌점수 100점으로 설정됨');
 }
 
 async function debugReset() {
