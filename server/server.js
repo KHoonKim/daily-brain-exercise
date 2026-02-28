@@ -5,6 +5,16 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
+// .env 파일 로드 (없어도 무시)
+try {
+  fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) process.env[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim();
+  });
+} catch(e) {}
+
 const app = express();
 const PORT = 3001;
 
@@ -41,89 +51,53 @@ db.exec(`
 app.use(cors());
 app.use(express.json());
 
-// Estimated distributions per game (mean, stddev)
-// Calibrated by analyzing actual scoring mechanics:
-// - Timer games (30s): ~10pts/correct, ~1-2s/question → 15-20 correct → 150-200pts avg
-// - Level games (hearts=3): survive ~5-8 levels, scoring = lv*5~10 → 50-150pts
-// - Combo games: base 10 + combo multiplier → higher ceiling
-// - Special: reaction (formula based), numtouch (300-time*10), timing (accuracy based)
+// Estimated distributions per game: [mean, std]
+// mean = goalDefault (50th percentile anchor — achieving goal = average player)
+// std formula by game type:
+//   isLevel games: std = mean × 0.45
+//   isTimer games: std = mean × 0.40
+//   special (reaction, numtouch, timing): std = mean × 0.35
+//   others: std = mean × 0.40
+// These are overridden by calibration.json when real data accumulates.
 const ESTIMATED = {
-  // 30s timer + 10pt/correct + combo multiplier (10/20/30) + time bonus
-  math: [180, 80],
-  // 30s timer + 10pt/pair + time bonus (remaining*5). 8 pairs max = 80+bonus
-  memory: [100, 40],
-  // 7 rounds, max(5, (1000-ms)/10) per round. avg 300ms → ~70pts each → total ~490
-  reaction: [350, 120],
-  // 30s + combo multiplier (10/20/30) + time bonus at 5+ combo
-  stroop: [160, 70],
-  // Level game: lv*5 pts. Hearts=3. avg reach lv6-8 → 105-180pts
-  sequence: [100, 50],
-  // 30s + 20pt/word. ~3-5 words found → 60-100pts
-  word: [80, 35],
-  // 30s + 10pt*(1+combo/3). With combo → ~120pts avg
-  pattern: [120, 55],
-  // 30s, +10 good +30 bonus -5 bad. ~15-25 hits → 150-250pts
-  focus: [180, 70],
-  // 30s + 10pt/correct. ~8-12 correct → 80-120pts
-  rotate: [90, 40],
-  // Level game: lv*5 pts. Hearts=3. avg reach lv5-7 → 75-140pts
-  reverse: [80, 40],
-  // Speed: 300 - time*10. Fast=15s→150, slow=25s→50. avg ~20s → 100pts
-  numtouch: [100, 50],
-  // Level game: lv*10 pts. Hearts=3. avg reach lv4-6 → 100-210pts
-  rhythm: [100, 55],
-  // 30s + 10pt/correct. ~12-18 correct → 120-180pts
-  rps: [140, 55],
-  // 30s + (10+lv*2)/correct. Scales up. ~15-20 picks → 200-300pts
-  oddone: [200, 80],
-  // 30s + 10pt/correct. ~15-20 correct → 150-200pts
-  compare: [160, 60],
-  // Level game: lv*10 pts. Hearts=3. avg reach lv4-6 → 100-210pts
-  bulb: [100, 55],
-  // 30s + 10pt/correct. ~8-12 correct → 80-120pts
-  colormix: [90, 40],
-  // 30s + 10pt/correct. ~10-15 correct → 100-150pts
-  wordcomp: [110, 45],
-  // Accuracy-based. ~5-10 rounds, varying points. avg ~80-120pts
-  timing: [90, 45],
-  // 30s + 15pt/pair + time bonus. Multiple sets possible → 150-250pts
-  matchpair: [180, 70],
-  // 30s + 10pt/correct. ~8-12 correct → 80-120pts
-  headcount: [90, 40],
-  // 30s + 10pt/correct. ~6-10 correct → 60-100pts
-  pyramid: [70, 35],
-  // 30s + (10+lv)/correct, scaling. ~12-18 correct → 150-250pts
-  maxnum: [160, 65],
-  // 30s + 10pt/correct, difficulty scales. ~10-15 correct → 100-150pts
-  signfind: [110, 45],
-  // 30s + 10pt/correct, coin count scales. ~8-12 correct → 80-120pts
-  coincount: [90, 40],
-  // 20s total + 10pt/correct. ~6-10 correct → 60-100pts
-  clock: [70, 35],
-  // Level game: 10pt/word found + lv*5 bonus. All words → ~80-150pts
-  wordmem: [90, 45],
-  // 30s + 10pt/correct. ~8-12 correct → 80-120pts
-  blockcount: [90, 40],
-  // 30s + 10pt/correct. ~12-18 correct → 120-180pts
-  flanker: [140, 55],
-  // Level game: 10pt/cell. avg 4-7 levels → 60-120pts
-  memgrid: [80, 40],
-  // 30s + 10pt/correct. ~8-14 correct → 80-140pts
-  nback: [100, 45],
-  // 30s + 10pt/correct. ~8-12 correct → 80-120pts
-  scramble: [90, 40],
-  // 30s + 10pt/correct + 20pt bonus at 0. ~10-15 correct → 100-170pts
-  serial: [120, 50],
-  // 30s + 10pt/correct. ~12-18 correct → 120-180pts
-  leftright: [140, 55],
-  // 30s + 10pt/correct. ~10-15 correct → 100-150pts
-  calccomp: [110, 45],
-  // Level game: 10+lv*5 pts. Hearts=3. avg reach lv4-7 → 70-175pts
-  flash: [90, 45],
-  // 30s + 10pt + combo bonus(10). ~12-18 correct → 120-220pts
-  sort: [140, 55],
-  // 30s + 10pt/correct, transforms scale. ~8-12 correct → 80-120pts
-  mirror: [90, 40]
+  math:       [200, 80],   // isTimer, goal=200
+  memory:     [120, 48],   // default, goal=120
+  reaction:   [400, 140],  // special, goal=400
+  stroop:     [150, 60],   // isTimer, goal=150
+  sequence:   [100, 45],   // isLevel, goal=100
+  word:       [120, 48],   // default, goal=120
+  pattern:    [120, 48],   // isTimer, goal=120
+  focus:      [200, 80],   // isTimer, goal=200
+  rotate:     [120, 48],   // isTimer, goal=120
+  reverse:    [80,  36],   // isLevel, goal=80
+  numtouch:   [100, 35],   // special, goal=100
+  rhythm:     [80,  36],   // isLevel, goal=80
+  rps:        [120, 48],   // isTimer, goal=120
+  oddone:     [150, 60],   // isTimer, goal=150
+  compare:    [120, 48],   // isTimer, goal=120
+  bulb:       [80,  36],   // isLevel, goal=80
+  colormix:   [100, 40],   // isTimer, goal=100
+  wordcomp:   [120, 48],   // isTimer, goal=120
+  timing:     [100, 35],   // special, goal=100
+  matchpair:  [120, 48],   // isTimer, goal=120
+  headcount:  [120, 54],   // isTimer+isLevel → isLevel 우선, goal=120
+  pyramid:    [120, 48],   // isTimer, goal=120
+  maxnum:     [150, 60],   // isTimer, goal=150
+  signfind:   [120, 48],   // isTimer, goal=120
+  coincount:  [120, 48],   // isTimer, goal=120
+  clock:      [100, 40],   // isTimer, goal=100
+  wordmem:    [80,  36],   // isLevel, goal=80
+  blockcount: [120, 48],   // isTimer, goal=120
+  flanker:    [120, 48],   // isTimer, goal=120
+  memgrid:    [80,  36],   // isLevel, goal=80
+  nback:      [150, 60],   // isTimer, goal=150
+  scramble:   [120, 48],   // default, goal=120
+  serial:     [150, 60],   // isTimer, goal=150
+  leftright:  [120, 48],   // isTimer, goal=120
+  calccomp:   [120, 48],   // isTimer, goal=120
+  flash:      [80,  36],   // isLevel, goal=80
+  sort:       [150, 60],   // isTimer, goal=150
+  mirror:     [120, 48],   // isTimer, goal=120
 };
 
 // Normal CDF approximation
@@ -626,7 +600,8 @@ app.post('/api/score/toss/message/inactive', async (req, res) => {
 });
 
 // Toss 연결 끊기 콜백 (회원 탈퇴/연결 해제)
-const DISCONNECT_AUTH = 'brainfit2026:xK9mP3vR7wQ2';
+const DISCONNECT_AUTH = process.env.DISCONNECT_AUTH;
+if (!DISCONNECT_AUTH) console.warn('[WARN] DISCONNECT_AUTH가 .env에 설정되지 않았습니다');
 function verifyDisconnectAuth(req) {
   const auth = req.headers.authorization;
   return auth && auth === 'Basic ' + Buffer.from(DISCONNECT_AUTH).toString('base64');
