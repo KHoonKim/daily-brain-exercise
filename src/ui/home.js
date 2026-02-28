@@ -130,23 +130,3 @@ function goHome(){
   renderHome();
 }
 
-function debugSet99Points() {
-  LS.set('points', 100);
-  if(window.renderPoints) renderPoints(false);
-  toast('두뇌점수 100점으로 설정됨');
-}
-
-async function debugReset() {
-  if (!confirm('모든 데이터를 초기화할까요?\n(XP, 두뇌점수, 티켓, 미션 + 서버 DB 전부 삭제)')) return;
-  Object.keys(localStorage).filter(k => k.startsWith('bf-')).forEach(k => localStorage.removeItem(k));
-  await AIT.storageSet('toss_userKey', '');
-  await AIT.storageSet('toss_name', '');
-  try {
-    await fetch('/api/admin/reset-db', {
-      method: 'POST',
-      headers: { 'x-debug-token': 'brain-debug-reset-2026' }
-    });
-  } catch (e) {}
-  toast('초기화 완료! 앱을 다시 시작해주세요.');
-  setTimeout(() => location.reload(), 1500);
-}
