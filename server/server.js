@@ -48,7 +48,16 @@ db.exec(`
   )
 `);
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://littlesunnydays.com',
+    /\.apps\.tossmini\.com$/,
+    /\.private-apps\.tossmini\.com$/,
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 
 // Estimated distributions per game: [mean, std]
@@ -326,7 +335,12 @@ app.post('/api/score/toss/login', async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authorizationCode, referrer })
     });
-    const tokenData = await tokenResp.json();
+    const tokenText = await tokenResp.text();
+    console.log('[Toss Token] HTTP status:', tokenResp.status, 'body:', tokenText.slice(0, 300));
+    let tokenData;
+    try { tokenData = JSON.parse(tokenText); } catch (e) {
+      return res.status(500).json({ error: 'token_parse_failed', httpStatus: tokenResp.status, rawBody: tokenText.slice(0, 500) });
+    }
     if (tokenData.resultType !== 'SUCCESS') return res.status(400).json({ error: 'token_failed', detail: tokenData });
     const { accessToken, refreshToken } = tokenData.success;
 
@@ -395,7 +409,6 @@ app.get('/api/score/user/:userHash', (req, res) => {
 // Promotion config (IDs will be filled after approval)
 const PROMOTIONS = {
   FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
-  BRAIN_AGE_50: 'PLACEHOLDER_PROMO_BRAIN_AGE_50',
   POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
   FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT'
 };
