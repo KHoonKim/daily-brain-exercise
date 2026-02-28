@@ -1,4 +1,4 @@
-// ===== 20. MATCH PAIR =====
+// ===== 20. MATCH PAIR - 짝 맞추기 =====
 let mpScore,mpTime,mpPairs,mpSel,mpMatched;
 const MP_DB=[
   ['학교:배움터','산:높은 땅','강:흐르는 물','해:바다','풍:바람'],
@@ -12,7 +12,8 @@ const MP_DB=[
 ];
 function initMatchpair(){mpScore=0;mpTime=30;mpMatched=[];mpSel=null;
 document.getElementById('mp-score').textContent='0점';document.getElementById('mp-timer').textContent='30s';document.getElementById('mp-timer').className='g-timer';
-clearInterval(curTimer);curTimer=setInterval(()=>{mpTime--;document.getElementById('mp-timer').textContent=mpTime+'s';if(mpTime<=10)document.getElementById('mp-timer').className='g-timer urgent';if(mpTime<=0){clearInterval(curTimer);showResult(mpScore,'짝 맞추기',[{val:mpMatched.length,label:'맞춘 수'}], {_isTimerEnd:true})}},1000);mpGen()}
+clearInterval(curTimer);curTimer=setInterval(mpTick,1000);mpGen()}
+function mpTick(){mpTime--;document.getElementById('mp-timer').textContent=mpTime+'s';if(mpTime<=10)document.getElementById('mp-timer').className='g-timer urgent';if(mpTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{mpTime=s;document.getElementById('mp-timer').textContent=mpTime+'s';document.getElementById('mp-timer').className='g-timer';curTimer=setInterval(mpTick,1000);mpGen()});showResult(mpScore,'짝 맞추기',[{val:mpMatched.length,label:'맞춘 수'}], {_isTimerEnd:true})}}
 function mpGen(){mpSel=null;mpMatched=[];const set=MP_DB[~~(Math.random()*MP_DB.length)];
 mpPairs=set.map(s=>{const[k,v]=s.split(':');return{k,v}}).sort(()=>Math.random()-.5).slice(0,5);
 const left=[...mpPairs].sort(()=>Math.random()-.5);
@@ -29,5 +30,5 @@ const leftKey=side==='left'?key:otherSel.dataset.k;
 const rightKey=side==='right'?key:otherSel.dataset.v;
 if(leftKey===rightKey){el.classList.remove('sel');el.classList.add('ok');otherSel.classList.remove('sel');otherSel.classList.add('ok');
 mpScore+=15;mpMatched.push(leftKey);setScore('mp-score',mpScore);toast('✓ 맞음!');
-if(mpMatched.length>=5){mpScore+=Math.max(0,mpTime*2);setScore('mp-score',mpScore);setTimeout(mpGen,600)}}
+if(mpMatched.length>=5){mpScore+=Math.max(0,mpTime*2);setScore('mp-score',mpScore);scheduleNextQuestion(mpGen,600)}}
 else{el.classList.add('no');otherSel.classList.add('no');setTimeout(()=>{el.classList.remove('sel','no');otherSel.classList.remove('sel','no')},500)}}

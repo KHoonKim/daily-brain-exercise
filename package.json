@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "version-bump": "node --input-type=commonjs -e \"const fs=require('fs');let h=fs.readFileSync('index.html','utf8');const m=h.match(/\\\\?v=(\\\\d+)/);if(m){const n=+m[1]+1;h=h.replace(/\\\\?v=\\\\d+/g,'?v='+n);fs.writeFileSync('index.html',h);console.log('index.html 버전 v'+m[1]+' → v'+n+' 업데이트 완료')}else{console.log('버전 패턴을 찾지 못했습니다')}\""
   },
   "devDependencies": {
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "vite-plugin-full-reload": "^1.2.0"
   }
 }

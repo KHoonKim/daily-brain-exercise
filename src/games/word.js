@@ -1,4 +1,4 @@
-// ===== GAME 6: WORD =====
+// ===== 6. WORD - 단어 찾기 =====
 let wordScore,wordTime,wordWords,wordFound,wordSel,wordDragging,wordGridData;
 const WORD_CATS=[
   {name:'🍎 과일',words:['사과','포도','수박','딸기','참외','감귤','복숭아','자두','앵두','키위']},

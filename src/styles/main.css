@@ -1,4 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css');
+@import './tds.css';
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{
@@ -129,18 +130,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 /* ===== GAME COMMON ===== */
 .screen{display:none}
 .screen.active{display:flex;flex-direction:column;height:100vh;height:100dvh;position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;max-width:480px;left:50%;transform:translateX(-50%)}
-.g-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--border)}
-.g-hdr .back{font-size:22px;cursor:pointer;background:none;border:none;padding:4px 8px;color:var(--text)}
-.g-hdr .g-title{font-size:16px;font-weight:700}
-.g-hdr .g-timer{font-size:16px;font-weight:700;color:#3182F6;min-width:40px;text-align:right}
+/* TDS Navigation — g-hdr */
+.g-hdr{display:flex;justify-content:space-between;align-items:center;height:56px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;flex-shrink:0}
+.g-hdr .back{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;background:none;border:none;color:var(--text);border-radius:8px;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.g-hdr .back:active{background:rgba(25,31,40,.06)}
+.g-hdr .g-title{font-size:16px;font-weight:700;text-align:center;flex:1}
+.g-hdr .g-timer{font-size:16px;font-weight:700;color:#3182F6;min-width:48px;text-align:right;padding-right:4px}
 .g-hdr .g-timer.urgent{color:#F04452}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
 .g-body{flex:1;display:flex;flex-direction:column;padding:12px 16px;overflow:hidden;justify-content:center}
 .g-score{text-align:center;font-size:18px;font-weight:700;position:sticky;top:0;z-index:2;padding:8px 0;background:var(--bg);flex-shrink:0}
 .goal-bar{margin:4px 16px 8px;position:relative}
 .goal-bar .gb-track{height:8px;border-radius:4px;background:var(--border);overflow:hidden}
-.goal-bar .gb-fill{height:100%;border-radius:4px;background:var(--p);transition:width .3s;width:0}
-.goal-bar .gb-fill.hot{background:var(--no)}
+.goal-bar .gb-fill{height:100%;border-radius:4px;background:var(--no);transition:width .3s;width:0}
+.goal-bar .gb-fill.hot{background:var(--p)}
 .goal-bar .gb-fill.done{background:var(--ok)}
 .goal-bar .gb-label{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);padding:4px 2px}
 .goal-bar .gb-label .gb-target{font-weight:700;color:var(--p)}
@@ -269,7 +272,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 /* Rhythm */
 .rhy-pads{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:auto 0;padding:0 16px}
 .rhy-pad{aspect-ratio:1;border-radius:var(--r20);cursor:pointer;background:var(--pc);opacity:.5;box-shadow:var(--shadow);transition:all .2s;border:3px solid rgba(0,0,0,.08)}
-.rhy-pad:active{transform:scale(.9)}.rhy-pad.lit{opacity:1;transform:scale(1.05);border-color:rgba(255,255,255,.4);box-shadow:0 0 30px var(--pc)}
+.rhy-pad:active{transform:scale(.9)}.rhy-pad.lit{opacity:1;transform:scale(1.05);border-color:rgba(255,255,255,.4);box-shadow:0 0 30px var(--pc)}.rhy-pad.wrong{opacity:1;background:#ff3b30;transform:scale(1.05);border-color:rgba(255,255,255,.4);box-shadow:0 0 30px #ff3b30}
 
 /* RPS */
 .rps-enemy{font-size:48px;font-weight:900;text-align:center;padding:24px 0;color:var(--p)}
@@ -294,7 +297,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 /* Bulb */
 .bulb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:auto 0;padding:0 24px}
 .bulb-item{aspect-ratio:1;border-radius:50%;background:var(--card);border:3px solid var(--border);cursor:pointer;transition:all .25s;box-shadow:var(--shadow)}
-.bulb-item.on{background:#FBBF24;border-color:#F59E0B;box-shadow:0 0 24px rgba(251,191,36,.6),0 0 48px rgba(251,191,36,.2)}.bulb-item:active{transform:scale(.9)}
+.bulb-item.on{background:#FBBF24;border-color:#F59E0B;box-shadow:0 0 24px rgba(251,191,36,.6),0 0 48px rgba(251,191,36,.2)}.bulb-item.wrong{background:#ff3b30;border-color:#cc0000;box-shadow:0 0 24px rgba(255,59,48,.6)}.bulb-item:active{transform:scale(.9)}
 
 /* Color Mix */
 .cmx-q{text-align:center;padding:16px;font-size:16px;font-weight:600}

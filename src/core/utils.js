@@ -155,8 +155,7 @@ function getTodayMissions(){
   if(!missions){
     const gameMissions=GAMES.map(g=>{
       const best=LS.get(g.id+'-best',0);
-      const defaults={math:80,memory:60,reaction:200,stroop:80,sequence:50,word:60,pattern:60,focus:80,rotate:60,reverse:50,numtouch:200,rhythm:40,rps:80,oddone:80,compare:80,bulb:50,colormix:60,wordcomp:60,timing:60,matchpair:100,headcount:60,pyramid:60,maxnum:80,signfind:80,coincount:60,clock:60,wordmem:60,blockcount:60,flanker:80,memgrid:50,nback:80,scramble:60,serial:80,leftright:80,calccomp:60,flash:40,sort:60,mirror:50};
-      const target=best>0?Math.round(best*1.05):(defaults[g.id]||50);
+      const target=best>0?Math.round(best*1.05):(g.missionDefault||50);
       return {id:'goal-'+g.id,gameId:g.id,name:g.name,desc:`${target}점 이상 달성`,target,best,xp:20,icon:'●',bg:g.color,progress:0,done:false};
     });
     const shuffled=[...gameMissions].sort(()=>Math.random()-.5);

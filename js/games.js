@@ -1118,6 +1118,7 @@ function flUpdateDisplay() {
 function flKey(k) {
   if (k === '←') { window._flInput = window._flInput.slice(0, -1); flUpdateDisplay() }
   else if (k === 'OK') {
+    if (window._flInput.length < window._flLen) { return }
     if (window._flInput === flAnswer) {
       flScore += 10 + flLv * 5; flLv++;
       setScore('fl-score', flScore); document.getElementById('fl-level').textContent = 'Lv.' + flLv; toast('정답!')
@@ -1126,8 +1127,7 @@ function flKey(k) {
     setTimeout(flRound, 500); return
   }
   else if (window._flInput.length < window._flLen) {
-    window._flInput += k; flUpdateDisplay();
-    if (window._flInput.length === window._flLen) { setTimeout(() => flKey('OK'), 300) }
+    window._flInput += k; flUpdateDisplay()
   }
 }
 

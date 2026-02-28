@@ -1,9 +1,9 @@
-// ===== 28. BLOCK COUNT =====
+// ===== 28. BLOCK COUNT - 블록 세기 =====
 let bcScore,bcRound,bcTime,bcTick;
 function initBlockcount(){bcScore=0;bcRound=0;bcTime=30;document.getElementById('bc-score').textContent='0점';initHearts('bc');
 document.getElementById('bc-round').textContent='30s';
-clearInterval(bcTick);bcTick=setInterval(()=>{bcTime--;document.getElementById('bc-round').textContent=bcTime+'s';
-if(bcTime<=0){clearInterval(bcTick);showResult(bcScore,'블록 세기',[], {_isTimerEnd:true});}},1000);bcNext()}
+clearInterval(bcTick);bcTick=setInterval(bcTickFn,1000);bcNext()}
+function bcTickFn(){bcTime--;document.getElementById('bc-round').textContent=bcTime+'s';if(bcTime<=0){clearInterval(bcTick);setTimeExtendResumeCallback((s)=>{bcTime=s;document.getElementById('bc-round').textContent=bcTime+'s';bcTick=setInterval(bcTickFn,1000);bcNext()});showResult(bcScore,'블록 세기',[], {_isTimerEnd:true});}}
 function bcNext(){bcRound++;if(bcTime<=0)return;
 const maxH=bcRound<=3?4:bcRound<=6?5:6;const cols=bcRound<=3?3:bcRound<=6?4:5;
 const grid=[[]];let total=0;
@@ -26,4 +26,4 @@ function bcPick(el,n,ans){if(el.classList.contains('ok')||el.classList.contains(
 document.querySelectorAll('.bc-opt').forEach(o=>o.style.pointerEvents='none');
 if(n===ans){el.classList.add('ok');bcScore+=10;setScore('bc-score',bcScore);toast('정답!')}
 else{el.classList.add('no');document.querySelectorAll('.bc-opt').forEach(o=>{if(+o.textContent===ans)o.classList.add('ok')})}
-setTimeout(bcNext,600)}
+scheduleNextQuestion(bcNext,600)}

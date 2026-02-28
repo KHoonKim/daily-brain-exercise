@@ -1,4 +1,4 @@
-// ===== 27. WORD MEMORY =====
+// ===== 27. WORD MEM - 단어 암기 =====
 let wmScore,wmLv,wmWords,wmShowing,wmFound,wmTarget;
 const WM_POOL=['사과','바나나','포도','수박','딸기','오렌지','복숭아','키위','멜론','체리','자두','감','귤','배','밤','호두','잣','살구','망고','파인애플',
 '강아지','고양이','토끼','거북이','사자','호랑이','코끼리','기린','펭귄','독수리','돌고래','나비','잠자리','벌','개미','다람쥐','여우','늑대','곰','원숭이',
@@ -25,5 +25,5 @@ function wmPick(el,w,correct){if(el.classList.contains('ok')||el.classList.conta
 if(correct){el.classList.add('ok');wmFound++;wmScore+=10;setScore('wm-score',wmScore);
 document.getElementById('wm-msg').textContent=`있었던 단어를 모두 고르세요 (${wmFound}/${wmTarget})`;
 if(wmFound>=wmTarget){wmLv++;wmScore+=wmLv*5;setScore('wm-score',wmScore);
-document.getElementById('wm-level').textContent='Lv.'+wmLv;toast('완벽!');setTimeout(wmNewRound,800)}}
+document.getElementById('wm-level').textContent='Lv.'+wmLv;toast('완벽!');scheduleNextQuestion(wmNewRound,800)}}
 else{el.classList.add('no');curScore=wmScore;if(loseHeart('wm'))return}}

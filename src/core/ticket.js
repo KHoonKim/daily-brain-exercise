@@ -35,7 +35,7 @@ function showTicketModal(gameId) {
         LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
         show('game-' + gameId); initGoalBar(gameId);
         initGameById(gameId);
-        if (window.AIT) AIT.log('game_start', { game: gameId, source: 'ticket_ad' });
+        if (typeof AIT !== 'undefined') AIT.log('game_start', { game: gameId, source: 'ticket_ad' });
       });
     };
   }
@@ -49,7 +49,7 @@ function showTicketShop() {
   if (tsScreen) tsScreen.classList.add('active');
 }
 function ticketAdRefill() {
-  if (window.AIT && AIT.showAd) {
+  if (typeof AIT !== 'undefined' && AIT.showAd) {
     AIT.showAd('rewarded').then(res => {
       if (res.success) {
         const bonus = 3 + ~~(Math.random() * 3); // 3~5장
@@ -86,7 +86,7 @@ function startGame(id, skipTicket = false) {
   LS.set('totalPlays', LS.get('totalPlays', 0) + 1);
   show('game-' + id); initGoalBar(id);
   initGameById(id);
-  if (window.AIT && AIT.log) AIT.log('game_start', { game: id, totalPlays: LS.get('totalPlays', 0) });
+  if (typeof AIT !== 'undefined' && AIT.log) AIT.log('game_start', { game: id, totalPlays: LS.get('totalPlays', 0) });
 }
 
 function initGameById(gameId) {

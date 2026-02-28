@@ -1,4 +1,4 @@
-// ===== 30. MEMGRID =====
+// ===== 30. MEM GRID - 격자 기억 =====
 let mgScore,mgLv,mgCells,mgPhase;
 function initMemgrid(){mgScore=0;mgLv=1;document.getElementById('mg-score').textContent='0점';document.getElementById('mg-level').textContent='Lv.1';initHearts('mg');mgRound()}
 function mgRound(){mgPhase='show';const size=mgLv<=2?3:mgLv<=5?4:5;const count=mgLv+2;

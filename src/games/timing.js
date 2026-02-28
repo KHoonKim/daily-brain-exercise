@@ -1,4 +1,4 @@
-// ===== 19. TIMING =====
+// ===== 19. TIMING - 타이밍 =====
 let tmScore,tmRound,tmAnim,tmPos,tmTarget,tmDir;
 function initTiming(){tmScore=0;tmRound=0;document.getElementById('tm-score').textContent='0점';tmNext()}
 function tmNext(){tmRound++;if(tmRound>10){showResult(tmScore,'타이밍',[]);return}
@@ -21,4 +21,4 @@ const dist=hit?0:Math.min(Math.abs(tmPos-tmTarget.l),Math.abs(tmPos-tmTarget.r))
 const pts=hit?15:Math.max(0,10-~~(dist/10));
 tmScore+=pts;setScore('tm-score',tmScore);
 toast(hit?'정확!':pts>5?'근접!':'아깝!');
-setTimeout(tmNext,800)}
+scheduleNextQuestion(tmNext,800)}

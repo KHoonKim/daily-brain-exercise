@@ -394,10 +394,10 @@ app.get('/api/score/user/:userHash', (req, res) => {
 
 // Promotion config (IDs will be filled after approval)
 const PROMOTIONS = {
-  FIRST_LOGIN: 'PLACEHOLDER_PROMO_FIRST_LOGIN',
+  FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
   BRAIN_AGE_50: 'PLACEHOLDER_PROMO_BRAIN_AGE_50',
-  POINT_100: 'PLACEHOLDER_PROMO_POINT_100',
-  FIRST_WORKOUT: 'PLACEHOLDER_PROMO_FIRST_WORKOUT'
+  POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
+  FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT'
 };
 
 // Promotion grant table (track per user to prevent duplicates)

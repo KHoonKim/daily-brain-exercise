@@ -1,4 +1,4 @@
-// ===== 11. NUMBER TOUCH =====
+// ===== 11. NUMTOUCH - 넘버 터치 =====
 let ntNext,ntStart,ntTimer;
 function initNumtouch(){ntNext=1;ntStart=null;ntTimer=null;document.getElementById('nt-score').textContent='0점';document.getElementById('nt-timer').textContent='0.0s';document.getElementById('nt-msg').textContent='1부터 순서대로 터치!';
 const nums=Array.from({length:25},(_,i)=>i+1).sort(()=>Math.random()-.5);

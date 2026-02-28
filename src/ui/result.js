@@ -2,8 +2,7 @@
 const RANK_SVG = `<img src="https://static.toss.im/2d-emojis/svg/u2B50.svg" style="width:1em;height:1em;vertical-align:-2px">`;
 
 function getRetryMotivation(gameId, score, best, isNew) {
-  const levelGames = ['sequence', 'reverse', 'rhythm', 'bulb', 'flash', 'wordmem', 'memgrid', 'headcount'];
-  const isLevel = levelGames.includes(gameId);
+  const isLevel = GAMES.find(g => g.id === gameId)?.isLevel ?? false;
   const btn = '광고보고 한 번 더 도전하기';
   if (isNew && score > 0) {
     if (isLevel) return { msg: '새 기록 달성! 집중력이 올라왔을 때 더 높이!', btn };
@@ -24,10 +23,10 @@ function getRetryMotivation(gameId, score, best, isNew) {
 
 let _showResultArgs = null;
 function showResult(score, name, stats, extra = {}) {
-  const timerGames = ['math', 'stroop', 'pattern', 'focus', 'rps', 'compare', 'oddone', 'maxnum', 'signfind', 'coincount', 'sort', 'flanker', 'nback', 'leftright', 'rotate', 'colormix', 'wordcomp', 'headcount', 'pyramid', 'clock', 'blockcount', 'calccomp', 'serial', 'matchpair', 'mirror'];
   const isTimerEnd = extra._isTimerEnd || false;
+  const curGameMeta = GAMES.find(g => g.id === curGame);
 
-  if (!timeExtendUsed && timerGames.includes(curGame) && !extra._fromTimeExtend && isTimerEnd) {
+  if (!timeExtendUsed && curGameMeta?.isTimer && !extra._fromTimeExtend && isTimerEnd) {
     _showResultArgs = [score, name, stats, extra];
     showTimeExtend(() => {
       const a = _showResultArgs;
@@ -134,6 +133,27 @@ function showResult(score, name, stats, extra = {}) {
     if (score > 0 && AIT.isToss) AIT.submitScore(score).catch(() => { });
   }
 
+  // 서버에 점수 저장 & 백분위 표시
+  const pctEl = document.getElementById('r-percentile');
+  if (pctEl) pctEl.classList.add('hide');
+  if (score > 0) {
+    AIT.getUserHash()
+      .then(uh => fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: curGame, score, userHash: uh })
+      }))
+      .then(r => r.json())
+      .then(d => {
+        const top = 100 - d.percentile;
+        document.getElementById('r-pct-val').textContent = top <= 1 ? '상위 1%' : `상위 ${top}%`;
+        document.getElementById('r-pct-val').style.color = top <= 10 ? 'var(--ok)' : top <= 30 ? 'var(--purple)' : 'var(--p)';
+        document.getElementById('r-pct-players').textContent = d.totalPlayers >= 100 ? `${d.totalPlayers.toLocaleString()}명 참여` : '';
+        if (pctEl) pctEl.classList.remove('hide');
+      })
+      .catch(() => { });
+  }
+
   const motivation = getRetryMotivation(curGame, score, best, isNew);
   document.getElementById('r-main-btn').textContent = motivation.btn;
 
@@ -148,6 +168,7 @@ function showResult(score, name, stats, extra = {}) {
   }
 
   document.getElementById('overlay').classList.add('active');
+  if (window.AIT?.loadBannerAd) AIT.loadBannerAd('r-banner');
 
   if (newRank !== oldRank) {
     setTimeout(() => showLevelUp(newRank, newXP), 600);
@@ -197,7 +218,7 @@ function showAd(cb, type = 'interstitial') {
     return;
   }
   const o = document.createElement('div');
-  o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font:600 17px var(--font);flex-direction:column;gap:12px';
-  o.innerHTML = '<div style="color:var(--sub-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div>광고 로딩 중...</div>';
+  o.className = 'tds-ad-overlay';
+  o.innerHTML = '<div class="tds-color-sub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div>광고 로딩 중...</div>';
   document.body.appendChild(o); setTimeout(() => { o.remove(); cb?.() }, 1500);
 }

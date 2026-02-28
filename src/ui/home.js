@@ -62,15 +62,21 @@ function renderHome(){
       const pct=Math.min(100,m.target>0?(m.progress/m.target*100):0);
       const best=LS.get(m.gameId+'-best',0);
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
-      // Unified Icon Style applied to Missions
-      return `<div class="mission-card" onclick="startGame('${m.gameId}')">
-        <div class="mission-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px;flex-shrink:0">${GI[m.gameId]||''}</div>
-        <div class="mission-info">
-          <div class="mission-name">${m.name} <span style="font-size:11px;color:var(--sub);font-weight:400">목표 ${m.target}점 · 최고 ${best}점</span></div>
-          <div class="mission-desc">${m.desc}</div>
-          ${m.done?'':`<div class="mission-prog"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
+      // TDS ListRow — Mission Card
+      return `<div class="tds-list-row tds-list-row--card" onclick="startGame('${m.gameId}')">
+        <div class="tds-list-row__left">
+          <div class="tds-asset-icon tds-asset-icon--sm" style="background:${g.color}18;color:${g.color};padding:7px">${GI[m.gameId]||''}</div>
         </div>
-        ${m.done?'<div class="mission-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px"></div>':`<div class="mission-reward" style="text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs" style="background:#FFD700;color:#fff;padding:2px 6px;border-radius:4px">+${m.xp}XP</span><span class="tds-badge tds-badge-xs" style="background:#3182F6;color:#fff;padding:2px 6px;border-radius:4px">+1점</span></div>`}
+        <div class="tds-list-row__contents">
+          <div class="tds-list-row__title">${m.name} <span class="tds-st13 tds-fw-regular tds-color-sub">목표 ${m.target}점 · 최고 ${best}점</span></div>
+          <div class="tds-list-row__desc">${m.desc}</div>
+          ${m.done?'':`<div class="mission-prog" style="margin-top:6px"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
+        </div>
+        <div class="tds-list-row__right">
+          ${m.done
+            ? '<img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px">'
+            : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs tds-badge-fill-yellow">+${m.xp}XP</span><span class="tds-badge tds-badge-xs tds-badge-fill-blue">+1점</span></div>`}
+        </div>
       </div>`}).join('');
   }
 
@@ -83,7 +89,7 @@ function renderHome(){
   let gridHtml='';
   cats.forEach(cat=>{
     const games=GAMES.filter(g=>g.cat===cat);if(!games.length)return;
-    gridHtml+=`<div class="grid-category-title" style="margin-top:16px;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--sub)">${cat}</div>`;
+    gridHtml+=`<div class="grid-category-title" class="tds-t7 tds-fw-bold tds-color-sub" style="margin-top:16px;margin-bottom:8px">${cat}</div>`;
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
@@ -95,8 +101,12 @@ function renderHome(){
 }
 
 function goHome(){
+  curGame=null;
   clearInterval(curTimer);
   clearTimeout(curTimer);
+  cancelNextQuestion();
+  document.getElementById('heartOverlay')?.classList.remove('active');
+  document.getElementById('timeExtendOverlay')?.classList.remove('active');
   show('homeScreen');
   const overlay = document.getElementById('overlay');
   if(overlay) overlay.classList.remove('active');

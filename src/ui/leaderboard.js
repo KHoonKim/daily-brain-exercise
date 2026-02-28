@@ -5,14 +5,14 @@ async function showLeaderboard(gameId = 'overall') {
   
   show('leaderboardScreen');
   const listEl = document.getElementById('lb-list');
-  listEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--sub-text)">불러오는 중...</div>';
+  listEl.innerHTML = '<div class="tds-empty-state">불러오는 중...</div>';
 
   try {
     const url = gameId === 'overall' ? '/api/score/overall-leaderboard' : `/api/score/leaderboard/${gameId}`;
     const data = await fetch(url).then(r => r.json());
 
     if (!data.length) {
-      listEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--sub-text)">아직 순위가 없습니다.<br>첫 번째 주인공이 되어보세요!</div>';
+      listEl.innerHTML = '<div class="tds-empty-state">아직 순위가 없습니다.<br>첫 번째 주인공이 되어보세요!</div>';
       return;
     }
 
@@ -31,7 +31,7 @@ async function showLeaderboard(gameId = 'overall') {
       `;
     }).join('');
   } catch (e) {
-    listEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--no)">데이터를 가져오지 못했습니다.</div>';
+    listEl.innerHTML = '<div class="tds-empty-state tds-empty-state--error">데이터를 가져오지 못했습니다.</div>';
   }
 }
 

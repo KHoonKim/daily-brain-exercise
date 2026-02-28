@@ -1,4 +1,4 @@
-// ===== 32. SCRAMBLE =====
+// ===== 32. SCRAMBLE - 글자 섞기 =====
 let scScore,scTime,scLevel,scQTimer,scQTime,scQLimit;
 const SC_WORDS=[
 '사과','포도','수박','딸기','기차','버스','학교','병원','공원','피자','치킨','라면','축구','야구','농구','배구','음악','미술','과학','수학','토끼','바다','여행','안경','모자','구름','나비','시계','우산','거울','창문','의자','연필','지구','우주','가방','신발','양말','장갑','모래','바람','이슬','노을','저녁','아침','점심','책상','칠판','분필','공책','가위','풀칠','색연','도장','상자','열쇠','자물','편지','봉투','우표','택배','선물','꽃병','화분','잔디','나무','숲길','계단','지붕','벽돌','타일','기둥','울타','다리','터널','항구','등대','파도','조개',
@@ -25,10 +25,10 @@ const opts=[word,...decoys].sort(()=>Math.random()-.5);
 document.getElementById('sc-opts').innerHTML=opts.map(o=>`<div class="sf-opt" onclick="scPick(this,'${o}','${word}')">${o}</div>`).join('');
 scQLimit=Math.max(1.5, 3.0 - scLevel*0.08);
 scQTime=scQLimit;clearInterval(scQTimer);
-const bar=document.getElementById('sc-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';requestAnimationFrame(()=>{bar.style.transition=`width ${scQLimit}s linear`;bar.style.width='0%'})}
-scQTimer=setInterval(()=>{scQTime-=0.1;if(scQTime<=0){clearInterval(scQTimer);curScore=scScore;if(loseHeart('sc'))return;setTimeout(scGen,300)}},100)}
+const bar=document.getElementById('sc-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${scQLimit}s linear`;bar.style.width='0%'}
+scQTimer=setInterval(()=>{scQTime-=0.1;if(scQTime<=0){clearInterval(scQTimer);curScore=scScore;setHeartResumeCallback(scGen);if(loseHeart('sc'))return;scheduleNextQuestion(scGen,300)}},100)}
 function scPick(el,picked,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;
 clearInterval(scQTimer);
 if(picked===ans){el.classList.add('ok');const pct=scQTime/scQLimit;const bonus=pct>.75?5:pct>.5?3:1;scScore+=10+bonus;setScore('sc-score',scScore)}
-else{el.classList.add('no');document.querySelectorAll('#sc-opts .sf-opt').forEach(o=>{if(o.textContent===ans)o.classList.add('ok')});curScore=scScore;if(loseHeart('sc'))return}
-setTimeout(scGen,500)}
+else{el.classList.add('no');document.querySelectorAll('#sc-opts .sf-opt').forEach(o=>{if(o.textContent===ans)o.classList.add('ok')});curScore=scScore;setHeartResumeCallback(scGen);if(loseHeart('sc'))return}
+scheduleNextQuestion(scGen,500)}

@@ -1,4 +1,4 @@
-// ===== 17. COLOR MIX =====
+// ===== 17. COLOR MIX - 색깔 조합 =====
 let cmxScore,cmxRound,cmxQTimer,cmxQTime,cmxQLimit,cmxTime;
 const CMIX=[
   {a:{name:'빨강',hex:'#F04452'},b:{name:'파랑',hex:'#3182F6'},result:{name:'보라',hex:'#8B5CF6'},wrong:[{name:'초록',hex:'#1FC58E'},{name:'주황',hex:'#F97316'},{name:'갈색',hex:'#92400E'}]},
@@ -11,9 +11,8 @@ const CMIX=[
 ];
 function initColormix(){cmxScore=0;cmxRound=0;cmxTime=30;document.getElementById('cmx-score').textContent='0점';initHearts('cmx');
 document.getElementById('cmx-round').textContent='30s';
-clearInterval(curTimer);curTimer=setInterval(()=>{cmxTime--;document.getElementById('cmx-round').textContent=cmxTime+'s';
-if(cmxTime<=10)document.getElementById('cmx-round').className='g-timer urgent';
-if(cmxTime<=0){clearInterval(curTimer);clearInterval(cmxQTimer);showResult(cmxScore,'색깔 조합',[], {_isTimerEnd:true})}},1000);cmxNext()}
+clearInterval(curTimer);setTickFn(cmxTick);curTimer=setInterval(cmxTick,1000);cmxNext()}
+function cmxTick(){cmxTime--;document.getElementById('cmx-round').textContent=cmxTime+'s';if(cmxTime<=10)document.getElementById('cmx-round').className='g-timer urgent';if(cmxTime<=0){clearInterval(curTimer);clearInterval(cmxQTimer);setTimeExtendResumeCallback((s)=>{cmxTime=s;document.getElementById('cmx-round').textContent=cmxTime+'s';document.getElementById('cmx-round').className='g-timer';curTimer=setInterval(cmxTick,1000);cmxNext()});showResult(cmxScore,'색깔 조합',[], {_isTimerEnd:true})}}
 function cmxNext(){cmxRound++;
 document.getElementById('cmx-round').textContent=cmxRound+'/10';
 const q=CMIX[~~(Math.random()*CMIX.length)];
@@ -22,9 +21,9 @@ document.getElementById('cmx-q').innerHTML=`<div style="display:flex;align-items
 const opts=[q.result,...q.wrong.sort(()=>Math.random()-.5).slice(0,3)].sort(()=>Math.random()-.5);
 document.getElementById('cmx-opts').innerHTML=opts.map(o=>`<div class="cmx-opt" data-name="${o.name}" onclick="cmxPick(this,'${o.name}','${q.result.name}')" style="background:var(--card)"><div>${chip(o,36)}</div><div style="font-size:13px;margin-top:6px;font-weight:600">${o.name}</div></div>`).join('');
 cmxQLimit=Math.max(2.0,4.0-cmxRound*0.12);cmxQTime=cmxQLimit;clearInterval(cmxQTimer);
-const cmxbar=document.getElementById('cmx-qbar');if(cmxbar){cmxbar.style.transition='none';cmxbar.style.width='100%';requestAnimationFrame(()=>{cmxbar.style.transition=`width ${cmxQLimit}s linear`;cmxbar.style.width='0%'})}
-cmxQTimer=setInterval(()=>{cmxQTime-=0.1;if(cmxQTime<=0){clearInterval(cmxQTimer);curScore=cmxScore;if(loseHeart('cmx'))return;setTimeout(cmxNext,300)}},100)}
+const cmxbar=document.getElementById('cmx-qbar');if(cmxbar){cmxbar.style.transition='none';cmxbar.style.width='100%';cmxbar.offsetWidth;cmxbar.style.transition=`width ${cmxQLimit}s linear`;cmxbar.style.width='0%'}
+cmxQTimer=setInterval(()=>{cmxQTime-=0.1;if(cmxQTime<=0){clearInterval(cmxQTimer);curScore=cmxScore;setHeartResumeCallback(cmxNext);if(loseHeart('cmx'))return;scheduleNextQuestion(cmxNext,300)}},100)}
 function cmxPick(el,picked,answer){if(el.classList.contains('ok')||el.classList.contains('no'))return;clearInterval(cmxQTimer);
 if(picked===answer){el.classList.add('ok');const pct=cmxQTime/cmxQLimit;const bonus=pct>.75?5:pct>.5?3:1;cmxScore+=10+bonus;setScore('cmx-score',cmxScore)}
-else{el.classList.add('no');document.querySelectorAll('.cmx-opt').forEach(o=>{if(o.dataset.name===answer)o.classList.add('ok')});curScore=cmxScore;if(loseHeart('cmx'))return}
-setTimeout(cmxNext,800)}
+else{el.classList.add('no');document.querySelectorAll('.cmx-opt').forEach(o=>{if(o.dataset.name===answer)o.classList.add('ok')});curScore=cmxScore;setHeartResumeCallback(cmxNext);if(loseHeart('cmx'))return}
+scheduleNextQuestion(cmxNext,800)}

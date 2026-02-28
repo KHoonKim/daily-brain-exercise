@@ -1,4 +1,4 @@
-// ===== 37. SORT =====
+// ===== 37. SORT - 카테고리 분류 =====
 let stScore,stTime,stCatA,stCatB,stItems,stAns,stCombo=0,stSwaps=0;
 const SORT_CATS=[
 {name:'과일',items:['사과','배','포도','수박','딸기','복숭아','감','귤']},
@@ -14,9 +14,8 @@ document.getElementById('st-timer').textContent='30s';document.getElementById('s
 const pair=[...SORT_CATS].sort(()=>Math.random()-.5).slice(0,2);stCatA=pair[0];stCatB=pair[1];
 document.getElementById('st-cat1').textContent=stCatA.name;document.getElementById('st-cat2').textContent=stCatB.name;
 document.getElementById('st-btn1').textContent=stCatA.name;document.getElementById('st-btn2').textContent=stCatB.name;
-clearInterval(curTimer);curTimer=setInterval(()=>{stTime--;document.getElementById('st-timer').textContent=stTime+'s';
-if(stTime<=10)document.getElementById('st-timer').className='g-timer urgent';
-if(stTime<=0){clearInterval(curTimer);showResult(stScore,'카테고리 분류',[], {_isTimerEnd:true})}},1000);stGen()}
+clearInterval(curTimer);curTimer=setInterval(stTick,1000);stGen()}
+function stTick(){stTime--;document.getElementById('st-timer').textContent=stTime+'s';if(stTime<=10)document.getElementById('st-timer').className='g-timer urgent';if(stTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{stTime=s;document.getElementById('st-timer').textContent=stTime+'s';document.getElementById('st-timer').className='g-timer';curTimer=setInterval(stTick,1000);stGen()});showResult(stScore,'카테고리 분류',[], {_isTimerEnd:true})}}
 function stGen(){stAns=Math.random()<.5?0:1;
 const cat=stAns===0?stCatA:stCatB;
 document.getElementById('st-word').textContent=cat.items[~~(Math.random()*cat.items.length)]}
@@ -26,4 +25,4 @@ document.getElementById('st-cat1').textContent=stCatA.name;document.getElementBy
 document.getElementById('st-btn1').textContent=stCatA.name;document.getElementById('st-btn2').textContent=stCatB.name;
 stCombo=0;toast('카테고리 변경!')}}
 else{stCombo=0;stScore=Math.max(0,stScore-5);setScore('st-score',stScore)}
-setTimeout(stGen,250)}
+scheduleNextQuestion(stGen,250)}

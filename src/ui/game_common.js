@@ -4,12 +4,8 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 let curGoal=0,goalReached=false;
 function initGoalBar(id){
   const best=LS.get(id+'-best',0);
-  const defaults={math:200,memory:120,reaction:400,stroop:150,sequence:100,word:120,pattern:120,focus:200,
-    rotate:120,reverse:80,numtouch:100,rhythm:80,rps:120,oddone:150,compare:120,bulb:80,colormix:100,
-    wordcomp:120,timing:100,matchpair:120,headcount:120,pyramid:120,maxnum:150,signfind:120,coincount:120,
-    clock:100,wordmem:80,blockcount:120,flanker:120,memgrid:80,nback:150,scramble:120,serial:150,
-    leftright:120,calccomp:120,flash:80,sort:150,mirror:120};
-  curGoal=best>0?Math.ceil(best*0.9):(defaults[id]||60);goalReached=false;
+  const gameMeta = GAMES.find(g => g.id === id);
+  curGoal=best>0?Math.ceil(best*0.9):(gameMeta?.goalDefault||60);goalReached=false;
   const scoreEl=document.querySelector('#game-'+id+' .g-score');
   if(!scoreEl)return;
   let bar=scoreEl.parentElement.querySelector('.goal-bar');
@@ -39,6 +35,18 @@ function updateGoal(score,gameId){
   else if(pct>=80)fill.className='gb-fill hot';
 }
 
+// ===== NEXT QUESTION SCHEDULING =====
+// 팝업이 떠 있는 동안 pending된 setTimeout이 실행되지 않도록 중앙 관리
+let _nextQTimeout = null;
+function scheduleNextQuestion(fn, delay) {
+  clearTimeout(_nextQTimeout);
+  _nextQTimeout = setTimeout(fn, delay);
+}
+function cancelNextQuestion() {
+  clearTimeout(_nextQTimeout);
+  _nextQTimeout = null;
+}
+
 // ===== HEART SYSTEM =====
 const MAX_HEARTS=3;
 let hearts=MAX_HEARTS;
@@ -61,6 +69,7 @@ function renderHearts(gameId){
   }
 }
 function loseHeart(gameId){
+  if(!curGame)return false;
   hearts--;
   const el=document.getElementById(gameId+'-heart-'+hearts);
   if(el){el.classList.add('heart-break');setTimeout(()=>el.classList.add('lost'),500)}
@@ -69,7 +78,7 @@ function loseHeart(gameId){
   if(navigator.vibrate)navigator.vibrate([50,30,50]);
   if(hearts<=0){
     clearInterval(curTimer);
-    // Note: game specific timers need careful handling if they are global
+    cancelNextQuestion();
     setTimeout(()=>{
       if(heartRefillUsed){
         const gameName=GAMES.find(g=>g.id===curGame)?.name||'';
@@ -84,19 +93,14 @@ function loseHeart(gameId){
   return false;
 }
 function refillHearts(){
-  if(window.AIT && AIT.showAd){
-    AIT.showAd('rewarded').then(res => {
-      if(res.success){
-        heartRefillUsed=true;
-        hearts=1;
-        document.getElementById('heartOverlay').classList.remove('active');
-        renderHearts(heartGameId);
-        toast('마지막 기회!');
-        resumeAfterHeart();
-      }
-    });
-  }
+  const doRefill=()=>{heartRefillUsed=true;hearts=1;document.getElementById('heartOverlay').classList.remove('active');renderHearts(heartGameId);toast('마지막 기회!');resumeAfterHeart()};
+  if(window.AIT && AIT.showAd){AIT.showAd('interstitial').then(doRefill).catch(doRefill)}else{doRefill()}
 }
+let _heartResumeCallback=null;
+let _curTickFn=null;
+function setTickFn(fn){_curTickFn=fn}
+function setHeartResumeCallback(fn){_heartResumeCallback=fn}
+function resumeAfterHeart(){if(_heartResumeCallback){const cb=_heartResumeCallback;_heartResumeCallback=null;if(_curTickFn){clearInterval(curTimer);curTimer=setInterval(_curTickFn,1000)}cb()}}
 function heartQuit(){
   document.getElementById('heartOverlay').classList.remove('active');
   const gameName=GAMES.find(g=>g.id===curGame)?.name||'';
@@ -106,24 +110,26 @@ function heartQuit(){
 // ===== TIME EXTEND =====
 let timeExtendUsed=false;
 let _timeExtendCallback=null;
+let _timeExtendResumeCallback=null;
+function setTimeExtendResumeCallback(fn){_timeExtendResumeCallback=fn}
+function resumeWithExtraTime(seconds){if(_timeExtendResumeCallback){const cb=_timeExtendResumeCallback;_timeExtendResumeCallback=null;cb(seconds)}}
 function showTimeExtend(callback){
+  if(!curGame)return;
   if(timeExtendUsed){callback();return}
+  cancelNextQuestion();
   _timeExtendCallback=callback;
   document.getElementById('timeExtendOverlay').classList.add('active');
 }
 function timeExtendQuit(){
   document.getElementById('timeExtendOverlay').classList.remove('active');
+  _timeExtendResumeCallback=null;
   if(_timeExtendCallback)_timeExtendCallback();
 }
 function timeExtendAccept(){
   document.getElementById('timeExtendOverlay').classList.remove('active');
+  const doResume=()=>{timeExtendUsed=true;toast('+5초!');resumeWithExtraTime(5)};
+  const doFallback=()=>{_timeExtendResumeCallback=null;if(_timeExtendCallback)_timeExtendCallback()};
   if(window.AIT && AIT.showAd){
-    AIT.showAd('rewarded').then(res => {
-      if(res.success){
-        timeExtendUsed=true;
-        toast('+5초!');
-        resumeWithExtraTime(5);
-      }
-    });
-  }
+    AIT.showAd('interstitial').then(res=>{if(res.success)doResume();else doFallback()}).catch(doFallback);
+  }else{doResume()}
 }

@@ -1,10 +1,9 @@
-// ===== 22. PYRAMID =====
+// ===== 22. PYRAMID - 피라미드 연산 =====
 let pyrScore,pyrRound,pyrAnswer,pyrTime;
 function initPyramid(){pyrScore=0;pyrRound=0;pyrTime=30;document.getElementById('pyr-score').textContent='0점';initHearts('pyr');
 document.getElementById('pyr-round').textContent='30s';
-clearInterval(curTimer);curTimer=setInterval(()=>{pyrTime--;document.getElementById('pyr-round').textContent=pyrTime+'s';
-if(pyrTime<=10)document.getElementById('pyr-round').className='g-timer urgent';
-if(pyrTime<=0){clearInterval(curTimer);showResult(pyrScore,'피라미드 연산',[], {_isTimerEnd:true})}},1000);pyrNext()}
+clearInterval(curTimer);setTickFn(pyrTick);curTimer=setInterval(pyrTick,1000);pyrNext()}
+function pyrTick(){pyrTime--;document.getElementById('pyr-round').textContent=pyrTime+'s';if(pyrTime<=10)document.getElementById('pyr-round').className='g-timer urgent';if(pyrTime<=0){clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{pyrTime=s;document.getElementById('pyr-round').textContent=pyrTime+'s';document.getElementById('pyr-round').className='g-timer';curTimer=setInterval(pyrTick,1000);pyrNext()});showResult(pyrScore,'피라미드 연산',[], {_isTimerEnd:true})}}
 function pyrNext(){pyrRound++;
 document.getElementById('pyr-round').textContent=pyrRound+'/10';
 const sz=pyrRound<=3?3:pyrRound<=7?4:5;
@@ -30,5 +29,5 @@ if(v===pyrAnswer){blank.classList.remove('blank');blank.style.borderColor='var(-
 pyrScore+=10;setScore('pyr-score',pyrScore);toast('정답!')}
 else{blank.style.borderColor='var(--no)';blank.style.background='var(--no-bg)';
 setTimeout(()=>{blank.textContent=pyrAnswer;blank.style.borderColor='var(--ok)';blank.style.background='var(--ok-bg)'},400);
-curScore=pyrScore;if(loseHeart('pyr'))return}
-setTimeout(pyrNext,900)}
+curScore=pyrScore;setHeartResumeCallback(pyrNext);if(loseHeart('pyr'))return}
+scheduleNextQuestion(pyrNext,900)}

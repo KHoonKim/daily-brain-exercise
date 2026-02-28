@@ -1,10 +1,9 @@
-// ===== 26. CLOCK =====
+// ===== 26. CLOCK - 시계 읽기 =====
 let clkScore,clkRound,clkTime,clkQTimer,clkQTime,clkQLimit;
 function initClock(){clkScore=0;clkRound=0;clkTime=30;document.getElementById('clk-score').textContent='0점';initHearts('clk');
 document.getElementById('clk-round').textContent='30s';document.getElementById('clk-round').className='g-timer';
-clearInterval(curTimer);curTimer=setInterval(()=>{clkTime--;document.getElementById('clk-round').textContent=clkTime+'s';
-if(clkTime<=10)document.getElementById('clk-round').className='g-timer urgent';
-if(clkTime<=0){clearInterval(curTimer);clearInterval(clkQTimer);showResult(clkScore,'시계 읽기',[], {_isTimerEnd:true})}},1000);clkNext()}
+clearInterval(curTimer);setTickFn(clkTick);curTimer=setInterval(clkTick,1000);clkNext()}
+function clkTick(){clkTime--;document.getElementById('clk-round').textContent=clkTime+'s';if(clkTime<=10)document.getElementById('clk-round').className='g-timer urgent';if(clkTime<=0){clearInterval(curTimer);clearInterval(clkQTimer);setTimeExtendResumeCallback((s)=>{clkTime=s;document.getElementById('clk-round').textContent=clkTime+'s';document.getElementById('clk-round').className='g-timer';curTimer=setInterval(clkTick,1000);clkNext()});showResult(clkScore,'시계 읽기',[], {_isTimerEnd:true})}}
 function clkNext(){clkRound++;
 const h=~~(Math.random()*12)+1,m=[0,5,10,15,20,25,30,35,40,45,50,55][~~(Math.random()*12)];
 const cv=document.getElementById('clk-canvas'),ctx=cv.getContext('2d'),cx=120,cy=120,r=95;
@@ -20,11 +19,11 @@ while(opts.size<4){const rh=~~(Math.random()*12)+1,rm=[0,5,10,15,20,25,30,35,40,
 document.getElementById('clk-opts').innerHTML=[...opts].sort(()=>Math.random()-.5).map(o=>`<div class="clk-opt" onclick="clkPick(this,'${o}','${answer}')">${o}</div>`).join('');
 clkQLimit=Math.max(2.5, 5.0 - clkRound*0.15);
 clkQTime=clkQLimit;clearInterval(clkQTimer);
-const qbar=document.getElementById('clk-qbar');if(qbar){qbar.style.transition='none';qbar.style.width='100%';requestAnimationFrame(()=>{qbar.style.transition=`width ${clkQLimit}s linear`;qbar.style.width='0%'})}
-clkQTimer=setInterval(()=>{clkQTime-=0.1;if(clkQTime<=0){clearInterval(clkQTimer);curScore=clkScore;if(loseHeart('clk'))return;setTimeout(clkNext,300)}},100)}
+const qbar=document.getElementById('clk-qbar');if(qbar){qbar.style.transition='none';qbar.style.width='100%';qbar.offsetWidth;qbar.style.transition=`width ${clkQLimit}s linear`;qbar.style.width='0%'}
+clkQTimer=setInterval(()=>{clkQTime-=0.1;if(clkQTime<=0){clearInterval(clkQTimer);curScore=clkScore;setHeartResumeCallback(clkNext);if(loseHeart('clk'))return;scheduleNextQuestion(clkNext,300)}},100)}
 function clkPick(el,v,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;
 clearInterval(clkQTimer);
 if(v===ans){el.classList.add('ok');const pct=clkQTime/clkQLimit;const bonus=pct>.75?5:pct>.5?3:1;clkScore+=10+bonus;setScore('clk-score',clkScore)}
 else{el.classList.add('no');document.querySelectorAll('.clk-opt').forEach(o=>{if(o.textContent===ans)o.classList.add('ok')});
-curScore=clkScore;if(loseHeart('clk'))return}
-setTimeout(clkNext,800)}
+curScore=clkScore;setHeartResumeCallback(clkNext);if(loseHeart('clk'))return}
+scheduleNextQuestion(clkNext,800)}

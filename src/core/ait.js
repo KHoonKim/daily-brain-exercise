@@ -6,18 +6,19 @@ const AIT = (() => {
   let _userHash = null;
   let _adLoaded = { interstitial: false, rewarded: false };
 
-  // ── Config (플레이스홀더 — 콘솔 발급 후 교체) ──
+  // ── Config ──
   const CONFIG = {
-    AD_INTERSTITIAL_ID: 'ait-ad-test-interstitial-id',  // TODO: 실제 광고 그룹 ID로 교체
-    AD_REWARDED_ID: 'ait-ad-test-rewarded-id',           // TODO: 실제 광고 그룹 ID로 교체
+    AD_BANNER_ID: 'ait.v2.live.47d7aeae54c14818',        // 배너형: 게임 결과 페이지
+    AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',  // 전면형: 하트 더받기, 5초 더하기, 한판 더하기
+    AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
     LEADERBOARD_ID: 'PLACEHOLDER_LEADERBOARD_ID',        // TODO: 게임센터 리더보드 ID
     PROMO_CODE: 'PLACEHOLDER_PROMO_CODE',                // TODO: 프로모션 코드 (레거시)
     PROMO_AMOUNT: 100,
-    // 4 Promotions (IDs filled after approval)
-    PROMO_FIRST_LOGIN: 'PLACEHOLDER_PROMO_FIRST_LOGIN',
+    // 4 Promotions
+    PROMO_FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
     PROMO_BRAIN_AGE_50: 'PLACEHOLDER_PROMO_BRAIN_AGE_50',
-    PROMO_POINT_100: 'PLACEHOLDER_PROMO_POINT_100',
-    PROMO_FIRST_WORKOUT: 'PLACEHOLDER_PROMO_FIRST_WORKOUT',
+    PROMO_POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
+    PROMO_FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT',
     SHARE_MODULE_ID: 'PLACEHOLDER_SHARE_MODULE_ID',      // TODO: 공유 리워드 모듈 ID
   };
 
@@ -65,6 +66,23 @@ const AIT = (() => {
         });
       } catch (e) { resolve({ success: false, error: e }); }
     });
+  }
+
+  // ── Banner Ad ──
+  function loadBannerAd(containerId) {
+    if (!isToss) {
+      const el = document.getElementById(containerId);
+      if (el) { el.style.background = 'var(--border)'; el.textContent = '광고 영역'; }
+      return;
+    }
+    try {
+      window.__granite__?.loadAppsInTossAdMob?.({
+        options: { adGroupId: CONFIG.AD_BANNER_ID },
+        containerId,
+        onEvent: (e) => { console.log('Banner ad event:', e); },
+        onError: (e) => { console.warn('Banner ad error:', e); }
+      });
+    } catch (e) { console.warn('Banner ad load failed:', e); }
   }
 
   // ── Game Center ──
@@ -228,7 +246,7 @@ const AIT = (() => {
 
   // 프로모션 1: 첫 로그인
   async function checkPromoFirstLogin() {
-    triggerPromo('FIRST_LOGIN', CONFIG.PROMO_FIRST_LOGIN, 10);
+    triggerPromo('FIRST_LOGIN', CONFIG.PROMO_FIRST_LOGIN, 1);
   }
   // 프로모션 2: 두뇌나이 50세 달성 (called from addXP outside AIT scope)
   async function checkPromoBrainAge50(xp) {
@@ -245,7 +263,7 @@ const AIT = (() => {
   }
   // 프로모션 4: 첫 두뇌운동 완료
   async function checkPromoFirstWorkout() {
-    triggerPromo('FIRST_WORKOUT', CONFIG.PROMO_FIRST_WORKOUT, 10);
+    triggerPromo('FIRST_WORKOUT', CONFIG.PROMO_FIRST_WORKOUT, 2);
   }
 
   // ── Init ──
@@ -264,7 +282,7 @@ const AIT = (() => {
   return {
     isToss, CONFIG, getUserHash, login, getLoginData, triggerPromo,
     checkPromoFirstLogin, checkPromoBrainAge50, checkPromoPoint100, checkPromoFirstWorkout,
-    showAd, preloadAd,
+    showAd, preloadAd, loadBannerAd,
     submitScore, openLeaderboard, getProfile,
     storageGet, storageSet, haptic,
     grantPromoReward, shareInvite, shareMessage,

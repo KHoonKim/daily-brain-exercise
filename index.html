@@ -12,7 +12,7 @@
   <meta property="og:title" content="매일매일 두뇌운동">
   <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="src/styles/main.css?v=127">
+  <link rel="stylesheet" href="src/styles/main.css?v=130">
 </head>
 
 <body>
@@ -25,9 +25,9 @@
 
     <!-- ===== HOME (ORIGINAL DESIGN) ===== -->
     <div id="homeScreen" class="home screen active">
-      <div class="home-header">
-        <h1><img src="icon-192.png" style="width:28px;height:28px;vertical-align:-6px;border-radius:6px"> 매일매일 두뇌운동</h1>
-        <div class="home-header-r">
+      <div class="home-header tds-top__row">
+        <h1 class="tds-top__title"><img src="icon-192.png" style="width:28px;height:28px;vertical-align:-6px;border-radius:6px"> 매일매일 두뇌운동</h1>
+        <div class="home-header-r tds-top__right">
           <div id="streakBadge" style="display:none"></div>
           <span id="pointDisplay" style="display:none"></span>
           <span id="ticketCount" class="tds-badge tds-badge-sm tds-badge-fill-blue"
@@ -41,43 +41,41 @@
       <div id="dailyWorkout"></div>
 
       <!-- Point Progress -->
-      <div
-        style="background:var(--card);border-radius:var(--r16);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)">
+      <div class="tds-card tds-card--p16" style="margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:14px;font-weight:800">두뇌점수 모으기</div>
-          <div style="font-size:14px;font-weight:800;color:#3182F6" id="pointProgress">0 / 100점</div>
+          <div class="tds-t5 tds-fw-bold">두뇌점수 모으기</div>
+          <div class="tds-t5 tds-fw-bold tds-color-primary" id="pointProgress">0 / 100점</div>
         </div>
-        <div style="height:4px;background:rgba(25,31,40,.06);border-radius:2px;overflow:hidden">
+        <div style="height:6px;background:rgba(25,31,40,.06);border-radius:3px;overflow:hidden">
           <div id="pointBar"
             style="height:100%;background:#3182F6;border-radius:2px;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%">
           </div>
         </div>
         <div id="streakLabel" style="display:none"></div>
-        <div style="font-size:12px;color:var(--sub);margin-top:4px">100점이 모이면 100원으로 교환할 수 있어요</div>
-        <button class="btn btn-combo" id="exchangeBtn" onclick="exchangePoints()" disabled
-          style="width:100%;margin:10px 0 0;padding:12px;font-size:15px;font-weight:700">100원 받기</button>
+        <div class="tds-t6 tds-color-sub" style="margin-top:4px">100점이 모이면 100원으로 교환할 수 있어요</div>
+        <button class="btn-combo tds-btn tds-btn-md tds-btn-block" id="exchangeBtn" onclick="exchangePoints()" disabled
+          style="margin:10px 0 0">100원 교환하기</button>
       </div>
       <div id="streakDays" style="display:none"></div>
 
       <!-- Profile Summary -->
-      <div
-        style="background:var(--card);border-radius:var(--r16);padding:20px 16px 14px;margin-bottom:12px;box-shadow:var(--shadow)">
+      <div class="tds-card" style="padding:20px 16px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;margin-bottom:12px">
           <div style="flex:1;text-align:center">
-            <div style="font-size:12px;color:var(--sub);margin-bottom:4px">나의 두뇌 나이</div>
-            <div style="font-size:36px;font-weight:900" id="rankName">100세</div>
+            <div class="tds-st12 tds-color-sub" style="margin-bottom:4px">나의 두뇌 나이</div>
+            <div class="tds-st2" style="font-weight:900" id="rankName">100세</div>
           </div>
           <div style="width:1px;height:48px;background:var(--border)"></div>
           <div style="flex:1;text-align:center">
-            <div style="font-size:12px;color:var(--sub);margin-bottom:4px">종합 순위</div>
-            <div style="font-size:36px;font-weight:900;color:var(--purple)" id="overallPct">--%</div>
+            <div class="tds-st12 tds-color-sub" style="margin-bottom:4px">종합 순위</div>
+            <div class="tds-st2" style="font-weight:900;color:var(--purple)" id="overallPct">--%</div>
           </div>
         </div>
         <div class="xp-bar" style="margin-top:12px">
-          <div class="xp-bar-label"
-            style="display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-bottom:6px"><span
+          <div class="xp-bar-label tds-st13 tds-color-sub"
+            style="display:flex;justify-content:space-between;margin-bottom:6px"><span
               id="xpCur">0 XP</span><span id="xpMax">200 XP</span></div>
-          <div class="xp-bar-track" style="height:4px;border-radius:2px;background:rgba(25,31,40,.06);overflow:hidden">
+          <div class="xp-bar-track" style="height:6px;border-radius:3px;background:rgba(25,31,40,.06);overflow:hidden">
             <div class="xp-bar-fill" id="xpFill"
               style="height:100%;border-radius:2px;background:#3182F6;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%">
             </div>
@@ -87,13 +85,14 @@
       </div>
 
       <!-- Missions -->
-      <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg"
-          style="width:16px;height:16px;vertical-align:-3px"> 오늘의 챌린지 <span class="st-sub" id="missionCount">0/5</span>
+      <div class="section-title tds-list-header__title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AF.svg"
+          style="width:16px;height:16px;vertical-align:-3px"> 오늘의 챌린지 <span class="st-sub tds-t7 tds-fw-regular tds-color-sub" id="missionCount">0/5</span>
       </div>
+      <div class="tds-st11 tds-color-sub" style="margin-top:1 px;margin-bottom:8px">5개 챌린지를 모두 완료하면 두뇌점수 <span class="tds-badge tds-badge-xs tds-badge-fill-blue">+2점</span> 추가 지급</div>
       <div id="missionList"></div>
 
       <!-- Free Training -->
-      <div class="section-title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg"
+      <div class="section-title tds-list-header__title"><img src="https://static.toss.im/2d-emojis/svg/u1F3AE.svg"
           style="width:16px;height:16px;vertical-align:-3px"> 자유 훈련</div>
       <div id="gameGrid"></div>
     </div>
@@ -113,9 +112,28 @@
       <div class="g-body" style="padding:24px 20px;text-align:center">
         <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg"
             style="width:72px;height:72px"></div>
-        <div id="ts-count" style="font-size:40px;font-weight:800;color:var(--p);margin-bottom:24px">0장</div>
-        <button class="btn btn-primary" onclick="ticketAdRefill()" style="width:100%;padding:16px;font-size:16px">광고 보고
-          티켓 받기</button>
+        <div style="font-size:14px;color:var(--sub);margin-bottom:4px">보유 티켓</div>
+        <div id="ts-count" class="tds-st0 tds-fw-extrabold" style="color:var(--p);margin-bottom:24px">0장</div>
+
+        <button class="btn btn-primary" onclick="ticketAdRefill()" id="ts-ad-btn"
+          style="width:100%;font-size:16px;padding:16px;margin-bottom:20px">
+          <span style="display:flex;align-items:center;justify-content:center;gap:8px"><img
+              src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px">광고 보고 3~5장 받기</span>
+        </button>
+
+        <div class="tds-card" style="padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
+          <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:32px;height:32px;flex-shrink:0">
+          <div style="text-align:left">
+            <div class="tds-t6 tds-fw-semibold">매일 오전 9시 자동 충전</div>
+            <div class="tds-st12 tds-color-sub" style="margin-top:2px">5장 미만이면 5장으로 채워져요</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--sub)">최대 99장까지 보유 가능</div>
+
+        <!-- 배너 광고 영역 -->
+        <div id="ts-banner"
+          style="margin-top:24px;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">
+          광고 영역</div>
       </div>
     </div>
 
@@ -125,8 +143,7 @@
   <div class="overlay" id="overlay">
     <div class="result-sheet">
       <div class="r-handle"></div>
-      <div
-        style="background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)">
+      <div class="tds-card" style="padding:24px 20px 16px;margin-bottom:14px">
         <h3 id="r-title">훈련 완료!</h3>
         <div class="r-score" id="r-score">0</div>
         <div class="r-cat" id="r-cat"></div>
@@ -136,14 +153,14 @@
         </div>
         <div class="r-stats" id="r-stats"></div>
       </div>
-      <div id="r-science"
-        style="background:var(--card);border-radius:var(--r12);padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px" id="r-sci-title">두뇌 상식</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5" id="r-sci-desc"></div>
+      <div id="r-science" class="tds-card tds-card--p16" style="margin-bottom:12px;text-align:left;border:1px solid var(--border)">
+        <div class="tds-t6 tds-fw-bold tds-color-primary" style="margin-bottom:4px" id="r-sci-title">두뇌 상식</div>
+        <div class="tds-st11 tds-color-sub" style="line-height:1.5" id="r-sci-desc"></div>
       </div>
-      <button class="btn btn-primary" id="r-main-btn" onclick="replayGame()"
-        style="width:100%;font-size:17px;padding:16px;font-weight:800;margin-bottom:12px">광고보고 한 번 더 도전하기</button>
-      <button class="btn btn-home" onclick="goHomeFromResult()">홈으로</button>
+      <div class="tds-bottom-cta">
+        <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" id="r-main-btn" onclick="replayGame()" style="margin-bottom:8px">광고보고 한 번 더 도전하기</button>
+        <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-weak-dark" onclick="goHomeFromResult()">홈으로</button>
+      </div>
     </div>
   </div>
 
@@ -659,7 +676,7 @@
     </div>
     <div class="g-body">
       <div class="g-score" id="cc2-score">0점</div>
-      <div class="seq-msg">더 큰 쪽을 터치!</div>
+      <div class="seq-msg" id="cc2-msg">더 큰 쪽을 터치!</div>
       <div
         style="width:80%;max-width:240px;margin:0 auto 8px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
         <div id="cc2-qbar" style="height:100%;background:var(--p);border-radius:2px;width:100%"></div>
@@ -725,38 +742,6 @@
     </div>
   </div>
 
-  <!-- ===== TICKET SHOP ===== -->
-  <div class="screen" id="ticketShop">
-    <div class="g-hdr"><button class="back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span></div>
-    <div class="g-body" style="padding:24px 20px;text-align:center">
-      <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg"
-          style="width:72px;height:72px"></div>
-      <div style="font-size:14px;color:var(--sub);margin-bottom:4px">보유 티켓</div>
-      <div id="ts-count" style="font-size:40px;font-weight:800;color:var(--p);margin-bottom:24px">0장</div>
-
-      <button class="btn btn-primary" onclick="ticketAdRefill()" id="ts-ad-btn"
-        style="width:100%;font-size:16px;padding:16px;margin-bottom:20px">
-        <span style="display:flex;align-items:center;justify-content:center;gap:8px"><img
-            src="https://static.toss.im/2d-emojis/svg/u1F3AC.svg" style="width:20px;height:20px">광고 보고 3~5장 받기</span>
-      </button>
-
-      <div
-        style="background:var(--card);border-radius:var(--r16);padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px">
-        <img src="https://static.toss.im/2d-emojis/svg/u23F0.svg" style="width:32px;height:32px;flex-shrink:0">
-        <div style="text-align:left">
-          <div style="font-size:15px;font-weight:700">매일 오전 9시 자동 충전</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">5장 미만이면 5장으로 채워져요</div>
-        </div>
-      </div>
-      <div style="font-size:12px;color:var(--sub)">최대 99장까지 보유 가능</div>
-
-      <!-- 배너 광고 영역 -->
-      <div id="ts-banner"
-        style="margin-top:24px;min-height:50px;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">
-        광고 영역</div>
-    </div>
-  </div>
-
   <!-- ===== RESULT ===== -->
   <!-- Ticket Modal -->
   <div class="overlay" id="ticketModal" style="z-index:1001">
@@ -778,8 +763,7 @@
     <div class="result-sheet">
       <div class="r-handle"></div>
       <div style="height:20px"></div>
-      <div
-        style="background:var(--card);border-radius:var(--r16);padding:24px 20px 16px;margin-bottom:14px;box-shadow:var(--shadow)">
+      <div class="tds-card" style="padding:24px 20px 16px;margin-bottom:14px">
         <h3 id="r-title">훈련 완료!</h3>
         <div class="r-score" id="r-score">0</div>
         <div id="r-bonus" class="hide" style="text-align:center;margin:4px 0;transition:all .5s"></div>
@@ -793,38 +777,37 @@
       </div>
       <div id="r-percentile" class="hide"
         style="text-align:center;margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,var(--p-light),#F3E8FF);border-radius:var(--r12);border:1px solid var(--border)">
-        <div style="font-size:12px;color:var(--sub);margin-bottom:2px">전체 플레이어 중</div>
-        <div id="r-pct-val" style="font-size:24px;font-weight:800;color:var(--purple)">상위 10%</div>
-        <div id="r-pct-players" style="font-size:11px;color:var(--sub);margin-top:2px"></div>
+        <div class="tds-st12 tds-color-sub" style="margin-bottom:2px">전체 플레이어 중</div>
+        <div id="r-pct-val" class="tds-st5 tds-fw-extrabold" style="color:var(--purple)">상위 10%</div>
+        <div id="r-pct-players" class="tds-st13 tds-color-sub" style="margin-top:2px"></div>
       </div>
-      <div id="r-science"
-        style="background:var(--card);border-radius:var(--r12);padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
-        <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px" id="r-sci-title"></div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5" id="r-sci-desc"></div>
+      <div id="r-science" class="tds-card" style="padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
+        <div class="tds-t7 tds-fw-bold tds-color-primary" style="margin-bottom:4px" id="r-sci-title"></div>
+        <div class="tds-st12 tds-color-sub" style="line-height:1.5" id="r-sci-desc"></div>
       </div>
-      <!-- Brain Age Card -->
-      <!-- brain age removed: rank = brain age -->
+      <!-- 배너 광고 영역 -->
+      <div id="r-banner" style="margin-bottom:12px;min-height:50px;border-radius:var(--r12);overflow:hidden"></div>
       <!-- 재도전 (최우선) -->
       <div id="r-retry-msg" class="hide"
         style="text-align:center;font-size:13px;font-weight:600;color:var(--p);padding:8px 16px;margin-bottom:6px;background:var(--p)10;border-radius:var(--r12)">
       </div>
-      <button class="btn btn-primary" id="r-main-btn" onclick="replayGame()"
-        style="width:100%;font-size:17px;padding:16px;font-weight:800;margin-bottom:12px">광고보고 한 번 더 도전하기</button>
+      <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" id="r-main-btn" onclick="replayGame()"
+        style="margin-bottom:12px">광고보고 한 번 더 도전하기</button>
 
       <!-- Share & Leaderboard -->
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="btn btn-weak" id="r-share-btn" onclick="shareScore()"
-          style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img
+        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-share-btn" onclick="shareScore()"
+          style="flex:1;gap:6px"><img
             src="https://static.toss.im/2d-emojis/svg/u1F4E4.svg" style="width:16px;height:16px">공유</button>
-        <button class="btn btn-weak" id="r-lb-btn" onclick="AIT.openLeaderboard()"
-          style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img
+        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-lb-btn" onclick="AIT.openLeaderboard()"
+          style="flex:1;gap:6px"><img
             src="https://static.toss.im/2d-emojis/svg/u1F3C6.svg" style="width:16px;height:16px">리더보드</button>
-        <button class="btn btn-weak" id="r-invite-btn" onclick="inviteFriend()"
-          style="flex:1;margin:0;font-size:13px;font-weight:600;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><img
+        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-invite-btn" onclick="inviteFriend()"
+          style="flex:1;gap:6px"><img
             src="https://static.toss.im/2d-emojis/svg/u1F44B.svg" style="width:16px;height:16px">초대</button>
       </div>
 
-      <button class="btn btn-home" onclick="goHomeFromResult()" style="margin-top:0">홈으로</button>
+      <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-weak-dark" onclick="goHomeFromResult()">홈으로</button>
     </div>
   </div>
 
@@ -834,7 +817,7 @@
     <div class="wkt-next" id="wkt-icon">🧮</div>
     <div class="wkt-name" id="wkt-name">암산 챌린지</div>
     <div class="wkt-desc" id="wkt-desc">준비되셨나요?</div>
-    <button class="btn btn-primary" onclick="wkStartNext()" style="width:200px;margin-top:12px">시작하기</button>
+    <button class="tds-btn tds-btn-lg tds-btn-primary" onclick="wkStartNext()" style="width:200px;margin-top:12px">시작하기</button>
   </div>
 
   <!-- ===== HEART REFILL ===== -->
@@ -876,53 +859,53 @@
 
   </div>
 
-  <script src="src/core/ait.js?v=127"></script>
-  <script src="src/core/config.js?v=127"></script>
-  <script src="src/core/utils.js?v=127"></script>
-  <script src="src/core/workout.js?v=127"></script>
-  <script src="src/core/ticket.js?v=127"></script>
-  <script src="src/ui/game_common.js?v=127"></script>
-  <script src="src/ui/home.js?v=127"></script>
-  <script src="src/ui/result.js?v=127"></script>
-  <script src="src/ui/leaderboard.js?v=127"></script>
-  <script src="src/games/math.js?v=127"></script>
-  <script src="src/games/memory.js?v=127"></script>
-  <script src="src/games/sequence.js?v=127"></script>
-  <script src="src/games/stroop.js?v=127"></script>
-  <script src="src/games/reaction.js?v=127"></script>
-  <script src="src/games/word.js?v=127"></script>
-  <script src="src/games/pattern.js?v=127"></script>
-  <script src="src/games/focus.js?v=127"></script>
-  <script src="src/games/rotate.js?v=127"></script>
-  <script src="src/games/reverse.js?v=127"></script>
-  <script src="src/games/numtouch.js?v=127"></script>
-  <script src="src/games/rhythm.js?v=127"></script>
-  <script src="src/games/rps.js?v=127"></script>
-  <script src="src/games/oddone.js?v=127"></script>
-  <script src="src/games/compare.js?v=127"></script>
-  <script src="src/games/bulb.js?v=127"></script>
-  <script src="src/games/colormix.js?v=127"></script>
-  <script src="src/games/wordcomp.js?v=127"></script>
-  <script src="src/games/timing.js?v=127"></script>
-  <script src="src/games/matchpair.js?v=127"></script>
-  <script src="src/games/headcount.js?v=127"></script>
-  <script src="src/games/pyramid.js?v=127"></script>
-  <script src="src/games/maxnum.js?v=127"></script>
-  <script src="src/games/signfind.js?v=127"></script>
-  <script src="src/games/coincount.js?v=127"></script>
-  <script src="src/games/clock.js?v=127"></script>
-  <script src="src/games/wordmem.js?v=127"></script>
-  <script src="src/games/blockcount.js?v=127"></script>
-  <script src="src/games/flanker.js?v=127"></script>
-  <script src="src/games/memgrid.js?v=127"></script>
-  <script src="src/games/nback.js?v=127"></script>
-  <script src="src/games/scramble.js?v=127"></script>
-  <script src="src/games/serial.js?v=127"></script>
-  <script src="src/games/leftright.js?v=127"></script>
-  <script src="src/games/calccomp.js?v=127"></script>
-  <script src="src/games/flash.js?v=127"></script>
-  <script src="src/games/sort.js?v=127"></script>
-  <script src="src/games/mirror.js?v=127"></script>
+  <script src="src/core/ait.js?v=130"></script>
+  <script src="src/core/config.js?v=130"></script>
+  <script src="src/core/utils.js?v=130"></script>
+  <script src="src/core/workout.js?v=130"></script>
+  <script src="src/core/ticket.js?v=130"></script>
+  <script src="src/ui/game_common.js?v=130"></script>
+  <script src="src/ui/home.js?v=130"></script>
+  <script src="src/ui/result.js?v=130"></script>
+  <script src="src/ui/leaderboard.js?v=130"></script>
+  <script src="src/games/math.js?v=130"></script>
+  <script src="src/games/memory.js?v=130"></script>
+  <script src="src/games/sequence.js?v=130"></script>
+  <script src="src/games/stroop.js?v=130"></script>
+  <script src="src/games/reaction.js?v=130"></script>
+  <script src="src/games/word.js?v=130"></script>
+  <script src="src/games/pattern.js?v=130"></script>
+  <script src="src/games/focus.js?v=130"></script>
+  <script src="src/games/rotate.js?v=130"></script>
+  <script src="src/games/reverse.js?v=130"></script>
+  <script src="src/games/numtouch.js?v=130"></script>
+  <script src="src/games/rhythm.js?v=130"></script>
+  <script src="src/games/rps.js?v=130"></script>
+  <script src="src/games/oddone.js?v=130"></script>
+  <script src="src/games/compare.js?v=130"></script>
+  <script src="src/games/bulb.js?v=130"></script>
+  <script src="src/games/colormix.js?v=130"></script>
+  <script src="src/games/wordcomp.js?v=130"></script>
+  <script src="src/games/timing.js?v=130"></script>
+  <script src="src/games/matchpair.js?v=130"></script>
+  <script src="src/games/headcount.js?v=130"></script>
+  <script src="src/games/pyramid.js?v=130"></script>
+  <script src="src/games/maxnum.js?v=130"></script>
+  <script src="src/games/signfind.js?v=130"></script>
+  <script src="src/games/coincount.js?v=130"></script>
+  <script src="src/games/clock.js?v=130"></script>
+  <script src="src/games/wordmem.js?v=130"></script>
+  <script src="src/games/blockcount.js?v=130"></script>
+  <script src="src/games/flanker.js?v=130"></script>
+  <script src="src/games/memgrid.js?v=130"></script>
+  <script src="src/games/nback.js?v=130"></script>
+  <script src="src/games/scramble.js?v=130"></script>
+  <script src="src/games/serial.js?v=130"></script>
+  <script src="src/games/leftright.js?v=130"></script>
+  <script src="src/games/calccomp.js?v=130"></script>
+  <script src="src/games/flash.js?v=130"></script>
+  <script src="src/games/sort.js?v=130"></script>
+  <script src="src/games/mirror.js?v=130"></script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {

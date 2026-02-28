@@ -1,4 +1,4 @@
-// ===== 21. HEAD COUNT =====
+// ===== 21. HEAD COUNT - 인원 세기 =====
 let hcScore,hcRound,hcCount,hcAnim,hcTime;
 const HC_CHAR='<img src="char-40.png" style="width:100%;height:100%">';
 function initHeadcount(){hcScore=0;hcRound=0;document.getElementById('hc-score').textContent='0점';
@@ -32,6 +32,6 @@ document.getElementById('hc-opts').innerHTML=opts.map(n=>`<div class="hc-opt" on
 },900)}
 function hcPick(el,n,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;
 document.querySelectorAll('.hc-opt').forEach(o=>o.style.pointerEvents='none');
-if(n===ans){el.classList.add('ok');hcScore+=10+hcRound*2;setScore('hc-score',hcScore);toast('정답!');setTimeout(hcNext,800)}
+if(n===ans){el.classList.add('ok');hcScore+=10+hcRound*2;setScore('hc-score',hcScore);toast('정답!');scheduleNextQuestion(hcNext,800)}
 else{el.classList.add('no');document.querySelectorAll('.hc-opt').forEach(o=>{if(+o.textContent===ans)o.classList.add('ok')});
-curScore=hcScore;if(loseHeart('hc'))return;setTimeout(hcNext,800)}}
+curScore=hcScore;if(loseHeart('hc'))return;scheduleNextQuestion(hcNext,800)}}
