@@ -202,3 +202,49 @@ function wkFinish(){
   document.getElementById('overlay').classList.remove('active');
   goHome();
 }
+
+function wkFinishWithAd(){
+  // 먼저 완료 처리 (XP 지급, 저장) — overlay는 닫지 않음
+  const wk=getTodayWorkout();
+  if(!wk.completed&&wk.done.length>=WK_SIZE){
+    wk.completed=true;saveWorkout(wk);
+    addXP(50);
+    if(window.AIT && AIT.checkPromoFirstWorkout)AIT.checkPromoFirstWorkout();
+  }
+  wkActive=false;
+
+  // 광고 표시
+  if(window.AIT && AIT.isToss){
+    AIT.showAd('interstitial')
+      .then(r=>{
+        if(r && r.success!==false){
+          const wk2=getTodayWorkout();
+          if(!wk2.adRewarded){
+            wk2.adRewarded=true;saveWorkout(wk2);
+            addPoints(3);
+            if(window.AIT) AIT.log('workout_ad_rewarded',{});
+            toast('두뇌점수 3점 획득!');
+          }
+        } else {
+          toast('광고를 불러오지 못했어요');
+        }
+        document.getElementById('overlay').classList.remove('active');
+        goHome();
+      })
+      .catch(()=>{
+        toast('광고를 불러오지 못했어요');
+        document.getElementById('overlay').classList.remove('active');
+        goHome();
+      });
+  } else {
+    // 비Toss 환경(로컬 개발): 광고 없이 바로 3점 지급
+    const wk2=getTodayWorkout();
+    if(!wk2.adRewarded){
+      wk2.adRewarded=true;saveWorkout(wk2);
+      addPoints(3);
+      toast('두뇌점수 3점 획득! (테스트)');
+    }
+    document.getElementById('overlay').classList.remove('active');
+    goHome();
+  }
+}
