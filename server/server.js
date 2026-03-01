@@ -750,6 +750,7 @@ function handleDisconnect(userKey, referrer) {
   db.prepare('DELETE FROM cashword_exchanges WHERE user_hash = ?').run(userHash);
   console.log(`[Disconnect] ${referrer || 'UNKNOWN'} — deleted data for userKey: ${userKey}`);
 }
+app.options('/api/score/disconnect', cors({ origin: '*' }));
 app.get('/api/score/disconnect', cors({ origin: '*' }), (req, res) => {
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.query;
