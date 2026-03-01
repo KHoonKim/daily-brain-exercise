@@ -31,6 +31,7 @@ function _showGameCompleteOverlay(cb) {
     </svg>
     <div class="tds-t2 tds-fw-bold" style="color:#fff;margin-top:12px">게임 완료!</div>
   </div>`;
+  document.querySelector('.game-complete-overlay')?.remove();
   document.body.appendChild(el);
   setTimeout(() => { el.remove(); cb(); }, 1000);
 }
