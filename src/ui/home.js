@@ -132,7 +132,7 @@ function renderHome(){
   if(window.AIT) {
     setTimeout(()=>{
       AIT.loadBannerAd('home-banner-1');
-      AIT.loadBannerAd('home-banner-2');
+      AIT.loadBannerAd('home-banner-2', {spaceId: AIT.CONFIG.AD_IMAGE_BANNER_ID});
       AIT.loadBannerAd('home-banner-4');
     }, 200);
   }

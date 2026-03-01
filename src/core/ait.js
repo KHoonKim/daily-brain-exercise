@@ -66,9 +66,9 @@ window.AIT = (() => {
 
   // ── Config ──
   const CONFIG = {
-    AD_BANNER_ID: 'ait.v2.live.b85a333f502c4b39',        // 배너형: 홈화면 하단
-    AD_IMAGE_BANNER_ID: 'ait.v2.live.0118ea745ccf494d',  // 이미지 강조형: 코인 상세 페이지 하단
-    AD_INTERSTITIAL_ID: 'ait.v2.live.253409cb2c514e7f',  // 전면형: 광고보고 다음 문제 풀기
+    AD_BANNER_ID: 'ait.v2.live.47d7aeae54c14818',
+    AD_IMAGE_BANNER_ID: 'ait.v2.live.2892ccfe07f44db8',
+    AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',
     AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
     // 프로모션 코드 (실제 코드는 Toss 콘솔 승인 후 교체)
     PROMO_FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',    // 토스로 로그인하기
