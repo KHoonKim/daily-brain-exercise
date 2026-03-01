@@ -248,3 +248,33 @@ function wkFinishWithAd(){
     goHome();
   }
 }
+
+function wkWatchAdForReward(){
+  if(window.AIT && AIT.isToss){
+    AIT.showAd('interstitial')
+      .then(r=>{
+        if(r && r.success!==false){
+          const wk=getTodayWorkout();
+          if(!wk.adRewarded){
+            wk.adRewarded=true;saveWorkout(wk);
+            addPoints(3);
+            if(window.AIT) AIT.log('workout_ad_rewarded_home',{});
+            toast('두뇌점수 3점 획득!');
+            renderWorkout();
+          }
+        } else {
+          toast('광고를 불러오지 못했어요');
+        }
+      })
+      .catch(()=>{ toast('광고를 불러오지 못했어요'); });
+  } else {
+    // 비Toss 환경
+    const wk=getTodayWorkout();
+    if(!wk.adRewarded){
+      wk.adRewarded=true;saveWorkout(wk);
+      addPoints(3);
+      toast('두뇌점수 3점 획득! (테스트)');
+      renderWorkout();
+    }
+  }
+}
