@@ -21,8 +21,23 @@ function getRetryMotivation(gameId, score, best, isNew) {
   return { msg: '첫 기록이 세워졌어요! 더 높은 점수에 도전?', btn };
 }
 
+function _showGameCompleteOverlay(cb) {
+  const el = document.createElement('div');
+  el.className = 'game-complete-overlay';
+  el.innerHTML = `<div class="game-complete-card">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:52px;height:52px;display:block;margin:0 auto">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="8 12 11 15 16 9"/>
+    </svg>
+    <div class="tds-t2 tds-fw-bold" style="color:#fff;margin-top:12px">게임 완료!</div>
+  </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.remove(); cb(); }, 1000);
+}
+
 let _showResultArgs = null;
 function showResult(score, name, stats, extra = {}) {
+  cancelNextQuestion();
   const isTimerEnd = extra._isTimerEnd || false;
   const curGameMeta = GAMES.find(g => g.id === curGame);
 
@@ -38,9 +53,12 @@ function showResult(score, name, stats, extra = {}) {
   }
   curScore = score;
   const best = LS.get(curGame + '-best', 0), isNew = score > best;
-  const freeTarget = best > 0 ? Math.round(best * (curGame === 'reaction' ? 1.01 : 1.05)) : 0;
-  const freeBonus = best > 0 && score >= freeTarget;
+  const isFreeMode = curGameContext === 'free';
+  const freeBest = isFreeMode ? LS.get(curGame + '-free-best', 0) : best;
+  const freeTarget = freeBest > 0 ? Math.round(freeBest * (curGame === 'reaction' ? 1.01 : 1.05)) : curGoal;
+  const freeBonus = !wkActive && freeTarget > 0 && score >= freeTarget && (!isFreeMode || freeBest >= best);
   if (isNew) LS.set(curGame + '-best', score);
+  if (isFreeMode && score > freeBest) LS.set(curGame + '-free-best', score);
   recordPlay();
 
   let xpGain = 10 + Math.floor(score / 5);
@@ -53,7 +71,7 @@ function showResult(score, name, stats, extra = {}) {
   const completed = updateMission(curGame, score, extra);
   completed.forEach(m => addXP(m.xp));
 
-  if (freeBonus) { addPoints(1); toast('목표점수 달성! 두뇌점수 +1점 획득!'); }
+  if (freeBonus) { addPoints(1); }
 
   // Update UI elements
   document.getElementById('r-title').textContent = name + ' 완료!';
@@ -164,6 +182,7 @@ function showResult(score, name, stats, extra = {}) {
       .then(r => r.json())
       .then(d => {
         const top = 100 - d.percentile;
+        LS.set(curGame + '-pct', top);
         document.getElementById('r-pct-val').textContent = top <= 1 ? '상위 1%' : `상위 ${top}%`;
         document.getElementById('r-pct-val').style.color = top <= 10 ? 'var(--ok)' : top <= 30 ? 'var(--purple)' : 'var(--p)';
         document.getElementById('r-pct-players').textContent = d.totalPlayers >= 100 ? `${d.totalPlayers.toLocaleString()}명 참여` : '';
@@ -185,12 +204,13 @@ function showResult(score, name, stats, extra = {}) {
     document.getElementById('r-main-btn').onclick = () => replayGame();
   }
 
-  document.getElementById('overlay').classList.add('active');
-  AIT.loadBannerAd('r-banner');
-
-  if (newRank !== oldRank) {
-    setTimeout(() => showLevelUp(newRank, newXP), 600);
-  }
+  _showGameCompleteOverlay(() => {
+    document.getElementById('overlay').classList.add('active');
+    AIT.loadBannerAd('r-banner');
+    if (newRank !== oldRank && newRank.age % 10 === 0) {
+      setTimeout(() => showLevelUp(newRank, newXP), 600);
+    }
+  });
 }
 
 function showLevelUp(rank, xp) {
