@@ -751,20 +751,24 @@ function handleDisconnect(userKey, referrer) {
   console.log(`[Disconnect] ${referrer || 'UNKNOWN'} — deleted data for userKey: ${userKey}`);
 }
 function setDisconnectCors(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-  res.removeHeader('Access-Control-Allow-Credentials');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (origin) res.setHeader('Vary', 'Origin');
   next();
 }
 app.options('/api/score/disconnect', setDisconnectCors, (req, res) => res.status(204).end());
 app.get('/api/score/disconnect', setDisconnectCors, (req, res) => {
+  if (!req.headers.authorization) return res.json({ status: 'ok' }); // 포털 연결 테스트
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.query;
   if (userKey) handleDisconnect(userKey, referrer);
   res.json({ status: 'ok' });
 });
 app.post('/api/score/disconnect', setDisconnectCors, (req, res) => {
+  if (!req.headers.authorization) return res.json({ status: 'ok' }); // 포털 연결 테스트
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.body;
   if (userKey) handleDisconnect(userKey, referrer);
