@@ -205,13 +205,6 @@ function showResult(score, name, stats, extra = {}) {
       // 마지막 게임: 광고 버튼
       wkBtn.textContent = '5초 광고보고 두뇌점수3점 받기';
       wkBtn.onclick = () => wkFinishWithAd();
-      // 보조 버튼: 홈으로 (광고 없이)
-      const homeBtn = document.createElement('button');
-      homeBtn.className = 'tds-btn tds-btn-lg tds-btn-block';
-      homeBtn.style.cssText = 'margin-top:8px;background:transparent;color:var(--sub-text);border:none';
-      homeBtn.textContent = '홈으로';
-      homeBtn.onclick = () => wkFinish();
-      wkBtn.insertAdjacentElement('afterend', homeBtn);
     }
   } else {
     document.getElementById('r-main-btn').onclick = () => replayGame();
