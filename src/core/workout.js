@@ -70,22 +70,13 @@ function renderWorkout(){
   const el=document.getElementById('dailyWorkout');
   if(!el) return;
   const allDone=wk.completed;
+  const adRewarded=wk.adRewarded??false;
   const doneCount=wk.done.length;
   const pct=allDone?100:Math.round(doneCount/WK_SIZE*100);
   const nextIdx=wk.games.findIndex(id=>!wk.done.includes(id));
   const nextGame=nextIdx>=0?GAMES.find(x=>x.id===wk.games[nextIdx]):null;
 
-  el.innerHTML=allDone?`
-    <div class="workout-card done tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
-      <div style="text-align:center;padding:8px 0">
-        <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:48px;height:48px"></div>
-        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px">오늘의 1분 두뇌운동 완료!</div>
-        <div class="tds-t7 tds-color-sub">내일도 잊지 말고 운동하러 오세요!</div>
-      </div>
-      <div class="wk-games" style="margin:14px 0 0;display:flex;gap:8px">
-        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r12);background:rgba(49,130,246,.04);position:relative"><div class="wk-check" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon" style="width:24px;height:24px;color:var(--p)">${GI[g.id]||''}</div><div class="wk-name tds-st13 tds-fw-semibold" style="text-align:center">${g.name}</div><div class="tds-st13 tds-fw-bold" style="color:var(--p)">${wk.scores[id]||0}점</div></div>`}).join('')}
-      </div>
-    </div>`:`
+  el.innerHTML=!allDone?`
     <div class="workout-card tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
       <div style="padding:4px 0 12px">
         <div style="display:flex;gap:4px;margin-bottom:4px">
@@ -110,6 +101,29 @@ function renderWorkout(){
       <button class="wk-start tds-btn tds-btn-xl tds-btn-block tds-btn-primary" onclick="startWorkout()">
         ${doneCount===0?'지금 바로 시작하기':nextGame?'다음: '+nextGame.name:'운동 시작하기'}
       </button>
+    </div>`:!adRewarded?`
+    <div class="workout-card done tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
+      <div style="text-align:center;padding:8px 0">
+        <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:48px;height:48px"></div>
+        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px">오늘의 1분 두뇌운동 완료!</div>
+        <div class="tds-t7 tds-color-sub" style="margin-bottom:16px">광고를 보고 두뇌점수 3점을 받아가세요</div>
+      </div>
+      <div class="wk-games" style="margin:0 0 16px;display:flex;gap:8px">
+        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r12);background:rgba(49,130,246,.04);position:relative"><div class="wk-check" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon" style="width:24px;height:24px;color:var(--p)">${GI[g.id]||''}</div><div class="wk-name tds-st13 tds-fw-semibold" style="text-align:center">${g.name}</div><div class="tds-st13 tds-fw-bold" style="color:var(--p)">${wk.scores[id]||0}점</div></div>`}).join('')}
+      </div>
+      <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" onclick="wkWatchAdForReward()" style="margin-bottom:0">
+        광고보고 두뇌점수 3점 받기
+      </button>
+    </div>`:`
+    <div class="workout-card done tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
+      <div style="text-align:center;padding:8px 0">
+        <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:48px;height:48px"></div>
+        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px">오늘의 1분 두뇌운동 완료!</div>
+        <div class="tds-t7 tds-color-sub">내일도 잊지 말고 운동하러 오세요!</div>
+      </div>
+      <div class="wk-games" style="margin:14px 0 0;display:flex;gap:8px">
+        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--r12);background:rgba(49,130,246,.04);position:relative"><div class="wk-check" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon" style="width:24px;height:24px;color:var(--p)">${GI[g.id]||''}</div><div class="wk-name tds-st13 tds-fw-semibold" style="text-align:center">${g.name}</div><div class="tds-st13 tds-fw-bold" style="color:var(--p)">${wk.scores[id]||0}점</div></div>`}).join('')}
+      </div>
     </div>`;
 }
 
