@@ -746,15 +746,17 @@ function handleDisconnect(userKey, referrer) {
   db.prepare('DELETE FROM users WHERE user_hash = ?').run(userHash);
   db.prepare('DELETE FROM promotion_grants WHERE user_hash = ?').run(userHash);
   db.prepare('DELETE FROM point_exchanges WHERE user_hash = ?').run(userHash);
+  db.prepare('DELETE FROM cashword_coins WHERE user_hash = ?').run(userHash);
+  db.prepare('DELETE FROM cashword_exchanges WHERE user_hash = ?').run(userHash);
   console.log(`[Disconnect] ${referrer || 'UNKNOWN'} — deleted data for userKey: ${userKey}`);
 }
-app.get('/api/score/disconnect', (req, res) => {
+app.get('/api/score/disconnect', cors({ origin: '*' }), (req, res) => {
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.query;
   if (userKey) handleDisconnect(userKey, referrer);
   res.json({ status: 'ok' });
 });
-app.post('/api/score/disconnect', (req, res) => {
+app.post('/api/score/disconnect', cors({ origin: '*' }), (req, res) => {
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.body;
   if (userKey) handleDisconnect(userKey, referrer);
