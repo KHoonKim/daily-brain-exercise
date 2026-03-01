@@ -19,7 +19,8 @@ const app = express();
 const PORT = 3001;
 
 // DB setup
-const db = new Database(path.join(__dirname, 'scores.db'));
+const DB_PATH = process.env.TEST_DB || path.join(__dirname, 'scores.db');
+const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.exec(`
   CREATE TABLE IF NOT EXISTS scores (
@@ -35,6 +36,8 @@ db.exec(`
 // Migration: add user_hash if table existed before
 try { db.exec('ALTER TABLE scores ADD COLUMN user_hash TEXT'); } catch(e) {}
 db.exec('CREATE INDEX IF NOT EXISTS idx_user_hash ON scores(user_hash)');
+// Migration: add points column to users
+try { db.exec('ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0'); } catch(e) {}
 
 // Users table for Toss profile
 db.exec(`
@@ -61,53 +64,49 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Estimated distributions per game: [mean, std]
-// mean = goalDefault (50th percentile anchor — achieving goal = average player)
-// std formula by game type:
-//   isLevel games: std = mean × 0.45
-//   isTimer games: std = mean × 0.40
-//   special (reaction, numtouch, timing): std = mean × 0.35
-//   others: std = mean × 0.40
-// These are overridden by calibration.json when real data accumulates.
+// ESTIMATED: [mean, std] — mean = goalDefault (50th percentile anchor, achieving goal = average player)
+// std by game type: isLevel×0.45, isTimer×0.40, special(reaction/numtouch/timing)×0.35
+// reaction: score = sum of (1000-ms)/10 × 5rounds — ms unit differs, kept separately
+// Overridden by calibration.json when real data accumulates (100+ players per game).
 const ESTIMATED = {
-  math:       [150, 60],   // isTimer, goal=150, std=150×0.40
-  memory:     [80,  32],   // default, goal=80,  std=80×0.40
-  reaction:   [300, 105],  // special, goal=300, std=300×0.35
-  stroop:     [130, 52],   // isTimer, goal=130, std=130×0.40
-  sequence:   [80,  36],   // isLevel, goal=80,  std=80×0.45
-  word:       [70,  28],   // default, goal=70,  std=70×0.40
-  pattern:    [100, 40],   // isTimer, goal=100, std=100×0.40
-  focus:      [150, 60],   // isTimer, goal=150, std=150×0.40
-  rotate:     [70,  28],   // isTimer, goal=70,  std=70×0.40
-  reverse:    [60,  27],   // isLevel, goal=60,  std=60×0.45
-  numtouch:   [80,  28],   // special, goal=80,  std=80×0.35
-  rhythm:     [80,  36],   // isLevel, goal=80,  std=80×0.45
-  rps:        [120, 48],   // isTimer, goal=120, std=120×0.40
-  oddone:     [170, 68],   // isTimer, goal=170, std=170×0.40
-  compare:    [140, 56],   // isTimer, goal=140, std=140×0.40
-  bulb:       [80,  36],   // isLevel, goal=80,  std=80×0.45
-  colormix:   [70,  28],   // isTimer, goal=70,  std=70×0.40
-  wordcomp:   [90,  36],   // isTimer, goal=90,  std=90×0.40
-  timing:     [70,  25],   // special, goal=70,  std=70×0.35
-  matchpair:  [150, 60],   // isTimer, goal=150, std=150×0.40
-  headcount:  [70,  32],   // isTimer+isLevel→isLevel 우선, goal=70, std=70×0.45
-  pyramid:    [60,  24],   // isTimer, goal=60,  std=60×0.40
-  maxnum:     [130, 52],   // isTimer, goal=130, std=130×0.40
-  signfind:   [90,  36],   // isTimer, goal=90,  std=90×0.40
-  coincount:  [70,  28],   // isTimer, goal=70,  std=70×0.40
-  clock:      [60,  24],   // isTimer, goal=60,  std=60×0.40
-  wordmem:    [70,  32],   // isLevel, goal=70,  std=70×0.45
-  blockcount: [70,  28],   // isTimer, goal=70,  std=70×0.40
-  flanker:    [120, 48],   // isTimer, goal=120, std=120×0.40
-  memgrid:    [60,  27],   // isLevel, goal=60,  std=60×0.45
-  nback:      [80,  32],   // isTimer, goal=80,  std=80×0.40
-  scramble:   [70,  28],   // default, goal=70,  std=70×0.40
-  serial:     [100, 40],   // isTimer, goal=100, std=100×0.40
-  leftright:  [120, 48],   // isTimer, goal=120, std=120×0.40
-  calccomp:   [90,  36],   // isTimer, goal=90,  std=90×0.40
-  flash:      [70,  32],   // isLevel, goal=70,  std=70×0.45
-  sort:       [120, 48],   // isTimer, goal=120, std=120×0.40
-  mirror:     [70,  28],   // isTimer, goal=70,  std=70×0.40
+  math:       [120, 48],   // isTimer, goalDefault=120
+  memory:     [80,  32],   // isTimer, goalDefault=80
+  reaction:   [300, 105],  // special: score=(1000-ms)/10×5, goalDefault=2000ms(다른 단위)
+  stroop:     [50,  20],   // isTimer, goalDefault=50
+  sequence:   [150, 68],   // isLevel, goalDefault=150
+  word:       [200, 80],   // default, goalDefault=200
+  pattern:    [30,  12],   // isTimer, goalDefault=30
+  focus:      [200, 80],   // isTimer, goalDefault=200
+  rotate:     [30,  12],   // isTimer, goalDefault=30
+  reverse:    [50,  23],   // isLevel, goalDefault=50
+  numtouch:   [250, 88],   // special, goalDefault=250
+  rhythm:     [120, 54],   // isLevel, goalDefault=120
+  rps:        [50,  20],   // isTimer, goalDefault=50
+  oddone:     [100, 40],   // isTimer, goalDefault=100
+  compare:    [120, 48],   // isTimer, goalDefault=120
+  bulb:       [100, 45],   // isLevel, goalDefault=100
+  colormix:   [70,  28],   // isTimer, goalDefault=70
+  wordcomp:   [80,  32],   // isTimer, goalDefault=80
+  timing:     [80,  28],   // special, goalDefault=80
+  matchpair:  [150, 60],   // isTimer, goalDefault=150
+  headcount:  [50,  23],   // isLevel 우선, goalDefault=50
+  pyramid:    [60,  24],   // isTimer, goalDefault=60
+  maxnum:     [80,  32],   // isTimer, goalDefault=80
+  signfind:   [60,  24],   // isTimer, goalDefault=60
+  coincount:  [50,  20],   // isTimer, goalDefault=50
+  clock:      [70,  28],   // isTimer, goalDefault=70
+  wordmem:    [150, 68],   // isLevel, goalDefault=150
+  blockcount: [50,  20],   // isTimer, goalDefault=50
+  flanker:    [120, 48],   // isTimer, goalDefault=120
+  memgrid:    [200, 90],   // isLevel, goalDefault=200
+  nback:      [100, 40],   // isTimer, goalDefault=100
+  scramble:   [70,  28],   // default, goalDefault=70
+  serial:     [80,  32],   // isTimer, goalDefault=80
+  leftright:  [80,  32],   // isTimer, goalDefault=80
+  calccomp:   [80,  32],   // isTimer, goalDefault=80
+  flash:      [150, 68],   // isLevel, goalDefault=150
+  sort:       [120, 48],   // isTimer, goalDefault=120
+  mirror:     [80,  32],   // isTimer, goalDefault=80
 };
 
 // Load persisted calibration if exists (overrides ESTIMATED defaults)
@@ -131,8 +130,12 @@ function normalCDF(x) {
 }
 
 function estimatedPercentile(game, score) {
-  const [mean, std] = ESTIMATED[game] || [50, 20];
-  const z = (score - mean) / std;
+  if (score <= 0) return 1;
+  // Log-normal distribution: median = ESTIMATED mean, σ = ln(5)/1.28 ≈ 1.257
+  // → 90th percentile (top 10%) = 5 × median
+  const [median] = ESTIMATED[game] || [50, 20];
+  const SIGMA = Math.log(5) / 1.28; // ≈ 1.257
+  const z = (Math.log(score) - Math.log(median)) / SIGMA;
   return Math.max(1, Math.min(99, Math.round(normalCDF(z) * 100)));
 }
 
@@ -485,6 +488,24 @@ app.post('/api/score/promo/record', (req, res) => {
   }
 });
 
+// POST /api/score/points/add — 서버에 포인트 적립 기록
+app.post('/api/score/points/add', (req, res) => {
+  const { userHash, amount } = req.body;
+  if (!userHash || !amount || amount <= 0) return res.status(400).json({ error: 'userHash and positive amount required' });
+  const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
+  if (!user) return res.status(404).json({ error: 'user not found' });
+  const newPoints = (user.points || 0) + amount;
+  db.prepare('UPDATE users SET points = ? WHERE user_hash = ?').run(newPoints, userHash);
+  res.json({ status: 'ok', points: newPoints });
+});
+
+// GET /api/score/points/:userHash — 서버 포인트 잔액 조회
+app.get('/api/score/points/:userHash', (req, res) => {
+  const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(req.params.userHash);
+  if (!user) return res.status(404).json({ error: 'user not found' });
+  res.json({ points: user.points || 0 });
+});
+
 // Point exchange (두뇌점수 100점 → 100원)
 db.exec(`
   CREATE TABLE IF NOT EXISTS point_exchanges (
@@ -498,9 +519,14 @@ db.exec(`
 `);
 
 app.post('/api/score/promo/exchange', (req, res) => {
-  const { userHash, points } = req.body;
-  if (!userHash || !points) return res.status(400).json({ error: 'userHash and points required' });
-  if (points < 100) return res.status(400).json({ error: 'minimum 100 points' });
+  const { userHash } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'userHash required' });
+
+  // 서버 잔액 확인
+  const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
+  if (!user) return res.status(404).json({ error: 'user not found' });
+  const serverPoints = user.points || 0;
+  if (serverPoints < 100) return res.status(400).json({ error: 'insufficient_points', points: serverPoints });
 
   // 최근 10초 내 동일 유저 교환 요청 방지 (동시성)
   const recent = db.prepare(
@@ -508,13 +534,41 @@ app.post('/api/score/promo/exchange', (req, res) => {
   ).get(userHash);
   if (recent) return res.status(429).json({ error: 'too_fast', message: '잠시 후 다시 시도해주세요' });
 
-  // 교환 기록
-  const result = db.prepare(
-    'INSERT INTO point_exchanges (user_hash, points, amount, status) VALUES (?, ?, 100, ?)'
-  ).run(userHash, points, 'granted');
+  // 서버 잔액 차감 + 교환 기록 (트랜잭션)
+  const doExchange = db.transaction(() => {
+    db.prepare('UPDATE users SET points = points - 100 WHERE user_hash = ?').run(userHash);
+    return db.prepare(
+      'INSERT INTO point_exchanges (user_hash, points, amount, status) VALUES (?, ?, 100, ?)'
+    ).run(userHash, serverPoints, 'pending');
+  });
+  const result = doExchange();
 
-  console.log(`[Exchange] user=${userHash} points=${points} → 100원 (id=${result.lastInsertRowid})`);
+  console.log(`[Exchange] user=${userHash} points=${serverPoints} → 100원 (id=${result.lastInsertRowid})`);
   res.json({ status: 'ok', exchangeId: result.lastInsertRowid });
+});
+
+// POST /api/score/promo/exchange/:id/confirm — SDK 성공 후 'granted' 확정
+app.post('/api/score/promo/exchange/:id/confirm', (req, res) => {
+  const { id } = req.params;
+  const row = db.prepare('SELECT * FROM point_exchanges WHERE id = ?').get(id);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  if (row.status !== 'pending') return res.json({ status: row.status }); // 이미 처리됨
+  db.prepare("UPDATE point_exchanges SET status = 'granted' WHERE id = ?").run(id);
+  res.json({ status: 'ok' });
+});
+
+// POST /api/score/promo/exchange/:id/restore — SDK 실패 시 포인트 복원
+app.post('/api/score/promo/exchange/:id/restore', (req, res) => {
+  const { id } = req.params;
+  const row = db.prepare('SELECT * FROM point_exchanges WHERE id = ?').get(id);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  if (row.status !== 'pending') return res.status(400).json({ error: 'already_processed' });
+  db.transaction(() => {
+    db.prepare('UPDATE users SET points = points + 100 WHERE user_hash = ?').run(row.user_hash);
+    db.prepare("UPDATE point_exchanges SET status = 'cancelled' WHERE id = ?").run(id);
+  })();
+  console.log(`[Exchange Restore] id=${id} user=${row.user_hash} +100점 복원`);
+  res.json({ status: 'ok' });
 });
 
 // Exchange history for a user
@@ -767,6 +821,10 @@ app.post('/api/admin/reset-db', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Score API running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Score API running on port ${PORT}`);
+  });
+}
+
+module.exports = { app };

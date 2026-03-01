@@ -141,6 +141,7 @@ window.AIT = (() => {
   // 배너 광고는 TossAdsSpaceKit + fetchTossAd 방식 사용 (loadAppsInTossAdMob은 전면 광고 전용)
   const _TOSS_ADS_SDK_URL = 'https://static.toss.im/ads/sdk/toss-ads-space-kit-1.3.0.js';
   let _tossAdSdkPromise = null;
+  let _sdkInitPromise = null; // race condition 방지: 중복 sdk.init() 호출 차단
 
   function _loadTossAdSdk() {
     if (_tossAdSdkPromise) return _tossAdSdkPromise;
@@ -160,47 +161,150 @@ window.AIT = (() => {
     return _tossAdSdkPromise;
   }
 
+  // fetchTossAd 지원 여부 확인 (공식 프레임워크와 동일한 체크)
+  const _fetchTossAdSupported = () => !!(window.__CONSTANT_HANDLER_MAP?.fetchTossAd_isSupported);
+
+  // fetchTossAd 응답 정규화 (공식 @apps-in-toss/web-framework Re() 함수와 동일한 로직)
+  // 두 가지 응답 형식 모두 처리:
+  //   1. wrapped:   { resultType: 'SUCCESS', success: { ads:[...], requestId:'', ... } }
+  //   2. unwrapped: { ads:[...], requestId:'', status:'OK', ... }
+  function _normalizeAdResponse(raw) {
+    const VALID_STYLE_IDS = new Set(['1', '2']);
+    const filterAds = (ads) => Array.isArray(ads) ? ads.filter(a => VALID_STYLE_IDS.has(String(a.styleId))) : [];
+    const hasResultType = raw && typeof raw === 'object' && 'resultType' in raw;
+    const hasAds = raw && typeof raw === 'object' && 'ads' in raw;
+    if (hasResultType) {
+      if (raw.resultType !== 'SUCCESS') return raw;
+      if (!raw.success) return { resultType: 'FAIL', error: { reason: 'fetchTossAd returned SUCCESS without payload' } };
+      return { ...raw, success: { ...raw.success, ads: filterAds(raw.success.ads) } };
+    }
+    if (hasAds) {
+      return { resultType: 'SUCCESS', success: { requestId: raw.requestId || '', status: raw.status || 'OK', ads: filterAds(raw.ads), ext: raw.ext } };
+    }
+    return { resultType: 'FAIL', error: { reason: 'Invalid response from fetchTossAd' } };
+  }
+
+  function _initSdkOnce(sdk) {
+    if (_sdkInitPromise) return _sdkInitPromise;
+    if (sdk.isInitialized()) return Promise.resolve(sdk);
+    _sdkInitPromise = new Promise((resolve) => {
+      try {
+        sdk.init({
+          environment: 'live',
+          customAdFetcher: async (_ctx, slotOpts) => {
+            const spaceUnitId = slotOpts?.spaceUnitId || slotOpts?.spaceId;
+            const isSupported = _fetchTossAdSupported();
+            console.log('[Banner] customAdFetcher: spaceUnitId=', spaceUnitId, 'isSupported=', isSupported, 'RNWV=', !!window.ReactNativeWebView);
+            // 공식 프레임워크와 동일: isSupported 체크 먼저
+            if (!isSupported) {
+              console.warn('[Banner] fetchTossAd not supported in this environment');
+              return { resultType: 'FAIL', error: { reason: 'fetchTossAd is not supported in this environment.' } };
+            }
+            return new Promise((res, rej) => {
+              // 타임아웃: 5초 내 응답 없으면 실패 처리
+              const timer = setTimeout(() => {
+                console.warn('[Banner] fetchTossAd timeout');
+                rej(new Error('fetchTossAd timeout'));
+              }, 5000);
+              const cleanup = _bridgeEvent('fetchTossAd', {
+                options: { adGroupId: spaceUnitId, sdkId: '108', availableStyleIds: ['1', '2'] },
+                onEvent: (r) => {
+                  clearTimeout(timer);
+                  console.log('[Banner] fetchTossAd raw response:', JSON.stringify(r)?.slice(0, 300));
+                  if (cleanup) cleanup();
+                  res(r);
+                },
+                onError: (e) => {
+                  clearTimeout(timer);
+                  console.warn('[Banner] fetchTossAd onError:', e);
+                  if (cleanup) cleanup();
+                  rej(e);
+                }
+              });
+              if (!window.ReactNativeWebView) {
+                clearTimeout(timer);
+                rej(new Error('ReactNativeWebView not available'));
+              }
+            }).then(raw => {
+              const normalized = _normalizeAdResponse(raw);
+              const adCount = normalized?.success?.ads?.length ?? 0;
+              console.log('[Banner] normalized resultType:', normalized?.resultType, 'ads:', adCount);
+              return normalized;
+            }).catch(e => ({ resultType: 'FAIL', error: { reason: String(e?.message || e) } }));
+          },
+          opener: (url) => { _bridgeCall('openURL', [url]).catch(() => {}); }
+        });
+        resolve(sdk);
+      } catch (e) {
+        console.warn('[Banner] sdk.init failed:', e);
+        _sdkInitPromise = null;
+        resolve(sdk);
+      }
+    });
+    return _sdkInitPromise;
+  }
+
+  const _bannerSlots = new Set();
+  const _bannerHandles = new Map(); // containerId -> { destroy() } 슬롯 핸들
+
+  function destroyBannerAd(containerId) {
+    const handle = _bannerHandles.get(containerId);
+    if (handle) { try { handle.destroy(); } catch(e) {} _bannerHandles.delete(containerId); }
+    _bannerSlots.delete(containerId);
+  }
+
   function loadBannerAd(containerId) {
     if (!isToss) {
       const el = document.getElementById(containerId);
-      if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
+      if (el) { el.style.cssText += ';background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px'; el.textContent = '광고 영역'; }
+      return;
+    }
+    if (_bannerSlots.has(containerId)) return; // 이미 슬롯 생성됨 or 대기 중
+    // fetchTossAd가 아직 준비 안 됐으면 1초 간격으로 최대 10회 재시도 (앱 시작 직후 브릿지 초기화 대기)
+    if (!_fetchTossAdSupported()) {
+      _bannerSlots.add(containerId); // 중복 폴링 방지
+      let attempts = 0;
+      const poll = setInterval(() => {
+        attempts++;
+        if (_fetchTossAdSupported()) {
+          clearInterval(poll);
+          _bannerSlots.delete(containerId);
+          loadBannerAd(containerId);
+        } else if (attempts >= 10) {
+          clearInterval(poll);
+          _bannerSlots.delete(containerId);
+          console.warn('[Banner] fetchTossAd 미지원 환경 - 포기:', containerId);
+        }
+      }, 1000);
       return;
     }
     const el = document.getElementById(containerId);
     if (!el) return;
     const handleError = (e) => {
       console.warn('Banner ad error:', e);
-      if (el) { el.style.cssText += ';background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;border-radius:var(--r12)'; el.textContent = '광고 영역'; }
+      el.textContent = '광고 영역';
+      el.style.display = 'flex';
     };
+    console.log('[Banner] loadBannerAd:', containerId, 'RNWV:', !!window.ReactNativeWebView, 'bridge:', !!_bridge);
     _loadTossAdSdk().then(sdk => {
-      if (!sdk.isInitialized()) {
-        sdk.init({
-          environment: 'live',
-          customAdFetcher: async (_ctx, slotOpts) => {
-            return new Promise((res, rej) => {
-              const cleanup = _bridgeEvent('fetchTossAd', {
-                options: { adGroupId: slotOpts.spaceUnitId, sdkId: '108', availableStyleIds: ['1', '2'] },
-                onEvent: (r) => { if (cleanup) cleanup(); res(r); },
-                onError: (e) => { if (cleanup) cleanup(); rej(e); }
-              });
-            }).then(raw => {
-              const ads = Array.isArray(raw?.ads) ? raw.ads.filter(a => ['1', '2'].includes(String(a.styleId))) : [];
-              return { resultType: 'SUCCESS', success: { requestId: raw?.requestId || '', status: 'OK', ads, ext: raw?.ext } };
-            }).catch(e => ({ resultType: 'FAIL', error: { reason: String(e?.message || e) } }));
-          },
-          opener: (url) => { _bridgeCall('openURL', [url]).catch(() => {}); }
-        });
-      }
+      console.log('[Banner] SDK loaded, isInitialized:', sdk.isInitialized(), 'hasBanner:', !!sdk.banner);
+      return _initSdkOnce(sdk);
+    }).then(sdk => {
       if (!sdk.banner) { handleError(new Error('banner not supported')); return; }
-      sdk.banner.createSlot(el, {
+      console.log('[Banner] createSlot:', containerId, CONFIG.AD_BANNER_ID);
+      _bannerSlots.add(containerId);
+      const slotHandle = sdk.banner.createSlot(el, {
         spaceId: CONFIG.AD_BANNER_ID,
+        variant: 'card',
         autoLoad: true,
         callbacks: {
-          onAdFailedToRender: (info) => handleError(info?.error),
+          onAdRendered: () => console.log('[Banner] rendered:', containerId),
+          onAdFailedToRender: (info) => { console.warn('[Banner] failed:', info); destroyBannerAd(containerId); handleError(info?.error); },
           onNoFill: () => console.log('[Banner] No fill:', containerId)
         }
       });
-    }).catch(handleError);
+      if (slotHandle?.destroy) _bannerHandles.set(containerId, slotHandle);
+    }).catch(e => { console.warn('[Banner] SDK load failed:', e); handleError(e); });
   }
 
   // ── Game Center ──
@@ -264,12 +368,11 @@ window.AIT = (() => {
         options: { moduleId: moduleId || CONFIG.SHARE_MODULE_ID },
         onEvent: (e) => {
           if (e && e.type === 'sendViral') {
-            if (typeof addPoints === 'function') addPoints(1);
-            if (typeof toast === 'function') toast('🎉 두뇌점수 +1점 지급 완료!');
+            if (typeof addPoints === 'function') addPoints(5);
             log('share_invite_rewarded', { ...(e.data || {}) });
           } else if (e && e.type === 'close') {
             const { sentRewardsCount } = e.data || {};
-            if (sentRewardsCount > 0 && typeof toast === 'function') toast(`총 ${sentRewardsCount}명에게 공유 완료!`);
+            if (sentRewardsCount > 0 && typeof toast === 'function') toast(`총 ${sentRewardsCount}명 초대 완료!`);
             log('share_invite_close', { ...(e.data || {}) });
             cleanup();
           }
@@ -358,21 +461,21 @@ window.AIT = (() => {
   const _promoGranted = {};
   let _promoLock = {};
   async function triggerPromo(promoType, promoCode, amount) {
-    if (promoType !== 'POINT_100' && _promoGranted[promoType]) return;
-    if (_promoLock[promoType]) return;
+    if (promoType !== 'POINT_100' && _promoGranted[promoType]) return true; // 이미 지급됨
+    if (_promoLock[promoType]) return false;
     _promoLock[promoType] = true;
     try {
       const uh = await getUserHash();
       if (promoType !== 'POINT_100') {
         try {
           const chk = await fetch(`${API_BASE}/api/score/promo/check/${uh}/${promoType}`).then(r=>r.json());
-          if (chk.granted) { _promoGranted[promoType] = true; return; }
+          if (chk.granted) { _promoGranted[promoType] = true; return true; }
         } catch(e) { console.warn('[AIT] promo check failed:', e); }
       }
       let bridgeOk = !isToss;
       if (isToss) {
         const result = await grantPromoReward(promoCode, amount);
-        bridgeOk = result && result.key;
+        bridgeOk = !!(result && result.key);
         console.log('[AIT] triggerPromo result:', promoType, bridgeOk, result);
         if (bridgeOk) log('promo_granted', { type: promoType, amount });
       }
@@ -384,6 +487,7 @@ window.AIT = (() => {
         });
         _promoGranted[promoType] = true;
       }
+      return bridgeOk;
     } finally {
       _promoLock[promoType] = false;
     }
@@ -409,7 +513,7 @@ window.AIT = (() => {
   return {
     isToss, CONFIG, getUserHash, login, getLoginData, triggerPromo,
     checkPromoFirstLogin, checkPromoPoint100, checkPromoFirstWorkout,
-    showAd, preloadAd, loadBannerAd,
+    showAd, preloadAd, loadBannerAd, destroyBannerAd,
     submitScore, openLeaderboard, getProfile,
     storageGet, storageSet, haptic,
     grantPromoReward, shareInvite, shareMessage,

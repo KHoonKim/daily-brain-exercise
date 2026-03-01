@@ -36,9 +36,26 @@ function addCoins(n){const c=getCoins()+n;LS.set('coins',c);return c}
 
 // ===== POINT SYSTEM (토스포인트 교환용) =====
 function getPoints(){return LS.get('points',0)}
+let _pendingPointsTotal=0,_pendingPointsTimer=null;
 function addPoints(n){
   const p=getPoints()+n;LS.set('points',p);
-  toast('+'+n+'점 적립!');
+  _pendingPointsTotal+=n;
+  clearTimeout(_pendingPointsTimer);
+  _pendingPointsTimer=setTimeout(()=>{
+    snackbar(`두뇌점수 <span class="tds-badge tds-badge-sm tds-badge-fill-blue" style="vertical-align:middle;margin-left:2px">🧠 ${_pendingPointsTotal}점</span>`,2500);
+    _pendingPointsTotal=0;
+  },50);
+  // 서버 동기화 (best-effort, non-blocking)
+  if(window.AIT){
+    AIT.getUserHash().then(uh=>{
+      if(!uh) return;
+      fetch(`${API_BASE}/api/score/points/add`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userHash:uh,amount:n})
+      }).catch(()=>{});
+    }).catch(()=>{});
+  }
   return p;
 }
 
@@ -55,7 +72,7 @@ function renderPoints(animate=false){
   if(animate&&_lastRenderedPoints!==null&&p>_lastRenderedPoints){
     animatePointsFrom(_lastRenderedPoints);
   } else {
-    if(prog) prog.textContent=p+' / 100점';
+    if(prog) prog.textContent='🧠 '+p+' / 100점';
     if(bar) bar.style.width=Math.min(100,p)+'%';
   }
   _lastRenderedPoints=p;
@@ -63,25 +80,35 @@ function renderPoints(animate=false){
 }
 
 async function exchangePoints(){
-  const p=getPoints();
-  if(p<100){toast('100점 이상부터 교환 가능합니다');return}
+  if(getPoints()<100){toast('100점 이상부터 교환 가능합니다');return}
   if(!AIT.isToss){toast('토스 앱에서만 교환 가능합니다');return}
   if(_exchangeLock){return}
   _exchangeLock=true;
   const btn=document.getElementById('exchangeBtn');
   if(btn){btn.disabled=true;btn.textContent='교환 중...'}
+  let exchangeId=null;
   try {
     const uh=await AIT.getUserHash();
+    // 1. 서버 잔액 검증 + 차감 (pending 상태)
     const serverRes=await fetch(`${API_BASE}/api/score/promo/exchange`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({userHash:uh,points:p})
+      body:JSON.stringify({userHash:uh})
     }).then(r=>r.json());
     if(serverRes.error){throw new Error(serverRes.error)}
-    await AIT.triggerPromo('POINT_100',AIT.CONFIG.PROMO_POINT_100,100);
+    exchangeId=serverRes.exchangeId;
+    // 2. Toss SDK로 실제 100원 지급
+    const ok=await AIT.triggerPromo('POINT_100',AIT.CONFIG.PROMO_POINT_100,100);
+    if(!ok){
+      // SDK 실패 → 서버 포인트 복원
+      await fetch(`${API_BASE}/api/score/promo/exchange/${exchangeId}/restore`,{method:'POST'}).catch(()=>{});
+      throw new Error('SDK 지급 실패');
+    }
+    // 3. 성공 확정
+    fetch(`${API_BASE}/api/score/promo/exchange/${exchangeId}/confirm`,{method:'POST'}).catch(()=>{});
     LS.set('points',0);renderPoints();
     toast('100원 교환 완료!');
-    AIT.log('point_exchange',{amount:p,userHash:uh});
+    AIT.log('point_exchange',{amount:100,userHash:uh});
   } catch(e) {
     console.error('Exchange failed:',e);
     toast('교환에 실패했습니다. 다시 시도해주세요.');
@@ -106,7 +133,7 @@ function animatePointsFrom(from){
       const p2=document.getElementById('pointProgress'),b2=document.getElementById('pointBar');
       const start=performance.now();
       function tick(now){const t=Math.min(1,(now-start)/dur);const ease=1-Math.pow(1-t,3);const cur=Math.round(from+(to-from)*ease);
-        if(p2)p2.textContent=cur+' / 100점';if(b2)b2.style.width=Math.min(100,cur)+'%';if(t<1)requestAnimationFrame(tick);
+        if(p2)p2.textContent='🧠 '+cur+' / 100점';if(b2)b2.style.width=Math.min(100,cur)+'%';if(t<1)requestAnimationFrame(tick);
         else{const btn=document.getElementById('exchangeBtn');if(btn)btn.disabled=to<100}}
       requestAnimationFrame(tick);
     },1200);
@@ -156,34 +183,54 @@ function doubleCoins(){
 }
 
 // ===== MISSIONS & HISTORY =====
-function getTodayMissions(){
+function getTodayChallenges(){
   const today=getDayKey();
-  let missions=LS.getJSON('missions-'+today,null);
-  if(missions&&(missions.length!==5||missions.every(m=>m.target<=10)||!missions[0].gameId||missions[0].type)){missions=null;localStorage.removeItem('bf-missions-'+today)}
-  if(!missions){
-    const gameMissions=GAMES.map(g=>{
+  let challenges=LS.getJSON('challenges-'+today,null);
+  if(challenges&&(challenges.length!==5||challenges.every(m=>m.target<=10)||!challenges[0].gameId||challenges[0].type)){challenges=null;localStorage.removeItem('bf-challenges-'+today)}
+  if(!challenges){
+    // 오늘의 운동 게임 하드 제외
+    const todayWorkout=LS.getJSON('workout-'+today,null);
+    const workoutIds=new Set(todayWorkout?.games||[]);
+
+    // 최근 3일간 챌린지 게임 소프트 제외
+    const recentIds=new Set();
+    const kst=new Date(new Date().getTime()+9*60*60*1000);
+    if(kst.getUTCHours()<9)kst.setUTCDate(kst.getUTCDate()-1);
+    for(let i=1;i<=3;i++){
+      kst.setUTCDate(kst.getUTCDate()-1);
+      const past=LS.getJSON('challenges-'+kst.toISOString().slice(0,10),null);
+      if(past)past.forEach(m=>{if(m.gameId)recentIds.add(m.gameId)});
+    }
+
+    const gameChallenges=GAMES.map(g=>{
       const best=LS.get(g.id+'-best',0);
-      const target=best>0?Math.round(best*1.05):(g.missionDefault||50);
+      const target=best>0?Math.ceil(best*1.03):(g.goalDefault||50);
       return {id:'goal-'+g.id,gameId:g.id,name:g.name,desc:`${target}점 이상 달성`,target,best,xp:20,icon:'●',bg:g.color,progress:0,done:false};
     });
-    const shuffled=[...gameMissions].sort(()=>Math.random()-.5);
-    missions=shuffled.slice(0,5);
-    LS.setJSON('missions-'+today,missions);
+
+    // 운동 게임 제외 후 최근 챌린지 게임도 제외한 것 우선, 부족하면 최근 챌린지 게임 보충
+    const noWorkout=gameChallenges.filter(m=>!workoutIds.has(m.gameId));
+    const preferred=noWorkout.filter(m=>!recentIds.has(m.gameId));
+    const pool=preferred.length>=5?preferred:[...preferred,...noWorkout.filter(m=>recentIds.has(m.gameId))];
+
+    const shuffled=[...pool].sort(()=>Math.random()-.5);
+    challenges=shuffled.slice(0,5);
+    LS.setJSON('challenges-'+today,challenges);
   }
-  return missions;
+  return challenges;
 }
-function updateMission(gameId,score,extra={}){
+function updateChallenge(gameId,score,extra={}){
   const today=getDayKey();
-  const missions=LS.getJSON('missions-'+today,[]);
+  const challenges=LS.getJSON('challenges-'+today,[]);
   let completed=[];
-  missions.forEach(m=>{
+  challenges.forEach(m=>{
     if(m.done)return;
     if(m.gameId===gameId&&score>=m.target){m.progress=score;m.done=true;completed.push(m);addPoints(1)}
   });
-  LS.setJSON('missions-'+today,missions);
-  const allDone=missions.every(m=>m.done);
-  const bonusKey='mission-bonus-'+today;
-  if(allDone&&!LS.get(bonusKey)){LS.set(bonusKey,1);addPoints(2);toast('챌린지 올클리어 보너스 +2점!')}
+  LS.setJSON('challenges-'+today,challenges);
+  const allDone=challenges.every(m=>m.done);
+  const bonusKey='challenge-bonus-'+today;
+  if(allDone&&!LS.get(bonusKey)){LS.set(bonusKey,1);addPoints(2)}
   return completed;
 }
 function recordDailyScore(score){
