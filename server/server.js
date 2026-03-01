@@ -4,6 +4,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
 
 // .env 파일 로드 (없어도 무시)
 try {
@@ -46,6 +47,7 @@ db.exec(`
     user_name TEXT,
     user_gender TEXT,
     user_birthday TEXT,
+    points INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -446,9 +448,9 @@ app.get('/api/score/user/:userHash', (req, res) => {
 
 // Promotion config (IDs will be filled after approval)
 const PROMOTIONS = {
-  FIRST_LOGIN: 'TEST_01KJ8A3HFMP24HQ5743KD6Q9GK',
-  POINT_100: 'TEST_01KJ8BCF26T648AQ1QCKYMS4TZ',
-  FIRST_WORKOUT: 'TEST_01KJ8B95RPCGDQV9NZSCQ418VT'
+  FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
+  POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
+  FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT'
 };
 
 // Promotion grant table (track per user to prevent duplicates)
@@ -516,6 +518,24 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
+`);
+
+// ===== CASHWORD DB =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS cashword_coins (
+    user_hash TEXT PRIMARY KEY,
+    coins INTEGER DEFAULT 0,
+    total_earned INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS cashword_exchanges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    coins_spent INTEGER NOT NULL DEFAULT 10,
+    toss_points INTEGER NOT NULL DEFAULT 1,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 app.post('/api/score/promo/exchange', (req, res) => {
@@ -819,6 +839,129 @@ app.post('/api/admin/reset-db', (req, res) => {
   db.prepare('DELETE FROM promotion_grants').run();
   db.prepare('DELETE FROM point_exchanges').run();
   res.json({ ok: true });
+});
+
+// ===== 일일 알림 (매일 KST 09:00) =====
+
+// 심사 승인 후 실제 templateSetCode로 교체
+const DAILY_NOTIFY_TEMPLATE = 'PLACEHOLDER_TEMPLATE_SET_CODE';
+const BULK_BATCH_SIZE = 2500;
+
+async function sendDailyNotification() {
+  const users = db.prepare('SELECT user_hash FROM users').all();
+  if (users.length === 0) {
+    console.log('[DailyNotify] 발송 대상 유저 없음');
+    return;
+  }
+
+  let totalSuccess = 0;
+  let totalFail = 0;
+
+  for (let i = 0; i < users.length; i += BULK_BATCH_SIZE) {
+    const chunk = users.slice(i, i + BULK_BATCH_SIZE);
+    const contextList = chunk.map(u => ({
+      userKey: parseInt(u.user_hash, 10),
+      context: {}
+    }));
+
+    try {
+      const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-bulk-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateSetCode: DAILY_NOTIFY_TEMPLATE, contextList })
+      });
+      const data = await resp.json();
+      if (data.resultType === 'SUCCESS') {
+        totalSuccess += chunk.length;
+      } else {
+        totalFail += chunk.length;
+        console.error('[DailyNotify] 배치 실패:', JSON.stringify(data).slice(0, 200));
+      }
+    } catch (e) {
+      totalFail += chunk.length;
+      console.error('[DailyNotify] 배치 오류:', e.message);
+    }
+  }
+
+  console.log(`[DailyNotify] 완료 — 대상: ${users.length}명, 성공: ${totalSuccess}, 실패: ${totalFail}`);
+}
+
+// 매일 KST 09:00 발송 (Asia/Seoul timezone 기준 "0 9 * * *")
+cron.schedule('0 9 * * *', sendDailyNotification, { timezone: 'Asia/Seoul' });
+
+// ===== CASHWORD API =====
+
+// GET /api/cashword/coins/:userHash — 코인 잔액 조회
+app.get('/api/cashword/coins/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  const row = db.prepare('SELECT coins, total_earned FROM cashword_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins: row?.coins || 0, totalEarned: row?.total_earned || 0 });
+});
+
+// POST /api/cashword/coins/add — 코인 적립 (정답 시)
+app.post('/api/cashword/coins/add', (req, res) => {
+  const { userHash, amount } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'userHash required' });
+  // anti-cheat: 1~3 범위만 허용
+  const safeAmount = Math.max(1, Math.min(3, parseInt(amount) || 1));
+  db.prepare(`
+    INSERT INTO cashword_coins (user_hash, coins, total_earned)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET
+      coins = coins + excluded.coins,
+      total_earned = total_earned + excluded.total_earned,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(userHash, safeAmount, safeAmount);
+  const row = db.prepare('SELECT coins, total_earned FROM cashword_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins: row.coins, totalEarned: row.total_earned });
+});
+
+// POST /api/cashword/exchange — 10코인 차감 + 교환 ID 발급
+app.post('/api/cashword/exchange', (req, res) => {
+  const { userHash } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'userHash required' });
+
+  const row = db.prepare('SELECT coins FROM cashword_coins WHERE user_hash = ?').get(userHash);
+  if (!row || row.coins < 10) {
+    return res.status(400).json({ error: 'insufficient_coins', coins: row?.coins || 0 });
+  }
+  // 동시성: 10초 내 중복 교환 차단
+  const recent = db.prepare(
+    "SELECT id FROM cashword_exchanges WHERE user_hash = ? AND created_at > datetime('now', '-10 seconds') AND status = 'pending'"
+  ).get(userHash);
+  if (recent) return res.status(429).json({ error: 'too_fast' });
+
+  const doExchange = db.transaction(() => {
+    db.prepare('UPDATE cashword_coins SET coins = coins - 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(userHash);
+    return db.prepare(
+      'INSERT INTO cashword_exchanges (user_hash, coins_spent, toss_points, status) VALUES (?, 10, 1, ?)'
+    ).run(userHash, 'pending');
+  });
+  const result = doExchange();
+  res.json({ exchangeId: result.lastInsertRowid });
+});
+
+// POST /api/cashword/exchange/:id/confirm — SDK 성공 후 확정
+app.post('/api/cashword/exchange/:id/confirm', (req, res) => {
+  const { id } = req.params;
+  const row = db.prepare('SELECT * FROM cashword_exchanges WHERE id = ?').get(id);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  if (row.status !== 'pending') return res.json({ status: row.status });
+  db.prepare("UPDATE cashword_exchanges SET status = 'granted' WHERE id = ?").run(id);
+  res.json({ status: 'ok' });
+});
+
+// POST /api/cashword/exchange/:id/restore — SDK 실패 시 코인 복원
+app.post('/api/cashword/exchange/:id/restore', (req, res) => {
+  const { id } = req.params;
+  const row = db.prepare('SELECT * FROM cashword_exchanges WHERE id = ?').get(id);
+  if (!row) return res.status(404).json({ error: 'not found' });
+  if (row.status !== 'pending') return res.status(400).json({ error: 'already_processed' });
+  db.transaction(() => {
+    db.prepare('UPDATE cashword_coins SET coins = coins + 10 WHERE user_hash = ?').run(row.user_hash);
+    db.prepare("UPDATE cashword_exchanges SET status = 'cancelled' WHERE id = ?").run(id);
+  })();
+  res.json({ status: 'ok' });
 });
 
 if (require.main === module) {
