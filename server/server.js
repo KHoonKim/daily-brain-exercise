@@ -750,15 +750,21 @@ function handleDisconnect(userKey, referrer) {
   db.prepare('DELETE FROM cashword_exchanges WHERE user_hash = ?').run(userHash);
   console.log(`[Disconnect] ${referrer || 'UNKNOWN'} — deleted data for userKey: ${userKey}`);
 }
-const disconnectCors = cors({ origin: '*', credentials: false });
-app.options('/api/score/disconnect', disconnectCors);
-app.get('/api/score/disconnect', disconnectCors, (req, res) => {
+function setDisconnectCors(req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  res.removeHeader('Access-Control-Allow-Credentials');
+  next();
+}
+app.options('/api/score/disconnect', setDisconnectCors, (req, res) => res.status(204).end());
+app.get('/api/score/disconnect', setDisconnectCors, (req, res) => {
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.query;
   if (userKey) handleDisconnect(userKey, referrer);
   res.json({ status: 'ok' });
 });
-app.post('/api/score/disconnect', disconnectCors, (req, res) => {
+app.post('/api/score/disconnect', setDisconnectCors, (req, res) => {
   if (!verifyDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { userKey, referrer } = req.body;
   if (userKey) handleDisconnect(userKey, referrer);
