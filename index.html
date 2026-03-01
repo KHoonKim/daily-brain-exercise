@@ -119,6 +119,24 @@
         <button class="btn-combo tds-btn tds-btn-md tds-btn-block" id="exchangeBtn" onclick="exchangePoints()" disabled
           style="margin:10px 0 0">100원 교환하기</button>
       </div>
+
+      <!-- 코인 교환하기 (코인 10개 = 토스포인트 1원, 프로모션 검토중) -->
+      <div class="tds-card tds-card--p16" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="tds-t5 tds-fw-bold" style="font-weight:800">코인 교환하기</div>
+          <div class="tds-t6 tds-fw-bold" style="color:#F5A623" id="coinProgress">🪙 0 / 10개</div>
+        </div>
+        <div style="height:6px;background:rgba(25,31,40,.06);border-radius:3px;overflow:hidden">
+          <div id="coinBar" style="height:100%;background:#F5A623;border-radius:2px;transition:width .5s cubic-bezier(.32,.72,0,1);width:0%"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+          <div class="tds-t6" style="color:#F5A623;font-weight:600">게임 완료할 때마다 🪙 1코인 적립</div>
+        </div>
+        <div class="tds-st12 tds-color-sub" style="margin-top:2px">코인 10개 = 토스포인트 1원 · 프로모션 검토 중</div>
+        <button class="tds-btn tds-btn-md tds-btn-block" id="coinExchangeBtn" onclick="exchangeCoins()" disabled
+          style="margin:10px 0 0;background:#F5A623;color:#fff;border:none">교환하기</button>
+      </div>
+
       <div id="streakDays" style="display:none"></div>
 
       <!-- Profile Summary -->
@@ -195,7 +213,7 @@
 
     <!-- ===== OVERLAYS & SCREENS ===== -->
     <div class="screen" id="leaderboardScreen">
-      <div class="g-hdr"><button class="tds-nav__back" onclick="lbBack()">←</button><span class="g-title" id="lb-title">순위</span>
+      <div class="g-hdr"><span class="g-title" id="lb-title">순위</span>
         <div style="width:24px"></div>
       </div>
       <div class="lb-container">
@@ -204,7 +222,7 @@
     </div>
 
     <div class="screen" id="ticketShop">
-      <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">티켓 충전</span><div class="tds-nav__right"></div></div>
+      <div class="g-hdr"><span class="g-title">티켓 충전</span><div class="tds-nav__right"></div></div>
       <div class="g-body" style="padding:24px 20px;text-align:center;justify-content:flex-start;flex:none;height:auto;overflow-y:visible">
         <div style="margin:20px 0 16px"><img src="https://static.toss.im/2d-emojis/svg/u1F39F.svg"
             style="width:72px;height:72px"></div>
@@ -236,7 +254,7 @@
 
   <!-- 게임 화면들 생략... (이후 JS 로드 로직으로 이어짐) -->
   <div class="screen" id="game-math">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">암산 챌린지</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">암산 챌린지</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="math-hearts"></div><span class="g-status-score" id="math-score">0점</span><span class="g-timer" id="math-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -259,7 +277,7 @@
   </div>
 
   <div class="screen" id="game-memory">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">기억력 카드</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">기억력 카드</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="mem-score">0점</span><span class="g-timer" id="mem-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -269,7 +287,7 @@
   </div>
 
   <div class="screen" id="game-sequence">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순서 기억</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">순서 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="seq-hearts"></div><span class="g-status-score" id="seq-score">0점</span><span class="g-timer" id="seq-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -279,7 +297,7 @@
   </div>
 
   <div class="screen" id="game-stroop">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">색깔 맞추기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">색깔 맞추기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="stroop-hearts"></div><span class="g-status-score" id="stroop-score">0점</span><span class="g-timer" id="stroop-timer">60s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -296,7 +314,7 @@
   </div>
 
   <div class="screen" id="game-reaction">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">반응속도</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">반응속도</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="react-score">준비하세요</span><span class="g-timer" id="react-round">1/5</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -307,7 +325,7 @@
   </div>
 
   <div class="screen" id="game-word">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 찾기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">단어 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="word-score">0점</span><span class="g-timer" id="word-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -319,7 +337,7 @@
   </div>
 
   <div class="screen" id="game-pattern">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">패턴 완성</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">패턴 완성</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="pat-hearts"></div><span class="g-status-score" id="pat-score">0점</span><span class="g-timer" id="pat-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -330,7 +348,7 @@
   </div>
 
   <div class="screen" id="game-focus">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">집중력 탭</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">집중력 탭</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="focus-score">0점</span><span class="g-timer" id="focus-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -340,7 +358,7 @@
   </div>
 
   <div class="screen" id="game-rotate">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">도형 회전</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">도형 회전</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rot-hearts"></div><span class="g-status-score" id="rot-score">0점</span><span class="g-timer" id="rot-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -351,7 +369,7 @@
   </div>
 
   <div class="screen" id="game-reverse">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순서 뒤집기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">순서 뒤집기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rev-hearts"></div><span class="g-status-score" id="rev-score">0점</span><span class="g-timer" id="rev-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -374,7 +392,7 @@
 
   <!-- ===== NEW GAMES ===== -->
   <div class="screen" id="game-numtouch">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">넘버 터치</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">넘버 터치</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="nt-hearts"></div><span class="g-status-score" id="nt-score">0점</span><span class="g-timer" id="nt-timer">0.0s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -384,7 +402,7 @@
   </div>
 
   <div class="screen" id="game-rhythm">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">리듬 기억</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">리듬 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rhy-hearts"></div><span class="g-status-score" id="rhy-score">0점</span><span class="g-timer" id="rhy-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -399,7 +417,7 @@
   </div>
 
   <div class="screen" id="game-rps">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">두뇌 가위바위보</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">두뇌 가위바위보</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="rps-hearts"></div><span class="g-status-score" id="rps-score">0점</span><span class="g-timer" id="rps-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -417,7 +435,7 @@
   </div>
 
   <div class="screen" id="game-oddone">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">다른 글자 찾기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">다른 글자 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="odd-hearts"></div><span class="g-status-score" id="odd-score">0점</span><span class="g-timer" id="odd-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -433,7 +451,7 @@
   </div>
 
   <div class="screen" id="game-compare">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">크다작다</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">크다작다</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cmp-hearts"></div><span class="g-status-score" id="cmp-score">0점</span><span class="g-timer" id="cmp-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -453,7 +471,7 @@
   </div>
 
   <div class="screen" id="game-bulb">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">전구 기억</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">전구 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="bulb-hearts"></div><span class="g-status-score" id="bulb-score">0점</span><span class="g-timer" id="bulb-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -463,7 +481,7 @@
   </div>
 
   <div class="screen" id="game-colormix">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">색깔 조합</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">색깔 조합</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cmx-hearts"></div><span class="g-status-score" id="cmx-score">0점</span><span class="g-timer" id="cmx-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -479,7 +497,7 @@
   </div>
 
   <div class="screen" id="game-wordcomp">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 완성</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">단어 완성</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="wc-hearts"></div><span class="g-status-score" id="wc-score">0점</span><span class="g-timer" id="wc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -496,7 +514,7 @@
   </div>
 
   <div class="screen" id="game-timing">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">타이밍</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">타이밍</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="tm-score">0점</span><span class="g-timer" id="tm-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -509,7 +527,7 @@
   </div>
 
   <div class="screen" id="game-matchpair">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">짝 맞추기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">짝 맞추기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mp-hearts"></div><span class="g-status-score" id="mp-score">0점</span><span class="g-timer" id="mp-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -523,7 +541,7 @@
 
   <!-- ===== NINTENDO-STYLE GAMES ===== -->
   <div class="screen" id="game-headcount">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">인원 세기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">인원 세기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="hc-hearts"></div><span class="g-status-score" id="hc-score">0점</span><span class="g-timer" id="hc-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -538,7 +556,7 @@
   </div>
 
   <div class="screen" id="game-pyramid">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">피라미드 연산</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">피라미드 연산</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="pyr-hearts"></div><span class="g-status-score" id="pyr-score">0점</span><span class="g-timer" id="pyr-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -554,7 +572,7 @@
   </div>
 
   <div class="screen" id="game-maxnum">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">수 찾기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">수 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mn-hearts"></div><span class="g-status-score" id="mx-score">0점</span><span class="g-timer" id="mx-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -570,7 +588,7 @@
   </div>
 
   <div class="screen" id="game-signfind">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">부호 찾기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">부호 찾기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="sf-hearts"></div><span class="g-status-score" id="sf-score">0점</span><span class="g-timer" id="sf-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -586,7 +604,7 @@
   </div>
 
   <div class="screen" id="game-coincount">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">동전 세기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">동전 세기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cc-hearts"></div><span class="g-status-score" id="cc-score">0점</span><span class="g-timer" id="cc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -597,7 +615,7 @@
   </div>
 
   <div class="screen" id="game-clock">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">시계 읽기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">시계 읽기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="clk-hearts"></div><span class="g-status-score" id="clk-score">0점</span><span class="g-timer" id="clk-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -614,7 +632,7 @@
   </div>
 
   <div class="screen" id="game-wordmem">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">단어 암기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">단어 암기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="wm-hearts"></div><span class="g-status-score" id="wm-score">0점</span><span class="g-timer" id="wm-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -625,7 +643,7 @@
   </div>
 
   <div class="screen" id="game-blockcount">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">블록 세기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">블록 세기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="bc-hearts"></div><span class="g-status-score" id="bc-score">0점</span><span class="g-timer" id="bc-round">1/10</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -643,7 +661,7 @@
 
   <!-- 29. FLANKER -->
   <div class="screen" id="game-flanker">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">방향 맞추기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">방향 맞추기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="fk-hearts"></div><span class="g-status-score" id="fk-score">0점</span><span class="g-timer" id="fk-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -668,7 +686,7 @@
   </div>
   <!-- 30. MEMGRID -->
   <div class="screen" id="game-memgrid">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">격자 기억</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">격자 기억</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mg-hearts"></div><span class="g-status-score" id="mg-score">0점</span><span class="g-timer" id="mg-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -678,7 +696,7 @@
   </div>
   <!-- 31. NBACK -->
   <div class="screen" id="game-nback">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">같거나 다르거나</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">같거나 다르거나</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="nb-score">0점</span><span class="g-timer" id="nb-round">1/20</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -700,7 +718,7 @@
   </div>
   <!-- 32. SCRAMBLE -->
   <div class="screen" id="game-scramble">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">글자 섞기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">글자 섞기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="sc-hearts"></div><span class="g-status-score" id="sc-score">0점</span><span class="g-timer" id="sc-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -718,7 +736,7 @@
   </div>
   <!-- 33. SERIAL -->
   <div class="screen" id="game-serial">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">연속 빼기</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">연속 빼기</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div></div><span class="g-status-score" id="sr-score">0점</span><span class="g-timer" id="sr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -729,7 +747,7 @@
   </div>
   <!-- 34. LEFTRIGHT -->
   <div class="screen" id="game-leftright">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">좌우 판단</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">좌우 판단</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="lr-hearts"></div><span class="g-status-score" id="lr-score">0점</span><span class="g-timer" id="lr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -749,7 +767,7 @@
   </div>
   <!-- 35. CALCCOMP -->
   <div class="screen" id="game-calccomp">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">계산 비교</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">계산 비교</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="cc2-hearts"></div><span class="g-status-score" id="cc2-score">0점</span><span class="g-timer" id="cc2-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -773,7 +791,7 @@
   </div>
   <!-- 36. FLASH -->
   <div class="screen" id="game-flash">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">순간 포착</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">순간 포착</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="fl-hearts"></div><span class="g-status-score" id="fl-score">0점</span><span class="g-timer" id="fl-level">Lv.1</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -786,7 +804,7 @@
   </div>
   <!-- 37. SORT -->
   <div class="screen" id="game-sort">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">카테고리 분류</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">카테고리 분류</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="st-hearts"></div><span class="g-status-score" id="st-score">0점</span><span class="g-timer" id="st-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -801,7 +819,7 @@
   </div>
   <!-- 38. MIRROR -->
   <div class="screen" id="game-mirror">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="goHome()">←</button><span class="g-title">거울 문자</span><div class="tds-nav__right"></div></div>
+    <div class="g-hdr"><span class="g-title">거울 문자</span><div class="tds-nav__right"></div></div>
     <div class="g-status"><div class="hearts" id="mr-hearts"></div><span class="g-status-score" id="mr-score">0점</span><span class="g-timer" id="mr-timer">30s</span></div>
     <div class="g-progress"></div>
     <div class="g-body">
@@ -890,7 +908,7 @@
 
   <!-- ===== WORKOUT TRANSITION ===== -->
   <div class="wk-transition" id="wkTransition">
-    <div class="g-hdr"><button class="tds-nav__back" onclick="wkBack()">←</button><span class="g-title"></span><div class="tds-nav__right"><span class="wkt-progress" id="wkt-progress">1 / 3</span></div></div>
+    <div class="g-hdr"><span class="g-title"></span><div class="tds-nav__right"><span class="wkt-progress" id="wkt-progress">1 / 3</span></div></div>
     <div class="wkt-body">
       <div class="wkt-icon-wrap">
         <div class="wkt-next" id="wkt-icon"></div>

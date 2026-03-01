@@ -3,6 +3,7 @@ let curGame=null,curTimer=null,curScore=0,replayCount=0;
 let curGameContext='free'; // 'workout' | 'challenge' | 'free'
 let _lastRenderedPoints=null;
 let _exchangeLock=false;
+let pendingCoins=0; // 게임 완료 시 적립 대기 코인
 
 // 오전 9시(KST) 기준 날짜 키 반환
 function getDayKey(){
@@ -137,6 +138,68 @@ function animatePointsFrom(from){
         else{const btn=document.getElementById('exchangeBtn');if(btn)btn.disabled=to<100}}
       requestAnimationFrame(tick);
     },1200);
+  }
+}
+
+// ===== COIN SYSTEM (코인 10개 = 토스포인트 1원, 프로모션 검토중) =====
+function renderCoins() {
+  const c = getCoins();
+  const prog = document.getElementById('coinProgress');
+  if (prog) prog.textContent = '🪙 ' + c + ' / 10개';
+  const bar = document.getElementById('coinBar');
+  if (bar) bar.style.width = Math.min(100, (c % 10) / 10 * 100) + '%';
+  const btn = document.getElementById('coinExchangeBtn');
+  if (btn) btn.disabled = c < 10;
+  const disp = document.getElementById('coinDisplay');
+  if (disp) disp.textContent = c + '개';
+}
+
+async function exchangeCoins() {
+  if (getCoins() < 10) { toast('코인 10개 이상부터 교환 가능합니다'); return; }
+  // 플레이스홀더: 프로모션 미승인 상태면 안내 메시지만 표시
+  if (window.AIT && AIT.CONFIG.PROMO_COIN_EXCHANGE.startsWith('PLACEHOLDER_')) {
+    toast('포인트 교환 프로모션을 준비 중이에요. 코인을 모아두세요! 🪙');
+    if (window.AIT) AIT.log('coin_exchange_placeholder', { coins: getCoins() });
+    return;
+  }
+  if (window.AIT && !AIT.isToss) { toast('토스 앱에서만 교환 가능합니다'); return; }
+  if (_exchangeLock) return;
+  _exchangeLock = true;
+  const btn = document.getElementById('coinExchangeBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '교환 중...'; }
+  let exchangeId = null;
+  try {
+    const uh = await AIT.getUserHash();
+    const serverRes = await fetch(`${API_BASE}/api/cashword/exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userHash: uh })
+    }).then(r => r.json());
+    if (serverRes.error) throw new Error(serverRes.error);
+    exchangeId = serverRes.exchangeId;
+    // 프로모션 지급 (코드 승인 후 자동 활성화)
+    const ok = await AIT.checkPromoCoinExchange();
+    if (ok) {
+      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/confirm`, { method: 'POST' }).catch(() => {});
+      const newCoins = Math.max(0, getCoins() - 10);
+      LS.set('coins', newCoins);
+      renderCoins();
+      toast('교환 완료! 토스포인트 1원이 지급됐어요 🎉');
+      AIT.log('coin_exchange_success', { coins: 10, points: 1, userHash: uh });
+    } else {
+      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/restore`, { method: 'POST' }).catch(() => {});
+      toast('교환에 실패했습니다. 다시 시도해주세요.');
+    }
+  } catch (e) {
+    if (exchangeId) {
+      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/restore`, { method: 'POST' }).catch(() => {});
+    }
+    console.error('Coin exchange failed:', e);
+    const msg = e.message === 'insufficient_coins' ? '코인이 부족합니다' : '교환에 실패했습니다. 다시 시도해주세요.';
+    toast(msg);
+  } finally {
+    _exchangeLock = false;
+    if (btn) { btn.disabled = getCoins() < 10; btn.textContent = '교환하기'; }
   }
 }
 

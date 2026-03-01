@@ -87,6 +87,18 @@ function renderHome(){
   renderWorkout();
   renderTicketCount();
   if(window.renderPoints) renderPoints(true);
+  if(window.renderCoins) renderCoins();
+  // 서버에서 코인 잔액 동기화
+  if(window.AIT) {
+    AIT.getUserHash().then(uh => {
+      if(!uh) return;
+      fetch(`${API_BASE}/api/cashword/coins/${uh}`)
+        .then(r => r.json())
+        .then(d => {
+          if(d.coins !== undefined) { LS.set('coins', d.coins); if(window.renderCoins) renderCoins(); }
+        }).catch(() => {});
+    }).catch(() => {});
+  }
 
   // Game grid grouped by category
   const CAT_INFO={

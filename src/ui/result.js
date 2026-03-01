@@ -60,6 +60,32 @@ function showResult(score, name, stats, extra = {}) {
   if (isNew) LS.set(curGame + '-best', score);
   recordPlay();
 
+  // 첫문제 풀기 프로모션 (플레이스홀더 - 코드 승인 후 자동 활성화)
+  if (score > 0 && !LS.get('first-game-done', 0)) {
+    LS.set('first-game-done', 1);
+    if (window.AIT && AIT.checkPromoFirstQuestion) AIT.checkPromoFirstQuestion();
+  }
+
+  // 코인 적립 (게임당 1코인)
+  if (score > 0) {
+    const newCoins = addCoins(1);
+    if (window.renderCoins) renderCoins();
+    snackbar('🪙 코인 1개 적립! (보유 ' + newCoins + '개)', 1800);
+    // 서버 동기화 (best-effort)
+    if (window.AIT) {
+      AIT.getUserHash().then(uh => {
+        if (!uh) return;
+        fetch(`${API_BASE}/api/cashword/coins/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userHash: uh, amount: 1 })
+        }).then(r => r.json()).then(d => {
+          if (d.coins !== undefined) { LS.set('coins', d.coins); if (window.renderCoins) renderCoins(); }
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+  }
+
   let xpGain = 10 + Math.floor(score / 5);
   if (isNew && score > 0) xpGain += 15;
   const oldXP = getXP();
@@ -212,6 +238,7 @@ function showResult(score, name, stats, extra = {}) {
 
   _showGameCompleteOverlay(() => {
     document.getElementById('overlay').classList.add('active');
+    history.pushState({app:true},'');
     AIT.loadBannerAd('r-banner', {spaceId: AIT.CONFIG.AD_IMAGE_BANNER_ID});
     if (newRank !== oldRank && newRank.age % 10 === 0) {
       setTimeout(() => showLevelUp(newRank, newXP), 600);
