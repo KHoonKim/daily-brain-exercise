@@ -66,13 +66,14 @@ window.AIT = (() => {
 
   // ── Config ──
   const CONFIG = {
-    AD_BANNER_ID: 'ait.v2.live.47d7aeae54c14818',        // 배너형: 게임 결과 페이지
-    AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',  // 전면형: 하트 더받기, 5초 더하기, 한판 더하기
+    AD_BANNER_ID: 'ait.v2.live.b85a333f502c4b39',        // 배너형: 홈화면 하단
+    AD_IMAGE_BANNER_ID: 'ait.v2.live.0118ea745ccf494d',  // 이미지 강조형: 코인 상세 페이지 하단
+    AD_INTERSTITIAL_ID: 'ait.v2.live.253409cb2c514e7f',  // 전면형: 광고보고 다음 문제 풀기
     AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
     // 4 Promotions
-    PROMO_FIRST_LOGIN: 'TEST_01KJ8A3HFMP24HQ5743KD6Q9GK',
-    PROMO_POINT_100: 'TEST_01KJ8BCF26T648AQ1QCKYMS4TZ',
-    PROMO_FIRST_WORKOUT: 'TEST_01KJ8B95RPCGDQV9NZSCQ418VT',
+    PROMO_FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',
+    PROMO_POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',
+    PROMO_FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT',
     SHARE_MODULE_ID: '12a10659-c8aa-407a-a090-38f3c5dd4639', // 공유 리워드 모듈 ID
   };
 
@@ -253,7 +254,7 @@ window.AIT = (() => {
     _bannerSlots.delete(containerId);
   }
 
-  function loadBannerAd(containerId) {
+  function loadBannerAd(containerId, opts = {}) {
     if (!isToss) {
       const el = document.getElementById(containerId);
       if (el) { el.style.cssText += ';background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px'; el.textContent = '광고 영역'; }
@@ -269,7 +270,7 @@ window.AIT = (() => {
         if (_fetchTossAdSupported()) {
           clearInterval(poll);
           _bannerSlots.delete(containerId);
-          loadBannerAd(containerId);
+          loadBannerAd(containerId, opts);
         } else if (attempts >= 10) {
           clearInterval(poll);
           _bannerSlots.delete(containerId);
@@ -282,25 +283,31 @@ window.AIT = (() => {
     if (!el) return;
     const handleError = (e) => {
       console.warn('Banner ad error:', e);
-      el.textContent = '광고 영역';
-      el.style.display = 'flex';
+      el.style.display = 'none';
     };
-    console.log('[Banner] loadBannerAd:', containerId, 'RNWV:', !!window.ReactNativeWebView, 'bridge:', !!_bridge);
+    const hideContainer = () => { el.style.display = 'none'; };
+    const spaceId = opts.spaceId || CONFIG.AD_BANNER_ID;
+    const variant = opts.variant || 'card';
+    const theme = opts.theme || 'light';
+    const tone = opts.tone || 'blackAndWhite';
+    console.log('[Banner] loadBannerAd:', containerId, spaceId, 'RNWV:', !!window.ReactNativeWebView, 'bridge:', !!_bridge);
     _loadTossAdSdk().then(sdk => {
       console.log('[Banner] SDK loaded, isInitialized:', sdk.isInitialized(), 'hasBanner:', !!sdk.banner);
       return _initSdkOnce(sdk);
     }).then(sdk => {
-      if (!sdk.banner) { handleError(new Error('banner not supported')); return; }
-      console.log('[Banner] createSlot:', containerId, CONFIG.AD_BANNER_ID);
+      if (!sdk.banner) { hideContainer(); return; }
+      console.log('[Banner] createSlot:', containerId, spaceId);
       _bannerSlots.add(containerId);
       const slotHandle = sdk.banner.createSlot(el, {
-        spaceId: CONFIG.AD_BANNER_ID,
-        variant: 'card',
+        spaceId,
+        variant,
+        theme,
+        tone,
         autoLoad: true,
         callbacks: {
           onAdRendered: () => console.log('[Banner] rendered:', containerId),
           onAdFailedToRender: (info) => { console.warn('[Banner] failed:', info); destroyBannerAd(containerId); handleError(info?.error); },
-          onNoFill: () => console.log('[Banner] No fill:', containerId)
+          onNoFill: () => { console.log('[Banner] No fill:', containerId); hideContainer(); }
         }
       });
       if (slotHandle?.destroy) _bannerHandles.set(containerId, slotHandle);

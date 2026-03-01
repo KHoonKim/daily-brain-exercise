@@ -32,8 +32,9 @@ function renderHome(){
     const t=1/(1+.2316419*Math.abs(z)),d=.3989422804,p=d*t*(-.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.3302744))));
     return Math.max(1,Math.min(99,Math.round((z>0?1-p:p)*100)));
   }
+  const _lsCache={};GAMES.forEach(g=>{_lsCache[g.id+'-pct']=LS.get(g.id+'-pct',0);_lsCache[g.id+'-best']=LS.get(g.id+'-best',0);if(g.goalUnit==='ms')_lsCache[g.id+'-best-ms']=LS.get(g.id+'-best-ms',0)});
   let total=0,count=0;
-  GAMES.forEach(g=>{const b=LS.get(g.id+'-best',0);if(b>0){total+=b;count++}});
+  GAMES.forEach(g=>{const b=_lsCache[g.id+'-best'];if(b>0){total+=b;count++}});
   const avg=count>0?Math.round(total/count):0;
   recordDailyScore(avg);
 
@@ -43,26 +44,29 @@ function renderHome(){
       fetch(`${API_BASE}/api/score/overall-rank/${uh}`)
         .then(r => r.json())
         .then(d => {
-          if (d.percentile !== undefined) {
-            const el = document.getElementById('overallPct');
-            if (el) el.textContent = `상위 ${101 - d.percentile}%`;
+          const el = document.getElementById('overallPct');
+          if (!el) return;
+          if (d.total < 100) {
+            el.textContent = `상위 ${Math.round(rank.age / 5) * 5}%`;
+          } else if (d.percentile !== undefined) {
+            el.textContent = `상위 ${101 - d.percentile}%`;
           }
         }).catch(() => {});
     });
   }
 
-  // Missions
-  const missions=getTodayMissions();
-  const doneCount=missions.filter(m=>m.done).length;
-  document.getElementById('missionCount').textContent=doneCount+'/'+missions.length;
-  
-  const missionListEl = document.getElementById('missionList');
-  if(missionListEl) {
-    missionListEl.innerHTML=missions.map(m=>{
+  // Challenges
+  const challenges=getTodayChallenges();
+  const doneCount=challenges.filter(m=>m.done).length;
+  document.getElementById('challengeCount').textContent=doneCount+'/'+challenges.length;
+
+  const challengeListEl = document.getElementById('challengeList');
+  if(challengeListEl) {
+    challengeListEl.innerHTML=challenges.map(m=>{
       const pct=Math.min(100,m.target>0?(m.progress/m.target*100):0);
       const best=LS.get(m.gameId+'-best',0);
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
-      // TDS ListRow — Mission Card
+      // TDS ListRow — Challenge Card
       return `<div class="tds-list-row tds-list-row--card" onclick="startGame('${m.gameId}', false, 'challenge')">
         <div class="tds-list-row__left">
           <div class="tds-asset-icon tds-asset-icon--sm" style="background:${g.color}18;color:${g.color};padding:7px">${GI[m.gameId]||''}</div>
@@ -70,12 +74,12 @@ function renderHome(){
         <div class="tds-list-row__contents">
           <div class="tds-list-row__title">${m.name} <span class="tds-st13 tds-fw-regular tds-color-sub">목표 ${m.target}점 · 최고 ${best}점</span></div>
           <div class="tds-list-row__desc">${m.desc}</div>
-          ${m.done?'':`<div class="mission-prog" style="margin-top:6px"><div class="mission-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
+          ${m.done?'':`<div class="challenge-prog" style="margin-top:6px"><div class="challenge-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
         </div>
         <div class="tds-list-row__right">
           ${m.done
             ? '<img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px">'
-            : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs tds-badge-fill-yellow">+${m.xp}XP</span><span class="tds-badge tds-badge-xs tds-badge-fill-blue">+1점</span></div>`}
+            : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs tds-badge-fill-yellow" style="font-size:12px">+${m.xp}XP</span><span class="tds-badge tds-badge-xs tds-badge-fill-blue" style="font-size:12px">🧠 1점</span></div>`}
         </div>
       </div>`}).join('');
   }
@@ -104,15 +108,21 @@ function renderHome(){
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}', false, 'free')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
-      <div class="gc-best">${(()=>{if(g.goalUnit==='ms'){const b=LS.get(g.id+'-best-ms',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}ms</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:'도전하기'}const b=LS.get(g.id+'-best',0);return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:'도전하기'})()}</div>
+      <div class="gc-best">${(()=>{const pct=_lsCache[g.id+'-pct']||0;const pctHtml=pct>0?`<span style="font-size:10px;color:#8B95A1"> · 상위 ${pct}%</span>`:'';if(g.goalUnit==='ms'){const b=_lsCache[g.id+'-best-ms']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}ms${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}ms</span>`}const b=_lsCache[g.id+'-best']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}점</span>`})()}</div>
     </div>`).join('')}</div>`;
+    if(cat==='언어력'){
+      gridHtml+=`<div id="home-banner-4" style="margin:8px 0;width:100%;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>`;
+    }
   });
   const gameGridEl = document.getElementById('gameGrid');
   if(gameGridEl) gameGridEl.innerHTML=gridHtml;
 
   if(window.AIT) {
-    AIT.loadBannerAd('home-banner-1');
-    AIT.loadBannerAd('home-banner-2');
+    setTimeout(()=>{
+      AIT.loadBannerAd('home-banner-1');
+      AIT.loadBannerAd('home-banner-2');
+      AIT.loadBannerAd('home-banner-4');
+    }, 200);
   }
 
 }
