@@ -3,7 +3,7 @@ const RANK_SVG = `<img src="https://static.toss.im/2d-emojis/svg/u2B50.svg" styl
 
 function getRetryMotivation(gameId, score, best, isNew) {
   const isLevel = GAMES.find(g => g.id === gameId)?.isLevel ?? false;
-  const btn = '광고보고 한 번 더 도전하기';
+  const btn = '3초 광고보고 다시 도전하기';
   if (isNew && score > 0) {
     if (isLevel) return { msg: '새 기록 달성! 집중력이 올라왔을 때 더 높이!', btn };
     return { msg: '컨디션 최고! 이 기세로 더 높은 점수를!', btn };
@@ -55,11 +55,9 @@ function showResult(score, name, stats, extra = {}) {
   curScore = score;
   const best = LS.get(curGame + '-best', 0), isNew = score > best;
   const isFreeMode = curGameContext === 'free';
-  const freeBest = isFreeMode ? LS.get(curGame + '-free-best', 0) : best;
-  const freeTarget = freeBest > 0 ? Math.round(freeBest * (curGame === 'reaction' ? 1.01 : 1.05)) : curGoal;
-  const freeBonus = !wkActive && freeTarget > 0 && score >= freeTarget && (!isFreeMode || freeBest >= best);
+  const freeTarget = best > 0 ? Math.ceil(best * 1.03) : curGoal;
+  const freeBonus = isFreeMode && !wkActive && freeTarget > 0 && score >= freeTarget;
   if (isNew) LS.set(curGame + '-best', score);
-  if (isFreeMode && score > freeBest) LS.set(curGame + '-free-best', score);
   recordPlay();
 
   let xpGain = 10 + Math.floor(score / 5);
@@ -69,7 +67,7 @@ function showResult(score, name, stats, extra = {}) {
   const newXP = addXP(xpGain);
   const newRank = getRank(newXP);
 
-  const completed = updateMission(curGame, score, extra);
+  const completed = curGameContext === 'challenge' ? updateChallenge(curGame, score, extra) : [];
   completed.forEach(m => addXP(m.xp));
 
   if (freeBonus) { addPoints(1); }
@@ -199,15 +197,29 @@ function showResult(score, name, stats, extra = {}) {
     wkOnGameEnd(curGame, score);
     const wkBtn = document.getElementById('r-main-btn');
     const doneCount = getTodayWorkout().done.length;
-    wkBtn.onclick = () => wkContinue();
-    wkBtn.textContent = doneCount < WK_SIZE ? `다음 운동 (${doneCount}/${WK_SIZE})` : '운동 완료하기';
+    if (doneCount < WK_SIZE) {
+      // 중간 게임: 기존과 동일
+      wkBtn.textContent = `다음 운동 (${doneCount}/${WK_SIZE})`;
+      wkBtn.onclick = () => wkContinue();
+    } else {
+      // 마지막 게임: 광고 버튼
+      wkBtn.textContent = '5초 광고보고 두뇌점수3점 받기';
+      wkBtn.onclick = () => wkFinishWithAd();
+      // 보조 버튼: 홈으로 (광고 없이)
+      const homeBtn = document.createElement('button');
+      homeBtn.className = 'tds-btn tds-btn-lg tds-btn-block';
+      homeBtn.style.cssText = 'margin-top:8px;background:transparent;color:var(--sub-text);border:none';
+      homeBtn.textContent = '홈으로';
+      homeBtn.onclick = () => wkFinish();
+      wkBtn.insertAdjacentElement('afterend', homeBtn);
+    }
   } else {
     document.getElementById('r-main-btn').onclick = () => replayGame();
   }
 
   _showGameCompleteOverlay(() => {
     document.getElementById('overlay').classList.add('active');
-    AIT.loadBannerAd('r-banner');
+    AIT.loadBannerAd('r-banner', {spaceId: AIT.CONFIG.AD_IMAGE_BANNER_ID});
     if (newRank !== oldRank && newRank.age % 10 === 0) {
       setTimeout(() => showLevelUp(newRank, newXP), 600);
     }
