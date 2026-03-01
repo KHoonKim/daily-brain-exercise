@@ -64,7 +64,7 @@ function renderWorkout(){
   const wk=getTodayWorkout();
   if(!wk.completed&&wk.done.length>=WK_SIZE){
     wk.completed=true;saveWorkout(wk);
-    addXP(50);addPoints(3);
+    addXP(50);
     if(window.AIT && AIT.checkPromoFirstWorkout)AIT.checkPromoFirstWorkout();
   }
   const el=document.getElementById('dailyWorkout');
@@ -133,7 +133,7 @@ const _WKT_CAT_INFO={
 };
 
 function showWkTransition(){
-  if(wkIdx>=wkGames.length){finishWorkout();return}
+  if(wkIdx>=wkGames.length){wkFinish();return}
   const g=GAMES.find(x=>x.id===wkGames[wkIdx]);
   const wk=getTodayWorkout();
   const totalDone=wk.done.length+1;
@@ -187,17 +187,18 @@ function wkContinue(){
   if(wkIdx<wkGames.length){
     showWkTransition();
   }else{
-    finishWorkout();
+    wkFinish();
   }
 }
 
-function finishWorkout(){
+function wkFinish(){
   const wk=getTodayWorkout();
   if(!wk.completed&&wk.done.length>=WK_SIZE){
     wk.completed=true;saveWorkout(wk);
-    addXP(50);addPoints(3);
+    addXP(50);
     if(window.AIT && AIT.checkPromoFirstWorkout)AIT.checkPromoFirstWorkout();
   }
   wkActive=false;
+  document.getElementById('overlay').classList.remove('active');
   goHome();
 }
