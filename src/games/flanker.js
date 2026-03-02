@@ -1,6 +1,6 @@
 // ===== 29. FLANKER - 방향 맞추기 =====
-let fkScore,fkTime,fkAns,fkLevel,fkQInterval;
-function initFlanker(){fkScore=0;fkTime=30;fkLevel=0;document.getElementById('fk-score').textContent='0점';initHearts('fk');
+let fkScore,fkTime,fkAns,fkLevel,fkQInterval,fkCombo;
+function initFlanker(){fkScore=0;fkTime=30;fkLevel=0;fkCombo=0;document.getElementById('fk-score').textContent='0점';initHearts('fk');
 document.getElementById('fk-timer').textContent='30s';document.getElementById('fk-timer').className='g-timer';
 clearInterval(curTimer);clearInterval(fkQInterval);setTickFn(fkTick);curTimer=setInterval(fkTick,1000);fkGen()}
 function fkTick(){fkTime--;document.getElementById('fk-timer').textContent=fkTime+'s';if(fkTime<=10)document.getElementById('fk-timer').className='g-timer urgent';if(fkTime<=0){clearInterval(fkQInterval);clearInterval(curTimer);setTimeExtendResumeCallback((s)=>{fkTime=s;document.getElementById('fk-timer').textContent=fkTime+'s';document.getElementById('fk-timer').className='g-timer';curTimer=setInterval(fkTick,1000);fkGen()});showResult(fkScore,'방향 맞추기',[],{_isTimerEnd:true})}}
@@ -15,8 +15,8 @@ const sides=Array.from({length:sideCount},()=>planeImg(randDir())).join('');
 document.getElementById('fk-display').innerHTML=sides+planeImg(dir)+sides;
 fkAns=dir==='←'?'left':dir==='→'?'right':dir==='↑'?'up':'down';fkLevel++;
 const qTime=Math.max(3.0-(fkLevel-1)*0.1,0.5);let elapsed=0;
-clearInterval(fkQInterval);const bar=document.getElementById('fk-qbar');if(bar)bar.style.width='100%';
-fkQInterval=setInterval(()=>{elapsed+=50;const pct=Math.max(0,100-(elapsed/(qTime*1000))*100);if(bar)bar.style.width=pct+'%';if(elapsed>=qTime*1000){clearInterval(fkQInterval);curScore=fkScore;setHeartResumeCallback(fkGen);if(loseHeart('fk'))return;scheduleNextQuestion(fkGen,300)}},50)}
-function fkPick(d){clearInterval(fkQInterval);if(d===fkAns){fkScore+=10;setScore('fk-score',fkScore);toast('정답!')}
-else{curScore=fkScore;setHeartResumeCallback(fkGen);if(loseHeart('fk'))return}
+clearInterval(fkQInterval);const bar=document.getElementById('fk-qbar');if(bar)bar.style.width='100%';const fkqt=document.getElementById('fk-q-time');if(fkqt)fkqt.textContent=qTime.toFixed(1)+'s';
+fkQInterval=setInterval(()=>{elapsed+=50;const pct=Math.max(0,100-(elapsed/(qTime*1000))*100);if(bar)bar.style.width=pct+'%';if(fkqt)fkqt.textContent=Math.max(0,qTime-elapsed/1000).toFixed(1)+'s';if(elapsed>=qTime*1000){clearInterval(fkQInterval);curScore=fkScore;setHeartResumeCallback(fkGen);if(loseHeart('fk'))return;scheduleNextQuestion(fkGen,300)}},50)}
+function fkPick(d){clearInterval(fkQInterval);if(d===fkAns){fkCombo++;fkScore+=10;setScore('fk-score',fkScore);if(fkCombo%5===0){fkTime=Math.min(fkTime+COMBO_TIME_BONUS,99);toast(fkCombo+'콤보! +'+COMBO_TIME_BONUS+'초')}else{toast('정답!')}}
+else{fkCombo=0;curScore=fkScore;setHeartResumeCallback(fkGen);if(loseHeart('fk'))return}
 scheduleNextQuestion(fkGen,300)}

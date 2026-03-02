@@ -9,3 +9,8 @@ dist/
 .DS_Store
 certificate_*.key
 certificate_*.crt
+.omc/
+server/.omc/
+coverage/
+test-results/
+.playwright-mcp/

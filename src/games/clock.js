@@ -21,8 +21,8 @@ clkQLimit=Math.max(2.5, 5.0 - clkRound*0.15);
 clkQTime=clkQLimit;clearInterval(clkQTimer);
 const qbar=document.getElementById('clk-qbar');if(qbar){qbar.style.transition='none';qbar.style.width='100%';qbar.offsetWidth;qbar.style.transition=`width ${clkQLimit}s linear`;qbar.style.width='0%'}const clkqt=document.getElementById('clk-q-time');if(clkqt)clkqt.textContent=clkQLimit.toFixed(1)+'s';
 clkQTimer=setInterval(()=>{clkQTime-=0.1;document.getElementById('clk-q-time').textContent=Math.max(0,clkQTime).toFixed(1)+'s';if(clkQTime<=0){clearInterval(clkQTimer);curScore=clkScore;setHeartResumeCallback(clkNext);if(loseHeart('clk'))return;scheduleNextQuestion(clkNext,300)}},100)}
-function clkPick(el,v,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;
-clearInterval(clkQTimer);
+function clkPick(el,v,ans){if(clkQTime<=0)return;if(el.classList.contains('ok')||el.classList.contains('no'))return;
+clearInterval(clkQTimer);freezeQBar('clk-qbar');
 if(v===ans){el.classList.add('ok');const pct=clkQTime/clkQLimit;const bonus=pct>.75?5:pct>.5?3:1;clkScore+=10+bonus;setScore('clk-score',clkScore)}
 else{el.classList.add('no');document.querySelectorAll('.clk-opt').forEach(o=>{if(o.textContent===ans)o.classList.add('ok')});
 curScore=clkScore;setHeartResumeCallback(clkNext);if(loseHeart('clk'))return}

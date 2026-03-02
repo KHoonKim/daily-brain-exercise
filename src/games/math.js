@@ -1,5 +1,5 @@
 // ===== 1. MATH - 암산 챌린지 =====
-let mathScore,mathCombo,mathTime,mathAnswer,mathInput,mathTotal,mathMaxCombo;
+let mathScore,mathCombo,mathTime,mathAnswer,mathInput,mathTotal,mathMaxCombo,mathQTimer,mathQTime,mathQLimit;
 function initMath(){
   mathScore=0;mathCombo=0;mathTime=30;mathInput='';mathTotal=0;mathMaxCombo=0;
   document.getElementById('math-score').textContent='0점';document.getElementById('math-combo').textContent='';
@@ -17,17 +17,18 @@ function mathGen(){
   else{a=~~(Math.random()*mx)+1;b=~~(Math.random()*mx)+1;mathAnswer=a+b}
   document.getElementById('math-a').textContent=a;document.getElementById('math-b').textContent=b;
   document.getElementById('math-op').textContent=op;mathInput='';document.getElementById('math-ans').textContent='?';
+  mathQLimit=Math.max(1.5,7.0-mathTotal*0.2);mathQTime=mathQLimit;clearInterval(mathQTimer);const mathbar=document.getElementById('math-qbar');if(mathbar){mathbar.style.transition='none';mathbar.style.width='100%';mathbar.offsetWidth;mathbar.style.transition=`width ${mathQLimit}s linear`;mathbar.style.width='0%'}const mathqt=document.getElementById('math-q-time');if(mathqt)mathqt.textContent=mathQLimit.toFixed(1)+'s';mathQTimer=setInterval(()=>{mathQTime-=0.1;if(mathqt)mathqt.textContent=Math.max(0,mathQTime).toFixed(1)+'s';if(mathQTime<=0){clearInterval(mathQTimer);freezeQBar('math-qbar');curScore=mathScore;setHeartResumeCallback(mathGen);if(loseHeart('math'))return;scheduleNextQuestion(mathGen,300)}},100);
 }
 function mathPress(n){mathInput+=n;document.getElementById('math-ans').textContent=mathInput}
 function mathDel(){mathInput=mathInput.slice(0,-1);document.getElementById('math-ans').textContent=mathInput||'?'}
 function mathSubmit(){
-  if(!mathInput)return;mathTotal++;const p=document.getElementById('math-problem');
-  if(parseInt(mathInput)===mathAnswer){mathScore+=(mathCombo>=5?30:mathCombo>=3?20:10);mathCombo++;mathMaxCombo=Math.max(mathMaxCombo,mathCombo);p.classList.add('ok');if(mathCombo%5===0){mathTime=Math.min(mathTime+3,99);const te=document.getElementById('math-timer');te.textContent='+3초!';te.style.cssText='color:#10B981;font-size:22px;font-weight:900;transform:scale(1.3)';setTimeout(()=>{te.style.cssText='';mathUpdateT()},800)}}
+  if(!mathInput||mathQTime<=0)return;clearInterval(mathQTimer);freezeQBar('math-qbar');mathTotal++;const p=document.getElementById('math-problem');
+  if(parseInt(mathInput)===mathAnswer){mathScore+=(mathCombo>=5?30:mathCombo>=3?20:10);mathCombo++;mathMaxCombo=Math.max(mathMaxCombo,mathCombo);p.classList.add('ok');if(mathCombo%5===0){mathTime=Math.min(mathTime+COMBO_TIME_BONUS,99);const te=document.getElementById('math-timer');te.textContent='+'+COMBO_TIME_BONUS+'초!';te.style.cssText='color:#10B981;font-size:22px;font-weight:900;transform:scale(1.3)';setTimeout(()=>{te.style.cssText='';mathUpdateT()},800)}}
   else{mathCombo=0;p.classList.add('no');curScore=mathScore;setHeartResumeCallback(mathGen);if(loseHeart('math'))return}
   setScore('math-score',mathScore);
   const mc=document.getElementById('math-combo');
   if(mathCombo>=2){mc.textContent=mathCombo+'콤보!'+(mathCombo>=5?' ×3':mathCombo>=3?' ×2':'');mc.style.cssText='transform:scale(1.4);transition:transform .15s';setTimeout(()=>mc.style.cssText='transition:transform .2s',150)}
   else{mc.textContent='';mc.style.cssText=''}
-  if(mathCombo>0&&mathCombo%5===0){mc.textContent=mathCombo+'콤보! +3초 보너스!';mc.style.cssText='transform:scale(1.5);color:#10B981;font-size:18px;transition:transform .15s';setTimeout(()=>mc.style.cssText='transition:transform .3s',300)}
+  if(mathCombo>0&&mathCombo%5===0){mc.textContent=mathCombo+'콤보! +'+COMBO_TIME_BONUS+'초 보너스!';mc.style.cssText='transform:scale(1.5);color:#10B981;font-size:18px;transition:transform .15s';setTimeout(()=>mc.style.cssText='transition:transform .3s',300)}
   setTimeout(()=>p.classList.remove('ok','no'),200);mathGen();
 }

@@ -12,8 +12,9 @@ async function initIntro() {
   const userKey = await AIT.storageGet('toss_userKey');
   if (userKey) {
     show('homeScreen');
+  } else {
+    show('introScreen');
   }
-  // userKey 없으면 introScreen이 이미 active 상태 → 유지
 }
 
 // 시작하기 버튼 핸들러

@@ -8,6 +8,6 @@ stroopQLimit=Math.max(1.0,3.0-stroopTotal*0.1);stroopQTime=stroopQLimit;clearInt
 const stroopbar=document.getElementById('stroop-qbar');if(stroopbar){stroopbar.style.transition='none';stroopbar.style.width='100%';stroopbar.offsetWidth;stroopbar.style.transition=`width ${stroopQLimit}s linear`;stroopbar.style.width='0%'}
 const stroopqt=document.getElementById('stroop-q-time');if(stroopqt)stroopqt.textContent=stroopQLimit.toFixed(1)+'s';
 stroopQTimer=setInterval(()=>{stroopQTime-=0.1;const qt=document.getElementById('stroop-q-time');if(qt)qt.textContent=Math.max(0,stroopQTime).toFixed(1)+'s';if(stroopQTime<=0){clearInterval(stroopQTimer);curScore=stroopScore;setHeartResumeCallback(stroopGen);if(loseHeart('stroop'))return;scheduleNextQuestion(stroopGen,300)}},100)}
-function stroopPick(p,c){clearInterval(stroopQTimer);stroopTotal++;if(p===c){stroopCombo++;const bonus=stroopCombo>=10?3:stroopCombo>=5?2:1;stroopScore+=10*bonus;
-setScore('stroop-score',stroopScore);if(stroopCombo>=5){stroopTime=Math.min(stroopTime+2,99);toast(stroopCombo+'콤보! +2초')}}
+function stroopPick(p,c){if(stroopQTime<=0)return;clearInterval(stroopQTimer);freezeQBar('stroop-qbar');stroopTotal++;if(p===c){stroopCombo++;const bonus=stroopCombo>=10?3:stroopCombo>=5?2:1;stroopScore+=10*bonus;
+setScore('stroop-score',stroopScore);if(stroopCombo%5===0){stroopTime=Math.min(stroopTime+COMBO_TIME_BONUS,99);toast(stroopCombo+'콤보! +'+COMBO_TIME_BONUS+'초')}}
 else{stroopCombo=0;curScore=stroopScore;setHeartResumeCallback(stroopGen);if(loseHeart('stroop'))return}stroopGen()}

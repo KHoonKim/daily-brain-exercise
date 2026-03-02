@@ -1,8 +1,26 @@
 // ===== LEADERBOARD UI =====
+let _lbFromResult = false;
+let _lbPrevScreenId = null;
+
+function lbBack() {
+  if (_lbFromResult) {
+    _lbFromResult = false;
+    // Restore the game screen that was active, then re-show the result overlay on top
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    if (_lbPrevScreenId) document.getElementById(_lbPrevScreenId)?.classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+  } else {
+    goHome();
+  }
+}
+
 async function showLeaderboard(gameId = 'overall') {
   const title = gameId === 'overall' ? '전체 순위' : (GAMES.find(g => g.id === gameId)?.name || '게임 순위');
   document.getElementById('lb-title').textContent = title;
-  
+
+  _lbFromResult = document.getElementById('overlay')?.classList.contains('active') ?? false;
+  _lbPrevScreenId = document.querySelector('.screen.active')?.id ?? null;
+  document.getElementById('overlay')?.classList.remove('active');
   show('leaderboardScreen');
   const listEl = document.getElementById('lb-list');
   listEl.innerHTML = '<div class="tds-empty-state">불러오는 중...</div>';

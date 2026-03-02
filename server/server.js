@@ -40,6 +40,15 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_user_hash ON scores(user_hash)');
 // Migration: add points column to users
 try { db.exec('ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0'); } catch(e) {}
 
+// Settings table (key-value store for runtime config)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
 // Users table for Toss profile
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -522,6 +531,24 @@ db.exec(`
 
 // ===== CASHWORD DB =====
 db.exec(`
+  CREATE TABLE IF NOT EXISTS cashword_users (
+    user_hash TEXT PRIMARY KEY,
+    user_name TEXT,
+    user_gender TEXT,
+    user_birthday TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS cashword_promotion_grants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    promo_type TEXT NOT NULL,
+    promo_code TEXT,
+    amount INTEGER,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_hash, promo_type)
+  );
   CREATE TABLE IF NOT EXISTS cashword_coins (
     user_hash TEXT PRIMARY KEY,
     coins INTEGER DEFAULT 0,
@@ -875,11 +902,17 @@ app.post('/api/admin/reset-db', (req, res) => {
 
 // ===== 일일 알림 (매일 KST 09:00) =====
 
-// 심사 승인 후 실제 templateSetCode로 교체
-const DAILY_NOTIFY_TEMPLATE = 'PLACEHOLDER_TEMPLATE_SET_CODE';
 const BULK_BATCH_SIZE = 2500;
 
+// 서버 시작 시 DB에서 1회 로드, admin API 업데이트 시 같이 갱신
+let dailyNotifyTemplate = db.prepare('SELECT value FROM settings WHERE key = ?').get('daily_notify_template')?.value ?? null;
+
 async function sendDailyNotification() {
+  if (!dailyNotifyTemplate) {
+    console.log('[DailyNotify] templateSetCode 미설정 — 발송 건너뜀');
+    return;
+  }
+
   const users = db.prepare('SELECT user_hash FROM users').all();
   if (users.length === 0) {
     console.log('[DailyNotify] 발송 대상 유저 없음');
@@ -900,7 +933,7 @@ async function sendDailyNotification() {
       const resp = await tossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-bulk-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateSetCode: DAILY_NOTIFY_TEMPLATE, contextList })
+        body: JSON.stringify({ templateSetCode: dailyNotifyTemplate, contextList })
       });
       const data = await resp.json();
       if (data.resultType === 'SUCCESS') {
@@ -918,10 +951,167 @@ async function sendDailyNotification() {
   console.log(`[DailyNotify] 완료 — 대상: ${users.length}명, 성공: ${totalSuccess}, 실패: ${totalFail}`);
 }
 
+// PATCH /api/admin/settings — 런타임 설정값 업데이트 (재배포 없이)
+// x-admin-secret 헤더 필요
+app.patch('/api/admin/settings', (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return res.status(503).json({ error: 'Admin not configured' });
+  if (req.headers['x-admin-secret'] !== secret) return res.status(403).json({ error: 'Forbidden' });
+
+  const { key, value } = req.body;
+  if (!key || value === undefined) return res.status(400).json({ error: 'key, value 필요' });
+
+  db.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at').run(key, value);
+
+  // 메모리 캐시 갱신
+  if (key === 'daily_notify_template') dailyNotifyTemplate = value;
+  if (key === 'cashword_daily_notify_template') cashwordDailyNotifyTemplate = value;
+
+  res.json({ ok: true, key, value });
+});
+
 // 매일 KST 09:00 발송 (Asia/Seoul timezone 기준 "0 9 * * *")
 cron.schedule('0 9 * * *', sendDailyNotification, { timezone: 'Asia/Seoul' });
 
 // ===== CASHWORD API =====
+
+// CashWord 전용 mTLS agent (인증서 위치: /root/ or 로컬 CashWord-english 프로젝트)
+const cashwordCertPath = fs.existsSync('/root/cashword_public.crt')
+  ? '/root/cashword_public.crt'
+  : path.join(__dirname, '../../../CashWord-english/cashword_public.crt');
+const cashwordKeyPath = fs.existsSync('/root/cashword_private.key')
+  ? '/root/cashword_private.key'
+  : path.join(__dirname, '../../../CashWord-english/cashword_private.key');
+const cashwordTossAgent = new https.Agent({
+  cert: fs.readFileSync(cashwordCertPath),
+  key: fs.readFileSync(cashwordKeyPath),
+});
+function cashwordTossFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const body = options.body || null;
+    const reqOpts = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: options.method || 'GET',
+      headers: { ...(options.headers || {}) },
+      agent: cashwordTossAgent,
+    };
+    if (body) reqOpts.headers['Content-Length'] = Buffer.byteLength(body);
+    const req = https.request(reqOpts, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        ok: res.statusCode >= 200 && res.statusCode < 300,
+        text: () => Promise.resolve(data),
+        json: () => Promise.resolve(JSON.parse(data)),
+      }));
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+// CashWord 전용 복호화 (AES-256-GCM)
+const cashwordKey = Buffer.from('G4yBKG3UWOIFwnDbjjUOJLHgDBRQTF2sbcWgIKYzd+A=', 'base64');
+function decryptCashword(encryptedText) {
+  try {
+    const decoded = Buffer.from(encryptedText, 'base64');
+    const iv = decoded.slice(0, 12);
+    const tag = decoded.slice(decoded.length - 16);
+    const ciphertext = decoded.slice(12, decoded.length - 16);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', cashwordKey, iv);
+    decipher.setAuthTag(tag);
+    return decipher.update(ciphertext, undefined, 'utf8') + decipher.final('utf8');
+  } catch (e) { console.warn('[CashWord decrypt] failed:', e.message); return null; }
+}
+
+// POST /api/cashword/toss/login — CashWord 전용 로그인 (cashword_users 테이블에 저장)
+app.post('/api/cashword/toss/login', async (req, res) => {
+  try {
+    const { authorizationCode, referrer } = req.body;
+    if (!authorizationCode || !referrer) return res.status(400).json({ error: 'authorizationCode and referrer required' });
+
+    // 1. 토큰 발급 (CashWord 인증서 사용)
+    const tokenResp = await cashwordTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authorizationCode, referrer })
+    });
+    const tokenText = await tokenResp.text();
+    console.log('[CashWord Token] HTTP status:', tokenResp.status, 'body:', tokenText.slice(0, 300));
+    let tokenData;
+    try { tokenData = JSON.parse(tokenText); } catch (e) {
+      return res.status(500).json({ error: 'token_parse_failed', httpStatus: tokenResp.status, rawBody: tokenText.slice(0, 500) });
+    }
+    if (tokenData.resultType !== 'SUCCESS') return res.status(400).json({ error: 'token_failed', detail: tokenData });
+    const { accessToken, refreshToken } = tokenData.success;
+
+    // 2. 유저 정보 조회
+    const meResp = await cashwordTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/login-me`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    const meData = await meResp.json();
+    if (meData.resultType !== 'SUCCESS') return res.status(400).json({ error: 'user_info_failed', detail: meData });
+    const user = meData.success;
+
+    // 3. CashWord 전용 복호화키로 복호화
+    const decrypted = {};
+    if (user.name) decrypted.name = decryptCashword(user.name);
+    if (user.gender) decrypted.gender = decryptCashword(user.gender);
+    if (user.birthday) decrypted.birthday = decryptCashword(user.birthday);
+
+    // 4. cashword_users 테이블에 저장 (brain-exercise users 테이블과 별도)
+    const userHash = String(user.userKey);
+    db.prepare(`INSERT INTO cashword_users (user_hash, user_name, user_gender, user_birthday, updated_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_hash) DO UPDATE SET
+        user_name=excluded.user_name, user_gender=excluded.user_gender,
+        user_birthday=excluded.user_birthday, updated_at=CURRENT_TIMESTAMP
+    `).run(userHash, decrypted.name || null, decrypted.gender || null, decrypted.birthday || null);
+
+    console.log(`[CashWord Login] User ${userHash} (${decrypted.name}) logged in`);
+
+    res.json({
+      status: 'ok',
+      userKey: user.userKey,
+      userHash,
+      name: decrypted.name,
+      gender: decrypted.gender,
+      birthday: decrypted.birthday,
+      accessToken,
+      refreshToken
+    });
+  } catch (e) {
+    console.error('[CashWord Login Error]', e);
+    res.status(500).json({ error: 'login_failed', detail: e.message });
+  }
+});
+
+// GET /api/cashword/promo/check/:userHash/:promoType — 프로모션 지급 여부 확인
+app.get('/api/cashword/promo/check/:userHash/:promoType', (req, res) => {
+  const { userHash, promoType } = req.params;
+  const row = db.prepare('SELECT * FROM cashword_promotion_grants WHERE user_hash = ? AND promo_type = ?').get(userHash, promoType);
+  res.json({ granted: !!row, detail: row || null });
+});
+
+// POST /api/cashword/promo/record — 프로모션 지급 기록 (SDK 성공 후 호출)
+app.post('/api/cashword/promo/record', (req, res) => {
+  const { userHash, promoType, promoCode, amount } = req.body;
+  if (!userHash || !promoType) return res.status(400).json({ error: 'userHash and promoType required' });
+  try {
+    db.prepare(`INSERT OR IGNORE INTO cashword_promotion_grants (user_hash, promo_type, promo_code, amount, status)
+      VALUES (?, ?, ?, ?, 'granted')
+    `).run(userHash, promoType, promoCode || null, amount || 0);
+    console.log(`[CashWord Promo] ${promoType} granted to ${userHash} (${amount})`);
+    res.json({ status: 'ok' });
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return res.json({ status: 'already_granted' });
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // GET /api/cashword/coins/:userHash — 코인 잔액 조회
 app.get('/api/cashword/coins/:userHash', (req, res) => {
@@ -995,6 +1185,81 @@ app.post('/api/cashword/exchange/:id/restore', (req, res) => {
   })();
   res.json({ status: 'ok' });
 });
+
+// ===== CASHWORD 기능성 알림 =====
+
+// DB에서 일일 알림 템플릿 로드 (설정되지 않으면 null)
+let cashwordDailyNotifyTemplate = db.prepare('SELECT value FROM settings WHERE key = ?').get('cashword_daily_notify_template')?.value ?? null;
+
+// POST /api/cashword/notify — 단건 발송 (특정 유저에게 즉시)
+// body: { userKey, templateSetCode, context? }
+app.post('/api/cashword/notify', async (req, res) => {
+  try {
+    const { userKey, templateSetCode, context } = req.body;
+    if (!userKey || !templateSetCode) {
+      return res.status(400).json({ error: 'userKey and templateSetCode required' });
+    }
+    const resp = await cashwordTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Toss-User-Key': String(userKey),
+      },
+      body: JSON.stringify({ templateSetCode, context: context || {} }),
+    });
+    const data = await resp.json();
+    console.log(`[CashWord Notify] userKey=${userKey} template=${templateSetCode} result=${data.resultType}`);
+    res.json(data);
+  } catch (e) {
+    console.error('[CashWord Notify Error]', e);
+    res.status(500).json({ error: 'notify_failed', detail: e.message });
+  }
+});
+
+// 전체 CashWord 유저에게 일일 알림 bulk 발송
+async function sendCashwordDailyNotification() {
+  if (!cashwordDailyNotifyTemplate) {
+    console.log('[CashWord DailyNotify] templateSetCode 미설정 — 발송 건너뜀');
+    return;
+  }
+
+  const users = db.prepare('SELECT user_hash FROM cashword_users').all();
+  if (users.length === 0) {
+    console.log('[CashWord DailyNotify] 발송 대상 유저 없음');
+    return;
+  }
+
+  let totalSuccess = 0;
+  let totalFail = 0;
+
+  for (let i = 0; i < users.length; i += BULK_BATCH_SIZE) {
+    const chunk = users.slice(i, i + BULK_BATCH_SIZE);
+    const contextList = chunk.map(u => ({ userKey: parseInt(u.user_hash, 10), context: {} }));
+
+    try {
+      const resp = await cashwordTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-bulk-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateSetCode: cashwordDailyNotifyTemplate, contextList }),
+      });
+      const data = await resp.json();
+      if (data.resultType === 'SUCCESS') {
+        totalSuccess += chunk.length;
+      } else {
+        totalFail += chunk.length;
+        console.error('[CashWord DailyNotify] 배치 실패:', JSON.stringify(data).slice(0, 200));
+      }
+    } catch (e) {
+      totalFail += chunk.length;
+      console.error('[CashWord DailyNotify] 배치 오류:', e.message);
+    }
+  }
+
+  console.log(`[CashWord DailyNotify] 완료 — 대상: ${users.length}명, 성공: ${totalSuccess}, 실패: ${totalFail}`);
+}
+
+// 매일 KST 09:00 CashWord 유저에게 알림 발송
+cron.schedule('0 9 * * *', sendCashwordDailyNotification, { timezone: 'Asia/Seoul' });
 
 if (require.main === module) {
   app.listen(PORT, '127.0.0.1', () => {

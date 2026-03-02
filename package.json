@@ -9,11 +9,22 @@
     "dev:vite": "vite",
     "build:vite": "vite build",
     "preview": "vite preview",
-    "version-bump": "node --input-type=commonjs -e \"const fs=require('fs');let h=fs.readFileSync('index.html','utf8');const m=h.match(/\\\\?v=(\\\\d+)/);if(m){const n=+m[1]+1;h=h.replace(/\\\\?v=\\\\d+/g,'?v='+n);fs.writeFileSync('index.html',h);console.log('index.html 버전 v'+m[1]+' → v'+n+' 업데이트 완료')}else{console.log('버전 패턴을 찾지 못했습니다')}\""
+    "version-bump": "node --input-type=commonjs -e \"const fs=require('fs');let h=fs.readFileSync('index.html','utf8');const m=h.match(/\\\\?v=(\\\\d+)/);if(m){const n=+m[1]+1;h=h.replace(/\\\\?v=\\\\d+/g,'?v='+n);fs.writeFileSync('index.html',h);console.log('index.html 버전 v'+m[1]+' → v'+n+' 업데이트 완료')}else{console.log('버전 패턴을 찾지 못했습니다')}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@vitest/coverage-istanbul": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "jsdom": "^28.1.0",
+    "supertest": "^7.2.2",
     "vite": "^6.0.0",
-    "vite-plugin-full-reload": "^1.2.0"
+    "vite-plugin-full-reload": "^1.2.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@apps-in-toss/web-framework": "^1.14.1"

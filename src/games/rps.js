@@ -16,7 +16,7 @@ rpsQLimit=Math.max(1.0,3.0-rpsTotal*0.1);rpsQTime=rpsQLimit;clearInterval(rpsQTi
 const rpsbar=document.getElementById('rps-qbar');if(rpsbar){rpsbar.style.transition='none';rpsbar.style.width='100%';rpsbar.offsetWidth;rpsbar.style.transition=`width ${rpsQLimit}s linear`;rpsbar.style.width='0%'}
 const rpsqt=document.getElementById('rps-q-time');if(rpsqt)rpsqt.textContent=rpsQLimit.toFixed(1)+'s';
 rpsQTimer=setInterval(()=>{rpsQTime-=0.1;const qt=document.getElementById('rps-q-time');if(qt)qt.textContent=Math.max(0,rpsQTime).toFixed(1)+'s';if(rpsQTime<=0){clearInterval(rpsQTimer);curScore=rpsScore;setHeartResumeCallback(rpsGen);if(loseHeart('rps'))return;scheduleNextQuestion(rpsGen,300)}},100)}
-function rpsPick(p){clearInterval(rpsQTimer);rpsTotal++;const win=(p-rpsCur+3)%3===1,lose=(p-rpsCur+3)%3===2,draw=p===rpsCur;
+function rpsPick(p){if(rpsQTime<=0)return;clearInterval(rpsQTimer);freezeQBar('rps-qbar');rpsTotal++;const win=(p-rpsCur+3)%3===1,lose=(p-rpsCur+3)%3===2,draw=p===rpsCur;
 const correct=(rpsMode==='win'&&win)||(rpsMode==='lose'&&lose)||(rpsMode==='draw'&&draw);
 const btns=document.querySelectorAll('.rps-btn');btns.forEach((b,i)=>b.disabled=true);
 btns[p].classList.add(correct?'ok':'no');

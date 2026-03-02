@@ -15,7 +15,7 @@ document.getElementById('nb-card').style.borderColor='var(--border)';
 if(nbPrev===null){nbStopQBar();document.getElementById('nb-msg').textContent='첫 번째 카드를 기억하세요!';setTimeout(()=>{nbAnswered=true;nbPrev=nbCur;scheduleNextQuestion(nbNext,400)},1000);return}
 document.getElementById('nb-msg').textContent='이전 카드와 같으면 O, 다르면 X';
 nbStartQBar();let nbQElapsed=0;
-nbQTimer=setInterval(()=>{nbQElapsed+=100;document.getElementById('nb-q-time').textContent=Math.max(0,(3000-nbQElapsed)/1000).toFixed(1)+'s';if(nbQElapsed>=3000){clearInterval(nbQTimer);if(nbAnswered)return;nbAnswered=true;nbStopQBar();nbScore=Math.max(0,nbScore-5);setScore('nb-score',nbScore);document.getElementById('nb-card').style.borderColor='var(--no)';toast('시간 초과! -5점');nbPrev=nbCur;scheduleNextQuestion(nbNext,600)}},100)}
+nbQTimer=setInterval(()=>{if(!curGame){clearInterval(nbQTimer);return;}nbQElapsed+=100;document.getElementById('nb-q-time').textContent=Math.max(0,(3000-nbQElapsed)/1000).toFixed(1)+'s';if(nbQElapsed>=3000){clearInterval(nbQTimer);if(nbAnswered)return;nbAnswered=true;nbStopQBar();nbScore=Math.max(0,nbScore-5);setScore('nb-score',nbScore);document.getElementById('nb-card').style.borderColor='var(--no)';toast('시간 초과! -5점');nbPrev=nbCur;scheduleNextQuestion(nbNext,600)}},100)}
 function nbPick(isSame){if(nbAnswered)return;nbAnswered=true;clearInterval(nbQTimer);nbStopQBar();
 const correct=(nbPrev!==null&&isSame&&nbCur===nbPrev)||(!isSame&&(nbPrev===null||nbCur!==nbPrev));
 if(correct){nbScore+=10;setScore('nb-score',nbScore);
