@@ -195,8 +195,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 /* weak + danger */
 .btn-danger-weak{background:rgba(240,68,82,.08);color:var(--no)}
 /* combo (포인트, 보상 등) */
-.btn-combo{background:var(--ok);color:#fff}
-.btn-combo:active{background:#28965D}
+.btn-combo{background:var(--p);color:#fff}
+.btn-combo:active{background:var(--p-dark)}
 .btn-combo:disabled{background:var(--border);color:var(--sub);opacity:1}
 
 /* ===== LEVEL UP OVERLAY ===== */
