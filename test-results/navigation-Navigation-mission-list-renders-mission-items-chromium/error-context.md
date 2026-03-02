@@ -1,0 +1,316 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "매일매일 두뇌운동" [level=1] [ref=e5]:
+      - img [ref=e6]
+      - text: 매일매일 두뇌운동
+    - generic [ref=e8] [cursor=pointer]:
+      - img [ref=e9]
+      - generic [ref=e10]: "3"
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: +50 XP
+        - generic [ref=e16]: 🧠 3점
+      - generic [ref=e17]: 오늘의 1분 두뇌운동
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - img [ref=e21]:
+          - generic [ref=e22]: R
+          - generic [ref=e23]: R
+        - generic [ref=e24]: 거울 문자
+      - generic [ref=e25]:
+        - img [ref=e27]
+        - generic [ref=e31]: 두뇌 가위바위보
+      - generic [ref=e32]:
+        - img [ref=e34]:
+          - generic [ref=e37]: ₩
+        - generic [ref=e38]: 동전 세기
+    - button "지금 바로 시작하기" [ref=e40] [cursor=pointer]
+  - generic [ref=e41]:
+    - generic [ref=e42]:
+      - generic [ref=e43]: 두뇌점수 모으기
+      - generic [ref=e44]: 🧠 0 / 100점
+    - generic [ref=e46]: 토스포인트 100원으로 교환할 수 있어요
+    - button "100원 교환하기" [disabled]
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]: 나의 두뇌 나이
+        - generic [ref=e51]: 100세
+      - generic [ref=e53]:
+        - generic [ref=e54]: 종합 순위
+        - generic [ref=e55]: 상위 100%
+    - generic [ref=e57]:
+      - generic [ref=e58]: 0 XP
+      - generic [ref=e59]: 37 XP
+  - generic [ref=e61]:
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - img [ref=e64]
+        - text: 오늘의 챌린지
+      - generic [ref=e65]: 0/5
+    - generic [ref=e66]:
+      - text: 챌린지 완료하면
+      - generic [ref=e67]: 🧠 1점
+      - text: 5개 챌린지를 모두 완료하면 두뇌점수
+      - generic [ref=e68]: 🧠 2점
+      - text: 추가 지급
+  - generic [ref=e69]:
+    - generic [ref=e70] [cursor=pointer]:
+      - img [ref=e73]
+      - generic [ref=e76]:
+        - generic [ref=e77]: 같거나 다르거나 목표 100점 · 최고 0점
+        - generic [ref=e78]: 100점 이상 달성
+      - generic [ref=e81]:
+        - generic [ref=e82]: +20XP
+        - generic [ref=e83]: 🧠 1점
+    - generic [ref=e84] [cursor=pointer]:
+      - img [ref=e87]
+      - generic [ref=e91]:
+        - generic [ref=e92]: 방향 맞추기 목표 120점 · 최고 0점
+        - generic [ref=e93]: 120점 이상 달성
+      - generic [ref=e96]:
+        - generic [ref=e97]: +20XP
+        - generic [ref=e98]: 🧠 1점
+    - generic [ref=e99] [cursor=pointer]:
+      - img [ref=e102]
+      - generic [ref=e105]:
+        - generic [ref=e106]: 단어 찾기 목표 200점 · 최고 0점
+        - generic [ref=e107]: 200점 이상 달성
+      - generic [ref=e110]:
+        - generic [ref=e111]: +20XP
+        - generic [ref=e112]: 🧠 1점
+    - generic [ref=e113] [cursor=pointer]:
+      - img [ref=e116]
+      - generic [ref=e121]:
+        - generic [ref=e122]: 다른 글자 찾기 목표 100점 · 최고 0점
+        - generic [ref=e123]: 100점 이상 달성
+      - generic [ref=e126]:
+        - generic [ref=e127]: +20XP
+        - generic [ref=e128]: 🧠 1점
+    - generic [ref=e129] [cursor=pointer]:
+      - img [ref=e132]
+      - generic [ref=e136]:
+        - generic [ref=e137]: 계산 비교 목표 80점 · 최고 0점
+        - generic [ref=e138]: 80점 이상 달성
+      - generic [ref=e141]:
+        - generic [ref=e142]: +20XP
+        - generic [ref=e143]: 🧠 1점
+  - generic: 광고 영역
+  - generic: 광고 영역
+  - generic [ref=e144]:
+    - generic [ref=e146]:
+      - img [ref=e147]
+      - text: 자유 훈련
+    - generic [ref=e148]:
+      - text: 목표점수 달성하면 두뇌점수
+      - generic [ref=e149]: 🧠 1점
+      - text: 지급
+  - generic [ref=e150]:
+    - generic [ref=e151]:
+      - generic [ref=e152]: 기억력
+      - generic [ref=e153]: 해마와 전전두엽의 협응을 강화해 정보를 부호화·저장·인출하는 능력을 키워요.
+    - generic [ref=e154]:
+      - generic [ref=e155] [cursor=pointer]:
+        - img [ref=e157]
+        - generic [ref=e162]: 기억력 카드
+        - generic [ref=e163]: 목표 80점
+      - generic [ref=e164] [cursor=pointer]:
+        - img [ref=e166]
+        - generic [ref=e167]: 순서 기억
+        - generic [ref=e168]: 목표 150점
+      - generic [ref=e169] [cursor=pointer]:
+        - img [ref=e171]
+        - generic [ref=e175]: 리듬 기억
+        - generic [ref=e176]: 목표 120점
+      - generic [ref=e177] [cursor=pointer]:
+        - img [ref=e179]
+        - generic [ref=e181]: 전구 기억
+        - generic [ref=e182]: 목표 100점
+      - generic [ref=e183] [cursor=pointer]:
+        - img [ref=e185]
+        - generic [ref=e188]: 단어 암기
+        - generic [ref=e189]: 목표 150점
+      - generic [ref=e190] [cursor=pointer]:
+        - img [ref=e192]
+        - generic [ref=e197]: 격자 기억
+        - generic [ref=e198]: 목표 200점
+      - generic [ref=e199] [cursor=pointer]:
+        - img [ref=e201]
+        - generic [ref=e203]: 순간 포착
+        - generic [ref=e204]: 목표 150점
+    - generic [ref=e205]:
+      - generic [ref=e206]: 집중력
+      - generic [ref=e207]: 전전두엽의 억제 제어 시스템을 단련해 방해 요소를 차단하고 목표에 주의를 유지하는 능력을 키워요.
+    - generic [ref=e208]:
+      - generic [ref=e209] [cursor=pointer]:
+        - img [ref=e211]
+        - generic [ref=e214]: 인원 세기
+        - generic [ref=e215]: 목표 50점
+      - generic [ref=e216] [cursor=pointer]:
+        - img [ref=e218]
+        - generic [ref=e221]: 수 찾기
+        - generic [ref=e222]: 목표 80점
+      - generic [ref=e223] [cursor=pointer]:
+        - img [ref=e225]
+        - generic [ref=e228]: 같거나 다르거나
+        - generic [ref=e229]: 목표 100점
+    - generic [ref=e230]:
+      - generic [ref=e231]: 수리력
+      - generic [ref=e232]: 전두엽·두정엽의 수리 네트워크를 활성화해 수치 정보를 빠르고 정확하게 처리하는 능력을 키워요.
+    - generic [ref=e233]:
+      - generic [ref=e234] [cursor=pointer]:
+        - img [ref=e236]
+        - generic [ref=e237]: 암산 챌린지
+        - generic [ref=e238]: 목표 120점
+      - generic [ref=e239] [cursor=pointer]:
+        - img [ref=e241]
+        - generic [ref=e244]: 크다작다
+        - generic [ref=e245]: 목표 120점
+      - generic [ref=e246] [cursor=pointer]:
+        - img [ref=e248]
+        - generic [ref=e252]: 피라미드 연산
+        - generic [ref=e253]: 목표 60점
+      - generic [ref=e254] [cursor=pointer]:
+        - img [ref=e256]
+        - generic [ref=e258]: 부호 찾기
+        - generic [ref=e259]: 목표 60점
+      - generic [ref=e260] [cursor=pointer]:
+        - img [ref=e262]:
+          - generic [ref=e265]: ₩
+        - generic [ref=e266]: 동전 세기
+        - generic [ref=e267]: 목표 50점
+      - generic [ref=e268] [cursor=pointer]:
+        - img [ref=e270]
+        - generic [ref=e272]: 연속 빼기
+        - generic [ref=e273]: 목표 80점
+      - generic [ref=e274] [cursor=pointer]:
+        - img [ref=e276]
+        - generic [ref=e280]: 계산 비교
+        - generic [ref=e281]: 목표 80점
+    - generic [ref=e282]:
+      - generic [ref=e283]: 전환력
+      - generic [ref=e284]: 전전두엽의 인지 제어 회로를 단련해 규칙과 관점 사이를 유연하게 전환하는 인지적 유연성을 키워요.
+    - generic [ref=e285]:
+      - generic [ref=e286] [cursor=pointer]:
+        - img [ref=e288]
+        - generic [ref=e294]: 색깔 맞추기
+        - generic [ref=e295]: 목표 50점
+      - generic [ref=e296] [cursor=pointer]:
+        - img [ref=e298]
+        - generic [ref=e302]: 순서 뒤집기
+        - generic [ref=e303]: 목표 50점
+      - generic [ref=e304] [cursor=pointer]:
+        - img [ref=e306]
+        - generic [ref=e310]: 두뇌 가위바위보
+        - generic [ref=e311]: 목표 50점
+      - generic [ref=e312] [cursor=pointer]:
+        - img [ref=e314]
+        - generic [ref=e318]: 좌우 판단
+        - generic [ref=e319]: 목표 80점
+    - generic [ref=e320]:
+      - generic [ref=e321]: 언어력
+      - generic [ref=e322]: 브로카·베르니케 언어 네트워크를 자극해 단어 인출, 의미 처리, 언어적 추론 능력을 높여요.
+    - generic [ref=e323]:
+      - generic [ref=e324] [cursor=pointer]:
+        - img [ref=e326]
+        - generic [ref=e329]: 단어 찾기
+        - generic [ref=e330]: 목표 200점
+      - generic [ref=e331] [cursor=pointer]:
+        - img [ref=e333]
+        - generic [ref=e335]: 단어 완성
+        - generic [ref=e336]: 목표 80점
+      - generic [ref=e337] [cursor=pointer]:
+        - img [ref=e339]
+        - generic [ref=e342]: 짝 맞추기
+        - generic [ref=e343]: 목표 150점
+      - generic [ref=e344] [cursor=pointer]:
+        - img [ref=e346]
+        - generic [ref=e351]: 글자 섞기
+        - generic [ref=e352]: 목표 70점
+    - generic [ref=e353]: 광고 영역
+    - generic [ref=e354]:
+      - generic [ref=e355]: 논리력
+      - generic [ref=e356]: 전두엽 연합 피질의 분석 회로를 강화해 패턴과 규칙에서 결론을 도출하는 추론 능력을 키워요.
+    - generic [ref=e357]:
+      - generic [ref=e358] [cursor=pointer]:
+        - img [ref=e360]
+        - generic [ref=e364]: 패턴 완성
+        - generic [ref=e365]: 목표 30점
+      - generic [ref=e366] [cursor=pointer]:
+        - img [ref=e368]
+        - generic [ref=e372]: 색깔 조합
+        - generic [ref=e373]: 목표 70점
+    - generic [ref=e374]:
+      - generic [ref=e375]: 공간지각력
+      - generic [ref=e376]: 두정-후두 피질의 시공간 처리 영역을 활성화해 3차원 공간 정보를 머릿속에서 조작하는 능력을 키워요.
+    - generic [ref=e377]:
+      - generic [ref=e378] [cursor=pointer]:
+        - img [ref=e380]
+        - generic [ref=e383]: 도형 회전
+        - generic [ref=e384]: 목표 30점
+      - generic [ref=e385] [cursor=pointer]:
+        - img [ref=e387]
+        - generic [ref=e390]: 블록 세기
+        - generic [ref=e391]: 목표 50점
+      - generic [ref=e392] [cursor=pointer]:
+        - img [ref=e394]:
+          - generic [ref=e395]: R
+          - generic [ref=e396]: R
+        - generic [ref=e397]: 거울 문자
+        - generic [ref=e398]: 목표 80점
+    - generic [ref=e399]:
+      - generic [ref=e400]: 반응력
+      - generic [ref=e401]: 감각-운동 피질의 신경 전달 효율을 높여 자극을 인식하고 신속·정확하게 반응하는 처리 속도를 키워요.
+    - generic [ref=e402]:
+      - generic [ref=e403] [cursor=pointer]:
+        - img [ref=e405]
+        - generic [ref=e407]: 반응속도
+        - generic [ref=e408]: 목표 2000ms
+      - generic [ref=e409] [cursor=pointer]:
+        - img [ref=e411]
+        - generic [ref=e414]: 집중력 탭
+        - generic [ref=e415]: 목표 200점
+      - generic [ref=e416] [cursor=pointer]:
+        - img [ref=e418]:
+          - generic [ref=e420]: "1"
+          - generic [ref=e421]: "2"
+          - generic [ref=e422]: "3"
+          - generic [ref=e423]: "4"
+        - generic [ref=e424]: 넘버 터치
+        - generic [ref=e425]: 목표 250점
+      - generic [ref=e426] [cursor=pointer]:
+        - img [ref=e428]
+        - generic [ref=e433]: 다른 글자 찾기
+        - generic [ref=e434]: 목표 100점
+      - generic [ref=e435] [cursor=pointer]:
+        - img [ref=e437]
+        - generic [ref=e440]: 타이밍
+        - generic [ref=e441]: 목표 80점
+      - generic [ref=e442] [cursor=pointer]:
+        - img [ref=e444]
+        - generic [ref=e447]: 시계 읽기
+        - generic [ref=e448]: 목표 70점
+      - generic [ref=e449] [cursor=pointer]:
+        - img [ref=e451]
+        - generic [ref=e455]: 방향 맞추기
+        - generic [ref=e456]: 목표 120점
+      - generic [ref=e457] [cursor=pointer]:
+        - img [ref=e459]
+        - generic [ref=e463]: 카테고리 분류
+        - generic [ref=e464]: 목표 120점
+  - generic [ref=e465] [cursor=pointer]:
+    - img [ref=e467]
+    - generic [ref=e468]:
+      - generic [ref=e469]:
+        - text: 친구에게 공유하고 두뇌점수
+        - generic [ref=e470]: 🧠 5점
+        - text: 받기
+      - generic [ref=e471]: 친구를 초대할 때마다 두뇌점수 지급
+    - img [ref=e473]
+  - generic: 광고 영역
+  - generic [ref=e475]: v170
+```

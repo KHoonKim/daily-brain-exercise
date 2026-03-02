@@ -1,0 +1,8 @@
+[      80ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[   18080ms] [WARNING] [backEvent] home subscribe failed: Error: ReactNativeWebView is not available in browser environment
+    at NativeWindow2.postMessage (http://localhost:5173/node_modules/.vite/deps/@apps-in-toss_web-framework.js?v=b6d5a569:249:13)
+    at http://localhost:5173/node_modules/.vite/deps/@apps-in-toss_web-framework.js?v=b6d5a569:322:19
+    at Object.addEventListener (http://localhost:5173/node_modules/.vite/deps/@apps-in-toss_web-framework.js?v=b6d5a569:905:34)
+    at subscribeHomeBackEvent (http://localhost:5173/src/ui/home.js?t=1772426207672:22:34)
+    at renderHome (http://localhost:5173/src/ui/home.js?t=1772426207672:620:9)
+    at HTMLButtonElement.<anonymous> (http://localhost:5173/src/ui/intro.js?t=1772419735940:94:9) @ http://localhost:5173/src/ui/home.js?t=1772426207672:619
