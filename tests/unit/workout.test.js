@@ -1,7 +1,9 @@
 import { readFileSync } from 'fs';
 import { createContext, runInContext } from 'vm';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const BASE = '/Users/daniel/Documents/daily-brain-exercise/daily-brain-exercise';
+const BASE = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 function makeCtx() {
   const store = {};

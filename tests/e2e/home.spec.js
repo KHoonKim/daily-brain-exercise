@@ -52,10 +52,8 @@ test.describe('Home Screen', () => {
     await page.locator('#introStartBtn').click();
     await page.waitForTimeout(500);
 
-    // Check for the app title in the header
-    const title = page.locator('.tds-top__title').first();
-    await expect(title).toBeVisible({ timeout: 3000 });
-    await expect(title).toContainText('매일매일 두뇌운동');
+    // Check the page title
+    await expect(page).toHaveTitle('매일매일 두뇌운동');
   });
 
   test('home screen has rank display', async ({ page }) => {

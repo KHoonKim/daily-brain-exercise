@@ -1,8 +1,11 @@
 import { readFileSync } from 'fs';
 import { createContext, runInContext } from 'vm';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const CONFIG_PATH = '/Users/daniel/Documents/daily-brain-exercise/daily-brain-exercise/src/core/config.js';
-const UTILS_PATH = '/Users/daniel/Documents/daily-brain-exercise/daily-brain-exercise/src/core/utils.js';
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const CONFIG_PATH = resolve(ROOT, 'src/core/config.js');
+const UTILS_PATH = resolve(ROOT, 'src/core/utils.js');
 
 function makeCtx() {
   const store = {};

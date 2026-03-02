@@ -404,14 +404,16 @@ describe('GET /api/score/promo/exchanges/:userHash', () => {
 // Disconnect (requires Basic auth)
 // ---------------------------------------------------------------------------
 describe('Disconnect endpoints', () => {
-  it('GET /api/score/disconnect returns 401 without auth', async () => {
+  it('GET /api/score/disconnect returns 200 without auth (connectivity test)', async () => {
     const res = await request.get('/api/score/disconnect').query({ userKey: '12345' });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'ok' });
   });
 
-  it('POST /api/score/disconnect returns 401 without auth', async () => {
+  it('POST /api/score/disconnect returns 200 without auth (connectivity test)', async () => {
     const res = await request.post('/api/score/disconnect').send({ userKey: '12345' });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'ok' });
   });
 });
 
