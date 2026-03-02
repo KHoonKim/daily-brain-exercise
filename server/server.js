@@ -565,6 +565,40 @@ db.exec(`
   );
 `);
 
+// ===== Golden Goose Tables =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS gg_users (
+    user_hash TEXT PRIMARY KEY,
+    user_name TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS gg_promotion_grants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    promo_type TEXT NOT NULL,
+    promo_code TEXT,
+    amount INTEGER DEFAULT 1,
+    status TEXT DEFAULT 'granted',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_hash, promo_type)
+  );
+  CREATE TABLE IF NOT EXISTS gg_coins (
+    user_hash TEXT PRIMARY KEY,
+    coins INTEGER DEFAULT 0,
+    total_earned INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS gg_exchanges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    coins_spent INTEGER DEFAULT 10,
+    promo_id TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 app.post('/api/score/promo/exchange', (req, res) => {
   const { userHash } = req.body;
   if (!userHash) return res.status(400).json({ error: 'userHash required' });
@@ -1260,6 +1294,139 @@ async function sendCashwordDailyNotification() {
 
 // 매일 KST 09:00 CashWord 유저에게 알림 발송
 cron.schedule('0 9 * * *', sendCashwordDailyNotification, { timezone: 'Asia/Seoul' });
+
+// ── 황금알을 낳는 거위 연결 끊기 콜백 ──────────────────────────────────────
+const GG_DISCONNECT_AUTH = process.env.GG_DISCONNECT_AUTH;
+if (!GG_DISCONNECT_AUTH) console.warn('[WARN] GG_DISCONNECT_AUTH가 .env에 설정되지 않았습니다');
+function verifyGGDisconnectAuth(req) {
+  const auth = req.headers.authorization;
+  return auth && auth === 'Basic ' + Buffer.from(GG_DISCONNECT_AUTH).toString('base64');
+}
+function handleGGDisconnect(userKey, referrer) {
+  const userHash = String(userKey);
+  try { db.prepare('DELETE FROM gg_coins WHERE user_hash = ?').run(userHash); } catch(e) {}
+  try { db.prepare('DELETE FROM gg_exchanges WHERE user_hash = ?').run(userHash); } catch(e) {}
+  console.log(`[GG Disconnect] ${referrer || 'UNKNOWN'} — deleted data for userKey: ${userKey}`);
+}
+app.options('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => res.status(204).end());
+app.get('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => {
+  if (!req.headers.authorization) return res.json({ status: 'ok' }); // 포털 연결 테스트
+  if (!verifyGGDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
+  const { userKey, referrer } = req.query;
+  if (userKey) handleGGDisconnect(userKey, referrer);
+  res.json({ status: 'ok' });
+});
+app.post('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => {
+  if (!req.headers.authorization) return res.json({ status: 'ok' }); // 포털 연결 테스트
+  if (!verifyGGDisconnectAuth(req)) return res.status(401).json({ error: 'Unauthorized' });
+  const { userKey, referrer } = req.body;
+  if (userKey) handleGGDisconnect(userKey, referrer);
+  res.json({ status: 'ok' });
+});
+
+// ===== Golden Goose API =====
+
+// GET /api/golden-goose/coins/:userHash — 금화 잔액 조회
+app.get('/api/golden-goose/coins/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  const row = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0 });
+});
+
+// POST /api/golden-goose/reward — 광고 완료 후 금화 지급 (서버에서 확률 추첨)
+app.post('/api/golden-goose/reward', (req, res) => {
+  const { userHash } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
+
+  const rand = Math.random();
+  let coins;
+  if (rand < 0.40)       coins = Math.floor(Math.random() * 4) + 1;
+  else if (rand < 0.88)  coins = Math.floor(Math.random() * 6) + 5;
+  else if (rand < 0.985) coins = Math.floor(Math.random() * 15) + 11;
+  else                   coins = Math.floor(Math.random() * 25) + 26;
+
+  db.prepare(`
+    INSERT INTO gg_coins (user_hash, coins, total_earned)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET
+      coins = coins + excluded.coins,
+      total_earned = total_earned + excluded.coins,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(userHash, coins, coins);
+
+  const updated = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned });
+});
+
+// POST /api/golden-goose/exchange — 금화 10개 차감 + 교환 ID 발급
+app.post('/api/golden-goose/exchange', (req, res) => {
+  const { userHash } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
+
+  const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
+  if (!row || row.coins < 10) return res.json({ error: 'insufficient_coins' });
+
+  const promoCfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
+  const promoId = promoCfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
+
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE gg_coins SET coins = coins - 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(userHash);
+    const result = db.prepare(
+      'INSERT INTO gg_exchanges (user_hash, coins_spent, promo_id, status) VALUES (?, 10, ?, ?)'
+    ).run(userHash, promoId, 'pending');
+    return result.lastInsertRowid;
+  });
+  const exchangeId = tx();
+
+  res.json({ exchangeId, promoId });
+});
+
+// POST /api/golden-goose/exchange/:id/confirm — 교환 확정
+app.post('/api/golden-goose/exchange/:id/confirm', (req, res) => {
+  const { id } = req.params;
+  db.prepare("UPDATE gg_exchanges SET status = 'confirmed' WHERE id = ?").run(id);
+  res.json({ ok: true });
+});
+
+// POST /api/golden-goose/exchange/:id/restore — 교환 실패 시 금화 복원
+app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
+  const { id } = req.params;
+  const exchange = db.prepare('SELECT * FROM gg_exchanges WHERE id = ?').get(id);
+  if (!exchange || exchange.status !== 'pending') return res.json({ ok: false });
+
+  db.transaction(() => {
+    db.prepare('UPDATE gg_coins SET coins = coins + 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(exchange.user_hash);
+    db.prepare("UPDATE gg_exchanges SET status = 'restored' WHERE id = ?").run(id);
+  })();
+  res.json({ ok: true });
+});
+
+// GET /api/golden-goose/promo-config
+app.get('/api/golden-goose/promo-config', (req, res) => {
+  const exchange = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
+  res.json({ exchange: exchange?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO' });
+});
+
+// GET /api/golden-goose/promo/check/:userHash/:promoType
+app.get('/api/golden-goose/promo/check/:userHash/:promoType', (req, res) => {
+  const { userHash, promoType } = req.params;
+  const row = db.prepare('SELECT * FROM gg_promotion_grants WHERE user_hash = ? AND promo_type = ?').get(userHash, promoType);
+  res.json({ granted: !!row });
+});
+
+// POST /api/golden-goose/promo/record
+app.post('/api/golden-goose/promo/record', (req, res) => {
+  const { userHash, promoType, promoCode, amount } = req.body;
+  try {
+    db.prepare(`
+      INSERT OR IGNORE INTO gg_promotion_grants (user_hash, promo_type, promo_code, amount, status)
+      VALUES (?, ?, ?, ?, 'granted')
+    `).run(userHash, promoType, promoCode, amount ?? 1);
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
 
 if (require.main === module) {
   app.listen(PORT, '127.0.0.1', () => {
