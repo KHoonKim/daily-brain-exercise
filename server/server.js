@@ -630,6 +630,24 @@ app.get('/api/score/promo/list/:userHash', (req, res) => {
   res.json(rows);
 });
 
+// Debug: set user points directly (server + test only)
+app.post('/api/score/debug/set-points', (req, res) => {
+  const { userHash, points } = req.body;
+  if (!userHash || points == null) return res.status(400).json({ error: 'missing params' });
+  db.prepare('UPDATE users SET points = ? WHERE user_hash = ?').run(points, userHash);
+  console.log(`[Debug] set points=${points} for ${userHash}`);
+  res.json({ ok: true, points });
+});
+
+// Delete all promotion grants for a user (debug/test reset)
+app.delete('/api/score/promo/reset/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  if (!userHash) return res.status(400).json({ error: 'userHash required' });
+  const { changes } = db.prepare('DELETE FROM promotion_grants WHERE user_hash = ?').run(userHash);
+  console.log(`[Promo] reset ${changes} grants for ${userHash}`);
+  res.json({ ok: true, deleted: changes });
+});
+
 // Disconnect cleanup: also remove promotion_grants
 // (already handled in handleDisconnect, adding below)
 

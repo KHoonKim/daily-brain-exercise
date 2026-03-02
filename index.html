@@ -179,6 +179,12 @@
 
       <div id="home-banner-2-wrap"></div>
 
+      <!-- DEBUG -->
+      <div style="text-align:center;padding:8px 0 0;display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+        <button onclick="(async()=>{const uh=await AIT.getUserHash();await fetch(API_BASE+'/api/score/debug/set-points',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userHash:uh,points:100})});LS.set('points',100);renderPoints();toast('두뇌점수 100점 (서버+로컬)');})();" style="font-size:11px;padding:4px 12px;border-radius:8px;border:1px dashed #f59e0b;background:transparent;color:#f59e0b;cursor:pointer">🐛 두뇌점수 100점</button>
+        <button onclick="(async()=>{const uh=await AIT.getUserHash();const r=await fetch(API_BASE+'/api/score/promo/reset/'+uh,{method:'DELETE'}).then(x=>x.json());toast('프로모션 기록 '+r.deleted+'건 삭제됨');})()" style="font-size:11px;padding:4px 12px;border-radius:8px;border:1px dashed #ef4444;background:transparent;color:#ef4444;cursor:pointer">🗑️ 프로모션 기록 초기화</button>
+      </div>
+
       <!-- 버전 표시 (이스터에그: 5초 안에 10번 클릭 → 데이터 초기화) -->
       <div id="versionBtn" style="text-align:center;padding:16px 0 24px;color:var(--tds-color-sub,#8b95a1);font-size:11px;cursor:default;user-select:none">v170</div>
 
