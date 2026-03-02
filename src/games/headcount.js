@@ -1,6 +1,6 @@
 // ===== 21. HEAD COUNT - 인원 세기 =====
 let hcScore,hcRound,hcCount,hcAnim,hcTime;
-const HC_CHAR='<img src="character.png" style="width:100%;height:100%">';
+const HC_CHAR='<img src="https://static.toss.im/2d-emojis/svg/u1F9CD.svg" style="width:100%;height:100%">';
 function initHeadcount(){hcScore=0;hcRound=0;document.getElementById('hc-score').textContent='0점';
 document.getElementById('hc-round').textContent='Lv.1';document.getElementById('hc-round').className='g-timer';
 initHearts('hc');hcNext()}

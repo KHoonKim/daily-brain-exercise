@@ -1,5 +1,5 @@
 // ===== TICKET SYSTEM =====
-const MAX_TICKETS = 5;
+const MAX_TICKETS = 3;
 function getTickets() {
   const today = getDayKey();
   const saved = LS.getJSON('tickets', null);
@@ -40,6 +40,28 @@ function showTicketModal(gameId) {
     };
   }
 }
+let _debugClickCount = 0, _debugClickTimer = null;
+function _initDebugTicket() {
+  const el = document.getElementById('ts-max-hint');
+  if (!el || el._debugBound) return;
+  el._debugBound = true;
+  el.addEventListener('click', () => {
+    _debugClickCount++;
+    if (_debugClickTimer) clearTimeout(_debugClickTimer);
+    _debugClickTimer = setTimeout(() => { _debugClickCount = 0; }, 5000);
+    if (_debugClickCount >= 10) {
+      _debugClickCount = 0;
+      clearTimeout(_debugClickTimer);
+      const t = getTickets();
+      t.count += 100;
+      LS.setJSON('tickets', t);
+      const tsCount = document.getElementById('ts-count');
+      if (tsCount) tsCount.textContent = t.count + '장';
+      renderTicketCount();
+      snackbar('🎫 티켓 100장 추가됨 (디버그)');
+    }
+  });
+}
 function showTicketShop() {
   const t = getTickets();
   const tsCount = document.getElementById('ts-count');
@@ -47,7 +69,9 @@ function showTicketShop() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const tsScreen = document.getElementById('ticketShop');
   if (tsScreen) tsScreen.classList.add('active');
-  if (window.AIT) AIT.loadBannerAd('ts-banner');
+  history.pushState({app:true},'');
+  if (window.AIT) AIT.loadBannerAd('ts-banner', {spaceId: AIT.CONFIG.AD_IMAGE_BANNER_ID});
+  _initDebugTicket();
 }
 function ticketAdRefill() {
   if (typeof AIT === 'undefined' || !AIT.showAd) return;

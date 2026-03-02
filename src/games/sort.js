@@ -24,6 +24,7 @@ stStartQTimer()}
 function stStartQTimer(){stStopQTimer();
 const fill=document.getElementById('st-qtimer-fill');
 if(fill){fill.style.transition='none';fill.style.width='100%';fill.style.background='var(--p)';}
+const stqt=document.getElementById('st-q-time');if(stqt)stqt.textContent=stQTimeLimit.toFixed(1)+'s';
 let elapsed=0;
 stQTimer=setInterval(()=>{elapsed+=100;
 const pct=Math.max(0,(1-elapsed/(stQTimeLimit*1000))*100);
@@ -31,6 +32,7 @@ if(fill){
   fill.style.transition='width 0.1s linear';
   fill.style.width=pct+'%';
   fill.style.background=pct<30?'#F43F5E':pct<60?'#F59E0B':'var(--p)';}
+if(stqt)stqt.textContent=Math.max(0,stQTimeLimit-elapsed/1000).toFixed(1)+'s';
 if(elapsed>=stQTimeLimit*1000){stStopQTimer();stCombo=0;stQRound++;stQTimeLimit=Math.max(0.5,3.0-stQRound*0.1);curScore=stScore;setHeartResumeCallback(stGen);if(loseHeart('st'))return;scheduleNextQuestion(stGen,250)}},100)}
 function stStopQTimer(){if(stQTimer){clearInterval(stQTimer);stQTimer=null;}}
 function stPick(idx){stStopQTimer();stQRound++;stQTimeLimit=Math.max(0.5,3.0-stQRound*0.1);

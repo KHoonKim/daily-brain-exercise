@@ -24,7 +24,7 @@ bcQLimit=Math.max(1.5,8.0-(bcRound-1)*0.2);bcQTime=bcQLimit;clearInterval(bcQTim
 const bcbar=document.getElementById('bc-qbar');if(bcbar){bcbar.style.transition='none';bcbar.style.width='100%';bcbar.offsetWidth;bcbar.style.transition=`width ${bcQLimit}s linear`;bcbar.style.width='0%'}
 const bcqt=document.getElementById('bc-q-time');if(bcqt)bcqt.textContent=bcQLimit.toFixed(1)+'s';
 bcQTimer=setInterval(()=>{bcQTime-=0.1;const qt=document.getElementById('bc-q-time');if(qt)qt.textContent=Math.max(0,bcQTime).toFixed(1)+'s';if(bcQTime<=0){clearInterval(bcQTimer);curScore=bcScore;setHeartResumeCallback(bcNext);if(loseHeart('bc'))return;scheduleNextQuestion(bcNext,300)}},100)}
-function bcPick(el,n,ans){if(el.classList.contains('ok')||el.classList.contains('no'))return;clearInterval(bcQTimer);
+function bcPick(el,n,ans){if(bcQTime<=0)return;if(el.classList.contains('ok')||el.classList.contains('no'))return;clearInterval(bcQTimer);freezeQBar('bc-qbar');
 document.querySelectorAll('.bc-opt').forEach(o=>o.style.pointerEvents='none');
 if(n===ans){el.classList.add('ok');bcScore+=10;setScore('bc-score',bcScore);toast('정답!')}
 else{el.classList.add('no');document.querySelectorAll('.bc-opt').forEach(o=>{if(+o.textContent===ans)o.classList.add('ok')});

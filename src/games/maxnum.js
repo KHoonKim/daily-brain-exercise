@@ -12,6 +12,6 @@ document.getElementById('mx-grid').innerHTML=nums.map((n,i)=>`<div class="mx-cel
 mxQLimit=Math.max(1.5,5.2-mxLv*0.2);mxQTime=mxQLimit;clearInterval(mxQTimer);
 const mxbar=document.getElementById('mn-qbar');if(mxbar){mxbar.style.transition='none';mxbar.style.width='100%';mxbar.offsetWidth;mxbar.style.transition=`width ${mxQLimit}s linear`;mxbar.style.width='0%'}const mnqt=document.getElementById('mn-q-time');if(mnqt)mnqt.textContent=mxQLimit.toFixed(1)+'s';
 mxQTimer=setInterval(()=>{mxQTime-=0.1;document.getElementById('mn-q-time').textContent=Math.max(0,mxQTime).toFixed(1)+'s';if(mxQTime<=0){clearInterval(mxQTimer);curScore=mxScore;setHeartResumeCallback(mxGen);if(loseHeart('mn'))return;scheduleNextQuestion(mxGen,300)}},100)}
-function mxPick(el,n,target){if(n===target){clearInterval(mxQTimer);el.classList.add('ok');const pct=mxQTime/mxQLimit;const bonus=pct>.75?5:pct>.5?3:1;mxScore+=10+mxLv+bonus;mxLv++;
+function mxPick(el,n,target){if(mxQTime<=0)return;if(n===target){clearInterval(mxQTimer);freezeQBar('mn-qbar');el.classList.add('ok');const pct=mxQTime/mxQLimit;const bonus=pct>.75?5:pct>.5?3:1;mxScore+=10+mxLv+bonus;mxLv++;
 setScore('mx-score',mxScore);scheduleNextQuestion(mxGen,400)}
 else{el.classList.add('no');mxScore=Math.max(0,mxScore-3);setScore('mx-score',mxScore);curScore=mxScore;setHeartResumeCallback(mxGen);if(loseHeart('mn'))clearInterval(mxQTimer)}}

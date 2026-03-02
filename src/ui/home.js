@@ -62,24 +62,20 @@ function renderHome(){
 
   const challengeListEl = document.getElementById('challengeList');
   if(challengeListEl) {
-    challengeListEl.innerHTML=challenges.map(m=>{
-      const pct=Math.min(100,m.target>0?(m.progress/m.target*100):0);
-      const best=LS.get(m.gameId+'-best',0);
+    challengeListEl.innerHTML=challenges.map((m,i,arr)=>{
       const g = GAMES.find(x => x.id === m.gameId) || { color: 'var(--p)' };
-      // TDS ListRow — Challenge Card
-      return `<div class="tds-list-row tds-list-row--card" onclick="startGame('${m.gameId}', false, 'challenge')">
+      const isLast=i===arr.length-1;
+      // TDS ListRow — Challenge List Item
+      return `<div class="tds-list-row" style="border-bottom:none${isLast?';border-radius:0 0 16px 16px':''}" onclick="startGame('${m.gameId}', false, 'challenge')">
         <div class="tds-list-row__left">
           <div class="tds-asset-icon tds-asset-icon--sm" style="background:${g.color}18;color:${g.color};padding:7px">${GI[m.gameId]||''}</div>
         </div>
         <div class="tds-list-row__contents">
-          <div class="tds-list-row__title">${m.name} <span class="tds-st13 tds-fw-regular tds-color-sub">목표 ${m.target}점 · 최고 ${best}점</span></div>
+          <div class="tds-list-row__title">${m.name}</div>
           <div class="tds-list-row__desc">${m.desc}</div>
-          ${m.done?'':`<div class="challenge-prog" style="margin-top:6px"><div class="challenge-prog-fill" style="width:${pct}%;background:${g.color}"></div></div>`}
         </div>
         <div class="tds-list-row__right">
-          ${m.done
-            ? '<img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px">'
-            : `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="tds-badge tds-badge-xs tds-badge-fill-yellow" style="font-size:12px">+${m.xp}XP</span><span class="tds-badge tds-badge-xs tds-badge-fill-blue" style="font-size:12px">🧠 1점</span></div>`}
+          ${m.done?'<img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:20px;height:20px">':''}
         </div>
       </div>`}).join('');
   }
@@ -87,47 +83,29 @@ function renderHome(){
   renderWorkout();
   renderTicketCount();
   if(window.renderPoints) renderPoints(true);
-  if(window.renderCoins) renderCoins();
-  // 서버에서 코인 잔액 동기화
-  if(window.AIT) {
-    AIT.getUserHash().then(uh => {
-      if(!uh) return;
-      fetch(`${API_BASE}/api/cashword/coins/${uh}`)
-        .then(r => r.json())
-        .then(d => {
-          if(d.coins !== undefined) { LS.set('coins', d.coins); if(window.renderCoins) renderCoins(); }
-        }).catch(() => {});
-    }).catch(() => {});
-  }
 
   // Game grid grouped by category
-  const CAT_INFO={
-    '기억력':{desc:'해마와 전전두엽의 협응을 강화해 정보를 부호화·저장·인출하는 능력을 키워요.'},
-    '집중력':{desc:'전전두엽의 억제 제어 시스템을 단련해 방해 요소를 차단하고 목표에 주의를 유지하는 능력을 키워요.'},
-    '수리력':{desc:'전두엽·두정엽의 수리 네트워크를 활성화해 수치 정보를 빠르고 정확하게 처리하는 능력을 키워요.'},
-    '전환력':{desc:'전전두엽의 인지 제어 회로를 단련해 규칙과 관점 사이를 유연하게 전환하는 인지적 유연성을 키워요.'},
-    '언어력':{desc:'브로카·베르니케 언어 네트워크를 자극해 단어 인출, 의미 처리, 언어적 추론 능력을 높여요.'},
-    '논리력':{desc:'전두엽 연합 피질의 분석 회로를 강화해 패턴과 규칙에서 결론을 도출하는 추론 능력을 키워요.'},
-    '공간지각력':{desc:'두정-후두 피질의 시공간 처리 영역을 활성화해 3차원 공간 정보를 머릿속에서 조작하는 능력을 키워요.'},
-    '반응력':{desc:'감각-운동 피질의 신경 전달 효율을 높여 자극을 인식하고 신속·정확하게 반응하는 처리 속도를 키워요.'},
-  };
   const cats=['기억력','집중력','수리력','전환력','언어력','논리력','공간지각력','반응력'];
   let gridHtml='';
   cats.forEach(cat=>{
     const games=GAMES.filter(g=>g.cat===cat);if(!games.length)return;
-    const info=CAT_INFO[cat]||{desc:''};
-    gridHtml+=`<div style="margin-top:20px;margin-bottom:4px"><div class="tds-t6 tds-fw-bold">${cat}</div><div class="tds-st12 tds-color-sub" style="margin-top:3px;margin-bottom:10px;line-height:1.5">${info.desc}</div></div>`;
+    gridHtml+=`<div style="margin-top:16px;margin-bottom:8px"><div class="tds-t6 tds-fw-bold">${cat}</div></div>`;
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}', false, 'free')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
       <div class="gc-best">${(()=>{const pct=_lsCache[g.id+'-pct']||0;const pctHtml=pct>0?`<span style="font-size:10px;color:#8B95A1"> · 상위 ${pct}%</span>`:'';if(g.goalUnit==='ms'){const b=_lsCache[g.id+'-best-ms']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}ms${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}ms</span>`}const b=_lsCache[g.id+'-best']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}점</span>`})()}</div>
     </div>`).join('')}</div>`;
     if(cat==='언어력'){
-      gridHtml+=`<div id="home-banner-4" style="margin:8px 0;width:100%;background:var(--border);border-radius:var(--r12);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px">광고 영역</div>`;
+      gridHtml+=`<div id="home-banner-4" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>`;
     }
   });
   const gameGridEl = document.getElementById('gameGrid');
   if(gameGridEl) gameGridEl.innerHTML=gridHtml;
+
+  const b1Wrap=document.getElementById('home-banner-1-wrap');
+  if(b1Wrap) b1Wrap.innerHTML='<div id="home-banner-1" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
+  const b2Wrap=document.getElementById('home-banner-2-wrap');
+  if(b2Wrap) b2Wrap.innerHTML='<div id="home-banner-2" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
 
   if(window.AIT) {
     setTimeout(()=>{
@@ -144,6 +122,15 @@ function goHome(){
   clearInterval(curTimer);
   clearTimeout(curTimer);
   cancelNextQuestion();
+  clearGameCallbacks();
+  // 모든 게임별 문항 타이머 강제 정리 (게임 이탈 시 시간초과/하트감소 등 로직 차단)
+  clearInterval(nbQTimer);clearInterval(oddQTimer);clearInterval(mxQTimer);
+  clearInterval(fkQInterval);clearInterval(focusSpawnTimer);clearInterval(clkQTimer);
+  clearInterval(stQTimer);clearInterval(cmxQTimer);clearInterval(scQTimer);
+  clearInterval(lrQTimer);clearInterval(rpsQTimer);clearInterval(wcQTimer);
+  clearInterval(mrQTimer);clearInterval(cc2QTimer);clearInterval(sfQTimer);
+  clearInterval(stroopQTimer);clearInterval(pyrQTimer);clearInterval(bcQTimer);
+  clearTimeout(reactTimeout);
   document.getElementById('heartOverlay')?.classList.remove('active');
   document.getElementById('timeExtendOverlay')?.classList.remove('active');
   show('homeScreen');

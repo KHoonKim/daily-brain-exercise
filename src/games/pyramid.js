@@ -26,7 +26,7 @@ const inp=document.createElement('div');inp.className='pyr-input';
 optArr.forEach(v=>{const b=document.createElement('button');b.className='pyr-btn';b.textContent=v;b.onclick=()=>pyrPick(v);inp.appendChild(b)});
 el.appendChild(inp);
 pyrStartQBar();let pyrQElapsed=0;
-pyrQTimer=setInterval(()=>{pyrQElapsed+=100;document.getElementById('pyr-q-time').textContent=Math.max(0,(5000-pyrQElapsed)/1000).toFixed(1)+'s';if(pyrQElapsed>=5000){clearInterval(pyrQTimer);if(pyrAnswered)return;pyrAnswered=true;pyrStopQBar();const blank=document.getElementById('pyr-blank');if(blank){blank.textContent=pyrAnswer;blank.style.borderColor='var(--no)';blank.style.background='var(--no-bg)'}toast('시간 초과!');curScore=pyrScore;setHeartResumeCallback(pyrNext);if(loseHeart('pyr'))return;scheduleNextQuestion(pyrNext,900)}},100)}
+pyrQTimer=setInterval(()=>{if(!curGame){clearInterval(pyrQTimer);return;}pyrQElapsed+=100;document.getElementById('pyr-q-time').textContent=Math.max(0,(5000-pyrQElapsed)/1000).toFixed(1)+'s';if(pyrQElapsed>=5000){clearInterval(pyrQTimer);if(pyrAnswered)return;pyrAnswered=true;pyrStopQBar();const blank=document.getElementById('pyr-blank');if(blank){blank.textContent=pyrAnswer;blank.style.borderColor='var(--no)';blank.style.background='var(--no-bg)'}toast('시간 초과!');curScore=pyrScore;setHeartResumeCallback(pyrNext);if(loseHeart('pyr'))return;scheduleNextQuestion(pyrNext,900)}},100)}
 function pyrPick(v){if(pyrAnswered)return;pyrAnswered=true;clearInterval(pyrQTimer);pyrStopQBar();
 const blank=document.getElementById('pyr-blank');if(!blank)return;
 blank.textContent=v;

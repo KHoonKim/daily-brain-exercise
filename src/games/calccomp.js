@@ -1,6 +1,6 @@
 // ===== 35. CALC COMP - 계산 비교 =====
-let cc2Score,cc2Time,cc2ValA,cc2ValB,cc2QTimer,cc2QTime,cc2QLimit,cc2Lv,cc2Mode;
-function initCalccomp(){cc2Score=0;cc2Time=30;cc2Lv=0;document.getElementById('cc2-score').textContent='0점';initHearts('cc2');
+let cc2Score,cc2Time,cc2ValA,cc2ValB,cc2QTimer,cc2QTime,cc2QLimit,cc2Lv,cc2Mode,cc2Combo;
+function initCalccomp(){cc2Score=0;cc2Time=30;cc2Lv=0;cc2Combo=0;document.getElementById('cc2-score').textContent='0점';initHearts('cc2');
 document.getElementById('cc2-timer').textContent='30s';document.getElementById('cc2-timer').className='g-timer';
 clearInterval(curTimer);setTickFn(cc2Tick);curTimer=setInterval(cc2Tick,1000);cc2Gen()}
 function cc2Tick(){cc2Time--;document.getElementById('cc2-timer').textContent=cc2Time+'s';if(cc2Time<=10)document.getElementById('cc2-timer').className='g-timer urgent';if(cc2Time<=0){clearInterval(curTimer);clearInterval(cc2QTimer);setTimeExtendResumeCallback((s)=>{cc2Time=s;document.getElementById('cc2-timer').textContent=cc2Time+'s';document.getElementById('cc2-timer').className='g-timer';curTimer=setInterval(cc2Tick,1000);cc2Gen()});showResult(cc2Score,'계산 비교',[], {_isTimerEnd:true})}}
@@ -19,8 +19,8 @@ const cc2msg=document.getElementById('cc2-msg');if(cc2msg)cc2msg.textContent=cc2
 cc2QLimit=Math.max(2,6-cc2Lv*0.1);cc2QTime=cc2QLimit;clearInterval(cc2QTimer);
 const cc2bar=document.getElementById('cc2-qbar');if(cc2bar){cc2bar.style.transition='none';cc2bar.style.width='100%';cc2bar.offsetWidth;cc2bar.style.transition=`width ${cc2QLimit}s linear`;cc2bar.style.width='0%'}const cc2qt=document.getElementById('cc2-q-time');if(cc2qt)cc2qt.textContent=cc2QLimit.toFixed(1)+'s';
 cc2QTimer=setInterval(()=>{cc2QTime-=0.1;document.getElementById('cc2-q-time').textContent=Math.max(0,cc2QTime).toFixed(1)+'s';if(cc2QTime<=0){clearInterval(cc2QTimer);setHeartResumeCallback(cc2Gen);curScore=cc2Score;if(loseHeart('cc2'))return;scheduleNextQuestion(cc2Gen,300)}},100)}
-function cc2Pick(side){clearInterval(cc2QTimer);const bigger=cc2ValA>cc2ValB?'left':'right';const correct=cc2Mode==='big'?side===bigger:side!==bigger;
+function cc2Pick(side){if(cc2QTime<=0)return;clearInterval(cc2QTimer);freezeQBar('cc2-qbar');const bigger=cc2ValA>cc2ValB?'left':'right';const correct=cc2Mode==='big'?side===bigger:side!==bigger;
 const el=document.getElementById(side==='left'?'cc2-a':'cc2-b');
-if(correct){el.style.borderColor='var(--ok)';cc2Lv++;cc2Score+=10;setScore('cc2-score',cc2Score);toast('정답!')}
-else{el.style.borderColor='var(--no)';setHeartResumeCallback(cc2Gen);curScore=cc2Score;if(loseHeart('cc2'))return}
+if(correct){el.style.borderColor='var(--ok)';cc2Lv++;cc2Combo++;const pts=cc2Combo>=5?30:cc2Combo>=3?20:10;cc2Score+=pts;setScore('cc2-score',cc2Score);if(cc2Combo%5===0){cc2Time=Math.min(cc2Time+COMBO_TIME_BONUS,99);toast(cc2Combo+'콤보! +'+COMBO_TIME_BONUS+'초')}else{toast('정답!')}}
+else{el.style.borderColor='var(--no)';cc2Combo=0;setHeartResumeCallback(cc2Gen);curScore=cc2Score;if(loseHeart('cc2'))return}
 scheduleNextQuestion(cc2Gen,400)}

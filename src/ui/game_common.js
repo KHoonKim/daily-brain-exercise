@@ -1,5 +1,27 @@
 // ===== GAME COMMON UI =====
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active')}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id)?.classList.add('active');if(id!=='homeScreen'&&id!=='introScreen')history.pushState({app:true},'')}
+
+// ===== BACK BUTTON =====
+function _handleBack(){
+  if(document.getElementById('levelupOverlay')?.classList.contains('active')){closeLevelUp();}
+  else if(document.getElementById('heartOverlay')?.classList.contains('active')){heartQuit();}
+  else if(document.getElementById('timeExtendOverlay')?.classList.contains('active')){timeExtendQuit();}
+  else if(document.getElementById('ticketModal')?.classList.contains('active')){closeTicketModal();}
+  else if(document.getElementById('overlay')?.classList.contains('active')){goHomeFromResult();}
+  else if(document.getElementById('wkTransition')?.classList.contains('active')){wkBack();}
+  else if(document.getElementById('leaderboardScreen')?.classList.contains('active')){lbBack();}
+  else if(document.getElementById('ticketShop')?.classList.contains('active')){goHome();}
+  else if(document.getElementById('homeScreen')?.classList.contains('active')){if(window.AIT)AIT.close();}
+  else{goHome();}
+}
+
+// History API (web browser fallback)
+history.replaceState({app:true},'');
+history.pushState({app:true},''); // 초기 버퍼: 홈에서 뒤로가기도 popstate 발화되도록
+window.addEventListener('popstate',()=>{_handleBack();history.pushState({app:true},'');});
+
+// Toss 네이티브 백버튼: 기본 동작 차단 후 직접 처리
+if(window.AIT&&AIT.isToss)AIT.subscribeBackEvent(_handleBack);
 
 let curGoal=0,goalReached=false;
 function initGoalBar(id){
@@ -8,17 +30,16 @@ function initGoalBar(id){
   goalReached=false;
   if(isMsGame){
     const bestMs=LS.get(id+'-best-ms',0);
-    const mult=curGameContext==='workout'?1.1:0.99;
-    const msDefault=gameMeta?.goalDefault||300;
-    curGoal=bestMs>0?Math.round(bestMs*mult):msDefault;
+    if(curGameContext==='workout'){const wk=getTodayWorkout();curGoal=wk.targets?.[id]??(bestMs>0?Math.round(bestMs*1.1):gameMeta.goalDefault);}
+    else{curGoal=bestMs>0?Math.round(bestMs*0.99):gameMeta.goalDefault;}
     const progressEl=document.querySelector('#game-'+id+' .g-progress');
     if(!progressEl)return;
     progressEl.innerHTML='<span class="gp-cur">--ms</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'ms</span>';
   }else{
     const best=LS.get(id+'-best',0);
-    const mult=curGameContext==='workout'?0.9:1.05;
     const scoreDefault=gameMeta?.goalDefault||60;
-    curGoal=best>0?Math.max(Math.ceil(best*mult),scoreDefault):scoreDefault;
+    if(curGameContext==='workout'){const wk=getTodayWorkout();curGoal=wk.targets?.[id]??(best>0?Math.max(Math.ceil(best*0.9),scoreDefault):scoreDefault);}
+    else{curGoal=best>0?Math.max(Math.ceil(best*1.03),scoreDefault):scoreDefault;}
     const progressEl=document.querySelector('#game-'+id+' .g-progress');
     if(!progressEl)return;
     progressEl.innerHTML='<span class="gp-cur">0점</span><div class="gp-track"><div class="gp-fill"></div></div><span class="gp-target">목표 '+curGoal+'점</span>';
@@ -74,11 +95,23 @@ function updateGoal(score,gameId){
 let _nextQTimeout = null;
 function scheduleNextQuestion(fn, delay) {
   clearTimeout(_nextQTimeout);
-  _nextQTimeout = setTimeout(fn, delay);
+  _nextQTimeout = setTimeout(() => { if(curGame) fn(); }, delay);
 }
 function cancelNextQuestion() {
   clearTimeout(_nextQTimeout);
   _nextQTimeout = null;
+}
+function freezeQBar(barId) {
+  const b = document.getElementById(barId);
+  if(!b) return;
+  const w = getComputedStyle(b).width;
+  b.style.transition = 'none';
+  b.style.width = w;
+}
+function clearGameCallbacks() {
+  _heartResumeCallback = null;
+  _timeExtendResumeCallback = null;
+  _curTickFn = null;
 }
 
 // ===== HEART SYSTEM =====
@@ -114,6 +147,7 @@ function loseHeart(gameId){
     clearInterval(curTimer);
     cancelNextQuestion();
     setTimeout(()=>{
+      if(!curGame)return;
       if(heartRefillUsed || timeExtendUsed){
         const gameName=GAMES.find(g=>g.id===curGame)?.name||'';
         showResult(curScore,gameName);

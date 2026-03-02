@@ -3,7 +3,6 @@ let curGame=null,curTimer=null,curScore=0,replayCount=0;
 let curGameContext='free'; // 'workout' | 'challenge' | 'free'
 let _lastRenderedPoints=null;
 let _exchangeLock=false;
-let pendingCoins=0; // 게임 완료 시 적립 대기 코인
 
 // 오전 9시(KST) 기준 날짜 키 반환
 function getDayKey(){
@@ -32,8 +31,6 @@ function addXP(n){
 function getRank(xp){let r=RANKS[0];for(const rank of RANKS)if(xp>=rank.minXp)r=rank;return r}
 function getNextRank(xp){for(const r of RANKS)if(xp<r.minXp)return r;return null}
 
-function getCoins(){return LS.get('coins',0)}
-function addCoins(n){const c=getCoins()+n;LS.set('coins',c);return c}
 
 // ===== POINT SYSTEM (토스포인트 교환용) =====
 function getPoints(){return LS.get('points',0)}
@@ -43,7 +40,7 @@ function addPoints(n){
   _pendingPointsTotal+=n;
   clearTimeout(_pendingPointsTimer);
   _pendingPointsTimer=setTimeout(()=>{
-    snackbar(`두뇌점수 <span class="tds-badge tds-badge-sm tds-badge-fill-blue" style="vertical-align:middle;margin-left:2px">🧠 ${_pendingPointsTotal}점</span>`,2500);
+    snackbar(`두뇌점수 <span class="tds-badge tds-badge-sm tds-badge-weak-blue" style="vertical-align:middle;margin-left:2px;color:#fff;font-size:16px"><img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" style="width:20px;height:20px;margin-right:2px"> ${_pendingPointsTotal}점</span>`,2500);
     _pendingPointsTotal=0;
   },50);
   // 서버 동기화 (best-effort, non-blocking)
@@ -73,7 +70,7 @@ function renderPoints(animate=false){
   if(animate&&_lastRenderedPoints!==null&&p>_lastRenderedPoints){
     animatePointsFrom(_lastRenderedPoints);
   } else {
-    if(prog) prog.textContent='🧠 '+p+' / 100점';
+    if(prog) prog.innerHTML='<img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" style="width:18px;height:18px;margin-right:2px"> '+p+' / 100점';
     if(bar) bar.style.width=Math.min(100,p)+'%';
   }
   _lastRenderedPoints=p;
@@ -134,74 +131,13 @@ function animatePointsFrom(from){
       const p2=document.getElementById('pointProgress'),b2=document.getElementById('pointBar');
       const start=performance.now();
       function tick(now){const t=Math.min(1,(now-start)/dur);const ease=1-Math.pow(1-t,3);const cur=Math.round(from+(to-from)*ease);
-        if(p2)p2.textContent='🧠 '+cur+' / 100점';if(b2)b2.style.width=Math.min(100,cur)+'%';if(t<1)requestAnimationFrame(tick);
+        if(p2)p2.innerHTML='<img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" style="width:18px;height:18px;margin-right:2px"> '+cur+' / 100점';if(b2)b2.style.width=Math.min(100,cur)+'%';if(t<1)requestAnimationFrame(tick);
         else{const btn=document.getElementById('exchangeBtn');if(btn)btn.disabled=to<100}}
       requestAnimationFrame(tick);
     },1200);
   }
 }
 
-// ===== COIN SYSTEM (코인 10개 = 토스포인트 1원, 프로모션 검토중) =====
-function renderCoins() {
-  const c = getCoins();
-  const prog = document.getElementById('coinProgress');
-  if (prog) prog.textContent = '🪙 ' + c + ' / 10개';
-  const bar = document.getElementById('coinBar');
-  if (bar) bar.style.width = Math.min(100, (c % 10) / 10 * 100) + '%';
-  const btn = document.getElementById('coinExchangeBtn');
-  if (btn) btn.disabled = c < 10;
-  const disp = document.getElementById('coinDisplay');
-  if (disp) disp.textContent = c + '개';
-}
-
-async function exchangeCoins() {
-  if (getCoins() < 10) { toast('코인 10개 이상부터 교환 가능합니다'); return; }
-  // 플레이스홀더: 프로모션 미승인 상태면 안내 메시지만 표시
-  if (window.AIT && AIT.CONFIG.PROMO_COIN_EXCHANGE.startsWith('PLACEHOLDER_')) {
-    toast('포인트 교환 프로모션을 준비 중이에요. 코인을 모아두세요! 🪙');
-    if (window.AIT) AIT.log('coin_exchange_placeholder', { coins: getCoins() });
-    return;
-  }
-  if (window.AIT && !AIT.isToss) { toast('토스 앱에서만 교환 가능합니다'); return; }
-  if (_exchangeLock) return;
-  _exchangeLock = true;
-  const btn = document.getElementById('coinExchangeBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '교환 중...'; }
-  let exchangeId = null;
-  try {
-    const uh = await AIT.getUserHash();
-    const serverRes = await fetch(`${API_BASE}/api/cashword/exchange`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userHash: uh })
-    }).then(r => r.json());
-    if (serverRes.error) throw new Error(serverRes.error);
-    exchangeId = serverRes.exchangeId;
-    // 프로모션 지급 (코드 승인 후 자동 활성화)
-    const ok = await AIT.checkPromoCoinExchange();
-    if (ok) {
-      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/confirm`, { method: 'POST' }).catch(() => {});
-      const newCoins = Math.max(0, getCoins() - 10);
-      LS.set('coins', newCoins);
-      renderCoins();
-      toast('교환 완료! 토스포인트 1원이 지급됐어요 🎉');
-      AIT.log('coin_exchange_success', { coins: 10, points: 1, userHash: uh });
-    } else {
-      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/restore`, { method: 'POST' }).catch(() => {});
-      toast('교환에 실패했습니다. 다시 시도해주세요.');
-    }
-  } catch (e) {
-    if (exchangeId) {
-      await fetch(`${API_BASE}/api/cashword/exchange/${exchangeId}/restore`, { method: 'POST' }).catch(() => {});
-    }
-    console.error('Coin exchange failed:', e);
-    const msg = e.message === 'insufficient_coins' ? '코인이 부족합니다' : '교환에 실패했습니다. 다시 시도해주세요.';
-    toast(msg);
-  } finally {
-    _exchangeLock = false;
-    if (btn) { btn.disabled = getCoins() < 10; btn.textContent = '교환하기'; }
-  }
-}
 
 // ===== TOAST & SNACKBAR =====
 let toastT;
@@ -228,22 +164,6 @@ function recordPlay(){
   if(!hist.includes(today)){hist.push(today);LS.setJSON('playDates',hist)}
 }
 
-function floatCoin(x,y){
-  const el=document.createElement('div');el.className='coin-float';el.textContent='+';
-  el.style.left=x+'px';el.style.top=y+'px';
-  document.body.appendChild(el);setTimeout(()=>el.remove(),1000);
-}
-
-function doubleCoins(){
-  if(!pendingCoins)return;
-  showAd(()=>{
-    addCoins(pendingCoins); // add same amount again = 2x
-    document.getElementById('r-coin-new').textContent='+'+pendingCoins*2+' (2배!)';
-    toast('코인 2배! +'+pendingCoins*2);
-    for(let i=0;i<5;i++){setTimeout(()=>floatCoin(window.innerWidth/2-12+Math.random()*40-20,window.innerHeight/2),i*100)}
-    pendingCoins=0;
-  });
-}
 
 // ===== MISSIONS & HISTORY =====
 function getTodayChallenges(){

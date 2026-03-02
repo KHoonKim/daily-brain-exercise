@@ -1,6 +1,6 @@
 // ===== 15. COMPARE - 크다작다 =====
-let cmpScore,cmpTime,cmpTotal,cmpA,cmpB,cmpMode,cmpQTimer,cmpQTime,cmpLastMode,cmpQLimit;
-function initCompare(){cmpScore=0;cmpTime=30;cmpTotal=0;cmpLastMode=null;document.getElementById('cmp-score').textContent='0점';initHearts('cmp');
+let cmpScore,cmpTime,cmpTotal,cmpA,cmpB,cmpMode,cmpQTimer,cmpQTime,cmpLastMode,cmpQLimit,cmpCombo;
+function initCompare(){cmpScore=0;cmpTime=30;cmpTotal=0;cmpLastMode=null;cmpCombo=0;document.getElementById('cmp-score').textContent='0점';initHearts('cmp');
 document.getElementById('cmp-timer').textContent='30s';document.getElementById('cmp-timer').className='g-timer';
 clearInterval(curTimer);setTickFn(cmpTick);curTimer=setInterval(cmpTick,1000);cmpGen()}
 function cmpTick(){cmpTime--;document.getElementById('cmp-timer').textContent=cmpTime+'s';if(cmpTime<=10)document.getElementById('cmp-timer').className='g-timer urgent';if(cmpTime<=0){clearInterval(curTimer);clearInterval(cmpQTimer);setTimeExtendResumeCallback((s)=>{cmpTime=s;document.getElementById('cmp-timer').textContent=cmpTime+'s';document.getElementById('cmp-timer').className='g-timer';curTimer=setInterval(cmpTick,1000);cmpGen()});showResult(cmpScore,'크다작다',[{val:cmpTotal,label:'문제 수'}], {_isTimerEnd:true})}}
@@ -21,10 +21,10 @@ cmpQLimit=Math.max(1.0, 2.0 - cmpTotal*0.05);
 cmpQTime=cmpQLimit;clearInterval(cmpQTimer);
 const bar=document.getElementById('cmp-qbar');if(bar){bar.style.transition='none';bar.style.width='100%';bar.offsetWidth;bar.style.transition=`width ${cmpQLimit}s linear`;bar.style.width='0%'}const cmpqt=document.getElementById('cmp-q-time');if(cmpqt)cmpqt.textContent=cmpQLimit.toFixed(1)+'s';
 cmpQTimer=setInterval(()=>{cmpQTime-=0.1;document.getElementById('cmp-q-time').textContent=Math.max(0,cmpQTime).toFixed(1)+'s';if(cmpQTime<=0){clearInterval(cmpQTimer);cmpTotal++;curScore=cmpScore;setHeartResumeCallback(cmpGen);if(loseHeart('cmp'))return;scheduleNextQuestion(cmpGen,300)}},100)}
-function cmpPick(choice){clearInterval(cmpQTimer);cmpTotal++;
+function cmpPick(choice){if(cmpQTime<=0)return;clearInterval(cmpQTimer);freezeQBar('cmp-qbar');cmpTotal++;
 const pickedBig=(choice==='left'&&cmpA>cmpB)||(choice==='right'&&cmpB>cmpA);
 const correct=(cmpMode==='big'&&pickedBig)||(cmpMode==='small'&&!pickedBig);
 const picked=choice==='left'?'cmp-a':'cmp-b',other=choice==='left'?'cmp-b':'cmp-a';
-if(correct){document.getElementById(other).style.opacity='.3';const pct=cmpQTime/cmpQLimit;const bonus=pct>.75?5:pct>.5?3:1;cmpScore+=10+bonus;setScore('cmp-score',cmpScore)}
-else{document.getElementById(picked).style.opacity='.3';curScore=cmpScore;setHeartResumeCallback(cmpGen);if(loseHeart('cmp'))return}
+if(correct){document.getElementById(other).style.opacity='.3';cmpCombo++;const pct=cmpQTime/cmpQLimit;const bonus=pct>.75?5:pct>.5?3:1;cmpScore+=10+bonus;setScore('cmp-score',cmpScore);if(cmpCombo%5===0){cmpTime=Math.min(cmpTime+COMBO_TIME_BONUS,99);toast(cmpCombo+'콤보! +'+COMBO_TIME_BONUS+'초')}}
+else{document.getElementById(picked).style.opacity='.3';cmpCombo=0;curScore=cmpScore;setHeartResumeCallback(cmpGen);if(loseHeart('cmp'))return}
 scheduleNextQuestion(cmpGen,400)}
