@@ -71,11 +71,11 @@ window.AIT = (() => {
     AD_INTERSTITIAL_ID: 'ait.v2.live.d1d5d979d5074f0d',
     AD_REWARDED_ID: 'ait.v2.live.f7733fd1f31d4772',       // 보상형: 티켓 샵
     // 프로모션 코드 (실제 코드는 Toss 콘솔 승인 후 교체)
-    PROMO_FIRST_LOGIN: '01KJ8A3HFMP24HQ5743KD6Q9GK',    // 토스로 로그인하기
-    PROMO_POINT_100: '01KJ8BCF26T648AQ1QCKYMS4TZ',        // 두뇌점수 100점 교환
-    PROMO_FIRST_WORKOUT: '01KJ8B95RPCGDQV9NZSCQ418VT',   // 오늘의 두뇌운동 완료
-    PROMO_FIRST_QUESTION: 'PLACEHOLDER_FIRST_QUESTION',   // 첫문제 풀기 (검토중)
-    PROMO_COIN_EXCHANGE: 'PLACEHOLDER_COIN_EXCHANGE',     // 코인→포인트 교환 (검토중)
+    PROMO_FIRST_LOGIN: 'TEST_01KJ8A3HFMP24HQ5743KD6Q9GK',    // 토스로 로그인하기
+    PROMO_POINT_100: 'TEST_01KJ8BCF26T648AQ1QCKYMS4TZ',        // 두뇌점수 100점 교환
+    PROMO_FIRST_WORKOUT: 'TEST_01KJ8B95RPCGDQV9NZSCQ418VT',   // 오늘의 두뇌운동 완료
+    PROMO_FIRST_QUESTION: 'TEST_PLACEHOLDER_FIRST_QUESTION',   // 첫문제 풀기 (검토중)
+    PROMO_COIN_EXCHANGE: 'TEST_PLACEHOLDER_COIN_EXCHANGE',     // 코인→포인트 교환 (검토중)
     SHARE_MODULE_ID: '12a10659-c8aa-407a-a090-38f3c5dd4639', // 공유 리워드 모듈 ID
   };
 
@@ -474,7 +474,7 @@ window.AIT = (() => {
     if (_promoLock[promoType]) return false;
     _promoLock[promoType] = true;
     // 플레이스홀더: Toss 콘솔 미승인 프로모션은 API 호출 없이 스킵
-    if (promoCode && promoCode.startsWith('PLACEHOLDER_')) {
+    if (promoCode && promoCode.includes('PLACEHOLDER_')) {
       console.log('[AIT] triggerPromo: placeholder, skipping:', promoType);
       _promoLock[promoType] = false;
       return false;
