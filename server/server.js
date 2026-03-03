@@ -1358,7 +1358,9 @@ app.post('/api/golden-goose/reward', (req, res) => {
   res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned });
 });
 
-// POST /api/golden-goose/exchange — 금화 10개 차감 + 교환 ID 발급
+// POST /api/golden-goose/exchange — 금화 차감 + 교환 ID 발급
+// coinCount >= 20: PROMO_COIN_EXCHANGE로 10단위 일괄 교환
+// coinCount 10~19: PROMO_REWARD로 10개 교환
 app.post('/api/golden-goose/exchange', (req, res) => {
   const { userHash } = req.body;
   if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
@@ -1366,19 +1368,30 @@ app.post('/api/golden-goose/exchange', (req, res) => {
   const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
   if (!row || row.coins < 10) return res.json({ error: 'insufficient_coins' });
 
-  const promoCfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
-  const promoId = promoCfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
+  const currentCoins = row.coins;
+  const coinCount = Math.floor(currentCoins / 10) * 10; // 10단위 내림
+  const points = coinCount / 10;
+
+  // 20개 이상이면 PROMO_COIN_EXCHANGE, 10~19개면 PROMO_REWARD
+  let promoId;
+  if (currentCoins >= 20) {
+    const cfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
+    promoId = cfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
+  } else {
+    const cfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
+    promoId = cfg?.value || 'GOLDEN_GOOSE_REWARD_PROMO';
+  }
 
   const tx = db.transaction(() => {
-    db.prepare('UPDATE gg_coins SET coins = coins - 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(userHash);
+    db.prepare('UPDATE gg_coins SET coins = coins - ?, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(coinCount, userHash);
     const result = db.prepare(
-      'INSERT INTO gg_exchanges (user_hash, coins_spent, promo_id, status) VALUES (?, 10, ?, ?)'
-    ).run(userHash, promoId, 'pending');
+      'INSERT INTO gg_exchanges (user_hash, coins_spent, promo_id, status) VALUES (?, ?, ?, ?)'
+    ).run(userHash, coinCount, promoId, 'pending');
     return result.lastInsertRowid;
   });
   const exchangeId = tx();
 
-  res.json({ exchangeId, promoId });
+  res.json({ exchangeId, promoId, coinCount, points });
 });
 
 // POST /api/golden-goose/exchange/:id/confirm — 교환 확정
@@ -1395,7 +1408,7 @@ app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
   if (!exchange || exchange.status !== 'pending') return res.json({ ok: false });
 
   db.transaction(() => {
-    db.prepare('UPDATE gg_coins SET coins = coins + 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(exchange.user_hash);
+    db.prepare('UPDATE gg_coins SET coins = coins + ?, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(exchange.coins_spent, exchange.user_hash);
     db.prepare("UPDATE gg_exchanges SET status = 'restored' WHERE id = ?").run(id);
   })();
   res.json({ ok: true });
@@ -1404,7 +1417,11 @@ app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
 // GET /api/golden-goose/promo-config
 app.get('/api/golden-goose/promo-config', (req, res) => {
   const exchange = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
-  res.json({ exchange: exchange?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO' });
+  const reward = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
+  res.json({
+    exchange: exchange?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO',
+    reward: reward?.value || 'GOLDEN_GOOSE_REWARD_PROMO',
+  });
 });
 
 // GET /api/golden-goose/promo/check/:userHash/:promoType
