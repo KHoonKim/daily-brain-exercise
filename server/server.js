@@ -624,11 +624,11 @@ db.exec(`
   )
 `);
 
-// GG 프로모션 ID 초기화 (테스트 코드 — 실서비스 전 production ID로 교체)
+// GG 프로모션 ID 초기화
 db.exec(`
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_exchange', 'TEST_01KJQMQJHX7Y5MAVRVTN0A4VNZ');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_login', 'TEST_01KJQKQHVSCC3WC4Q7AGFWTWN6');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_reward', 'TEST_01KJQMNSDZDH69WP2CG7NTFGX2');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_exchange', '01KJQMQJHX7Y5MAVRVTN0A4VNZ');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_login', '01KJQKQHVSCC3WC4Q7AGFWTWN6');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_reward', '01KJQMNSDZDH69WP2CG7NTFGX2');
 `);
 
 app.post('/api/score/promo/exchange', (req, res) => {
@@ -1637,9 +1637,9 @@ app.get('/api/golden-goose/promo-config', (req, res) => {
   const login = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_login'").get();
   const reward = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
   res.json({
-    exchange: exchange?.value || 'TEST_01KJQMQJHX7Y5MAVRVTN0A4VNZ',
-    login: login?.value || 'TEST_01KJQKQHVSCC3WC4Q7AGFWTWN6',
-    reward: reward?.value || 'TEST_01KJQMNSDZDH69WP2CG7NTFGX2',
+    exchange: exchange?.value || '01KJQMQJHX7Y5MAVRVTN0A4VNZ',
+    login: login?.value || '01KJQKQHVSCC3WC4Q7AGFWTWN6',
+    reward: reward?.value || '01KJQMNSDZDH69WP2CG7NTFGX2',
   });
 });
 
