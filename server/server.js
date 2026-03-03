@@ -287,6 +287,7 @@ app.get('/api/score/health', (req, res) => {
 // ===== TOSS LOGIN =====
 const TOSS_API = 'https://apps-in-toss-api.toss.im';
 const tossKeys = JSON.parse(fs.readFileSync(path.join(__dirname, 'keys/toss-login.json'), 'utf8'));
+const ggTossKeys = JSON.parse(fs.readFileSync(path.join(__dirname, 'keys/gg-toss-login.json'), 'utf8'));
 
 // mTLS: 토스 API 호출 시 클라이언트 인증서 사용 (https 내장 모듈)
 const https = require('https');
@@ -333,6 +334,20 @@ function decryptToss(encryptedText) {
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);
   decipher.setAAD(Buffer.from(tossKeys.aad));
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
+function decryptGGToss(encryptedText) {
+  const decoded = Buffer.from(encryptedText, 'base64');
+  const IV_LENGTH = 12;
+  const iv = decoded.subarray(0, IV_LENGTH);
+  const authTagLength = 16;
+  const ciphertext = decoded.subarray(IV_LENGTH, decoded.length - authTagLength);
+  const authTag = decoded.subarray(decoded.length - authTagLength);
+  const key = Buffer.from(ggTossKeys.key, 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  decipher.setAAD(Buffer.from(ggTossKeys.aad));
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
 }
 
@@ -597,6 +612,23 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+`);
+
+// 일일 접속 기록 (17시 재유도 알림용)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS gg_access_log (
+    user_hash TEXT NOT NULL,
+    access_date TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_hash, access_date)
+  )
+`);
+
+// GG 프로모션 ID 초기화 (테스트 코드 — 실서비스 전 production ID로 교체)
+db.exec(`
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_exchange', 'TEST_01KJQMQJHX7Y5MAVRVTN0A4VNZ');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_login', 'TEST_01KJQKQHVSCC3WC4Q7AGFWTWN6');
+  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_reward', 'TEST_01KJQMNSDZDH69WP2CG7NTFGX2');
 `);
 
 app.post('/api/score/promo/exchange', (req, res) => {
@@ -1000,6 +1032,8 @@ app.patch('/api/admin/settings', (req, res) => {
   // 메모리 캐시 갱신
   if (key === 'daily_notify_template') dailyNotifyTemplate = value;
   if (key === 'cashword_daily_notify_template') cashwordDailyNotifyTemplate = value;
+  if (key === 'gg_lottery_notify_template') ggLotteryNotifyTemplate = value;
+  if (key === 'gg_reengage_notify_template') ggReengageNotifyTemplate = value;
 
   res.json({ ok: true, key, value });
 });
@@ -1030,6 +1064,45 @@ function cashwordTossFetch(url, options = {}) {
       method: options.method || 'GET',
       headers: { ...(options.headers || {}) },
       agent: cashwordTossAgent,
+    };
+    if (body) reqOpts.headers['Content-Length'] = Buffer.byteLength(body);
+    const req = https.request(reqOpts, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        ok: res.statusCode >= 200 && res.statusCode < 300,
+        text: () => Promise.resolve(data),
+        json: () => Promise.resolve(JSON.parse(data)),
+      }));
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+// Golden Goose mTLS agent
+const ggCertPath = fs.existsSync('/root/golden-goose_public.crt')
+  ? '/root/golden-goose_public.crt'
+  : path.join(__dirname, '../../../golden-goose/golden-goose_public.crt');
+const ggKeyPath = fs.existsSync('/root/golden-goose_private.key')
+  ? '/root/golden-goose_private.key'
+  : path.join(__dirname, '../../../golden-goose/golden-goose_private.key');
+const ggTossAgent = new https.Agent({
+  cert: fs.readFileSync(ggCertPath),
+  key: fs.readFileSync(ggKeyPath),
+});
+function ggTossFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const body = options.body || null;
+    const reqOpts = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: options.method || 'GET',
+      headers: { ...(options.headers || {}) },
+      agent: ggTossAgent,
     };
     if (body) reqOpts.headers['Content-Length'] = Buffer.byteLength(body);
     const req = https.request(reqOpts, (res) => {
@@ -1295,6 +1368,158 @@ async function sendCashwordDailyNotification() {
 // 매일 KST 09:00 CashWord 유저에게 알림 발송
 cron.schedule('0 9 * * *', sendCashwordDailyNotification, { timezone: 'Asia/Seoul' });
 
+// ===== 황금알 거위 알림 =====
+
+// DB에서 알림 템플릿 로드 (설정되지 않으면 null)
+let ggLotteryNotifyTemplate = db.prepare('SELECT value FROM settings WHERE key = ?').get('gg_lottery_notify_template')?.value ?? null;
+let ggReengageNotifyTemplate = db.prepare('SELECT value FROM settings WHERE key = ?').get('gg_reengage_notify_template')?.value ?? null;
+
+// 전체 거위 유저에게 복권 충전 알림 bulk 발송 (매일 09:00 KST)
+async function sendGoldenGooseLotteryNotification() {
+  if (!ggLotteryNotifyTemplate) {
+    console.log('[GG LotteryNotify] templateSetCode 미설정 — 발송 건너뜀');
+    return;
+  }
+
+  const users = db.prepare(
+    "SELECT user_hash FROM gg_coins WHERE CAST(user_hash AS INTEGER) > 0"
+  ).all();
+  if (users.length === 0) {
+    console.log('[GG LotteryNotify] 발송 대상 유저 없음');
+    return;
+  }
+
+  let totalSuccess = 0;
+  let totalFail = 0;
+
+  for (let i = 0; i < users.length; i += BULK_BATCH_SIZE) {
+    const chunk = users.slice(i, i + BULK_BATCH_SIZE);
+    const contextList = chunk.map(u => ({ userKey: parseInt(u.user_hash, 10), context: {} }));
+
+    try {
+      const resp = await ggTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-bulk-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateSetCode: ggLotteryNotifyTemplate, contextList }),
+      });
+      const data = await resp.json();
+      if (data.resultType === 'SUCCESS') {
+        totalSuccess += chunk.length;
+      } else {
+        totalFail += chunk.length;
+        console.error('[GG LotteryNotify] 배치 실패:', JSON.stringify(data).slice(0, 200));
+      }
+    } catch (e) {
+      totalFail += chunk.length;
+      console.error('[GG LotteryNotify] 배치 오류:', e.message);
+    }
+  }
+
+  console.log(`[GG LotteryNotify] 완료 — 대상: ${users.length}명, 성공: ${totalSuccess}, 실패: ${totalFail}`);
+}
+
+// 오늘 미접속 거위 유저에게 재유도 알림 bulk 발송 (매일 17:00 KST)
+async function sendGoldenGooseReengageNotification() {
+  if (!ggReengageNotifyTemplate) {
+    console.log('[GG ReengageNotify] templateSetCode 미설정 — 발송 건너뜀');
+    return;
+  }
+
+  const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const users = db.prepare(`
+    SELECT user_hash FROM gg_coins
+    WHERE CAST(user_hash AS INTEGER) > 0
+    AND user_hash NOT IN (
+      SELECT user_hash FROM gg_access_log WHERE access_date = ?
+    )
+  `).all(today);
+
+  if (users.length === 0) {
+    console.log('[GG ReengageNotify] 미접속 유저 없음 — 발송 건너뜀');
+    return;
+  }
+
+  let totalSuccess = 0;
+  let totalFail = 0;
+
+  for (let i = 0; i < users.length; i += BULK_BATCH_SIZE) {
+    const chunk = users.slice(i, i + BULK_BATCH_SIZE);
+    const contextList = chunk.map(u => ({ userKey: parseInt(u.user_hash, 10), context: {} }));
+
+    try {
+      const resp = await ggTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/messenger/send-bulk-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateSetCode: ggReengageNotifyTemplate, contextList }),
+      });
+      const data = await resp.json();
+      if (data.resultType === 'SUCCESS') {
+        totalSuccess += chunk.length;
+      } else {
+        totalFail += chunk.length;
+        console.error('[GG ReengageNotify] 배치 실패:', JSON.stringify(data).slice(0, 200));
+      }
+    } catch (e) {
+      totalFail += chunk.length;
+      console.error('[GG ReengageNotify] 배치 오류:', e.message);
+    }
+  }
+
+  console.log(`[GG ReengageNotify] 완료 — 대상: ${users.length}명 (미접속), 성공: ${totalSuccess}, 실패: ${totalFail}`);
+}
+
+// 매일 KST 09:00 복권 충전 알림 (전체 유저)
+cron.schedule('0 9 * * *', sendGoldenGooseLotteryNotification, { timezone: 'Asia/Seoul' });
+// 매일 KST 17:00 미접속 유저 재유도 알림
+cron.schedule('0 17 * * *', sendGoldenGooseReengageNotification, { timezone: 'Asia/Seoul' });
+
+// POST /api/golden-goose/toss/login — 인가코드 → 토큰 → 유저정보 조회+저장 (GG mTLS)
+app.post('/api/golden-goose/toss/login', async (req, res) => {
+  try {
+    const { authorizationCode, referrer } = req.body;
+    if (!authorizationCode || !referrer) return res.status(400).json({ error: 'authorizationCode and referrer required' });
+
+    // 1. 토큰 발급 (GG mTLS)
+    const tokenResp = await ggTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/generate-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authorizationCode, referrer })
+    });
+    const tokenText = await tokenResp.text();
+    console.log('[GG Login] HTTP status:', tokenResp.status, 'body:', tokenText.slice(0, 300));
+    let tokenData;
+    try { tokenData = JSON.parse(tokenText); } catch (e) {
+      return res.status(500).json({ error: 'token_parse_failed', httpStatus: tokenResp.status, rawBody: tokenText.slice(0, 500) });
+    }
+    if (tokenData.resultType !== 'SUCCESS') return res.status(400).json({ error: 'token_failed', detail: tokenData });
+    const { accessToken, refreshToken } = tokenData.success;
+
+    // 2. 유저 정보 조회
+    const meResp = await ggTossFetch(`${TOSS_API}/api-partner/v1/apps-in-toss/user/oauth2/login-me`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    const meData = await meResp.json();
+    if (meData.resultType !== 'SUCCESS') return res.status(400).json({ error: 'user_info_failed', detail: meData });
+    const user = meData.success;
+
+    // 3. 복호화 + DB 저장 (GG 전용 키 사용)
+    const userHash = String(user.userKey);
+    let name = null;
+    try { if (user.name) name = decryptGGToss(user.name); } catch (e) { console.warn('[GG Login] name decrypt failed:', e.message); }
+    db.prepare(`INSERT INTO gg_users (user_hash, user_name, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_hash) DO UPDATE SET
+        user_name=excluded.user_name, updated_at=CURRENT_TIMESTAMP
+    `).run(userHash, name || null);
+
+    console.log(`[GG Login] User ${userHash} (${name}) logged in`);
+    res.json({ status: 'ok', userKey: user.userKey, userHash, name, accessToken, refreshToken });
+  } catch (e) {
+    console.error('[GG Login Error]', e);
+    res.status(500).json({ error: 'login_failed', detail: e.message });
+  }
+});
+
 // ── 황금알을 낳는 거위 연결 끊기 콜백 ──────────────────────────────────────
 const GG_DISCONNECT_AUTH = process.env.GG_DISCONNECT_AUTH;
 if (!GG_DISCONNECT_AUTH) console.warn('[WARN] GG_DISCONNECT_AUTH가 .env에 설정되지 않았습니다');
@@ -1330,7 +1555,8 @@ app.post('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => {
 app.get('/api/golden-goose/coins/:userHash', (req, res) => {
   const { userHash } = req.params;
   const row = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
-  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0 });
+  const exchangeRow = db.prepare("SELECT COUNT(*) as cnt FROM gg_exchanges WHERE user_hash = ? AND status = 'confirmed'").get(userHash);
+  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0, totalExchangedPoints: exchangeRow?.cnt ?? 0 });
 });
 
 // POST /api/golden-goose/reward — 광고 완료 후 금화 지급 (서버에서 확률 추첨)
@@ -1358,9 +1584,8 @@ app.post('/api/golden-goose/reward', (req, res) => {
   res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned });
 });
 
-// POST /api/golden-goose/exchange — 금화 차감 + 교환 ID 발급
-// coinCount >= 20: PROMO_COIN_EXCHANGE로 10단위 일괄 교환
-// coinCount 10~19: PROMO_REWARD로 10개 교환
+// POST /api/golden-goose/exchange — 금화 10단위 일괄 차감 + 교환 ID 발급
+// PROMO_COIN_EXCHANGE만 사용 (최대 1,000원 지급 가능)
 app.post('/api/golden-goose/exchange', (req, res) => {
   const { userHash } = req.body;
   if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
@@ -1368,19 +1593,11 @@ app.post('/api/golden-goose/exchange', (req, res) => {
   const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
   if (!row || row.coins < 10) return res.json({ error: 'insufficient_coins' });
 
-  const currentCoins = row.coins;
-  const coinCount = Math.floor(currentCoins / 10) * 10; // 10단위 내림
+  const coinCount = Math.floor(row.coins / 10) * 10;
   const points = coinCount / 10;
 
-  // 20개 이상이면 PROMO_COIN_EXCHANGE, 10~19개면 PROMO_REWARD
-  let promoId;
-  if (currentCoins >= 20) {
-    const cfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
-    promoId = cfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
-  } else {
-    const cfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
-    promoId = cfg?.value || 'GOLDEN_GOOSE_REWARD_PROMO';
-  }
+  const promoCfg = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
+  const promoId = promoCfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
 
   const tx = db.transaction(() => {
     db.prepare('UPDATE gg_coins SET coins = coins - ?, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(coinCount, userHash);
@@ -1417,10 +1634,12 @@ app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
 // GET /api/golden-goose/promo-config
 app.get('/api/golden-goose/promo-config', (req, res) => {
   const exchange = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
+  const login = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_login'").get();
   const reward = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
   res.json({
-    exchange: exchange?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO',
-    reward: reward?.value || 'GOLDEN_GOOSE_REWARD_PROMO',
+    exchange: exchange?.value || 'TEST_01KJQMQJHX7Y5MAVRVTN0A4VNZ',
+    login: login?.value || 'TEST_01KJQKQHVSCC3WC4Q7AGFWTWN6',
+    reward: reward?.value || 'TEST_01KJQMNSDZDH69WP2CG7NTFGX2',
   });
 });
 
@@ -1443,6 +1662,55 @@ app.post('/api/golden-goose/promo/record', (req, res) => {
   } catch (e) {
     res.json({ ok: false, error: e.message });
   }
+});
+
+// POST /api/golden-goose/promo/grant — Toss 프로모션 지급 (GG mTLS)
+app.post('/api/golden-goose/promo/grant', async (req, res) => {
+  const { userKey, promotionCode, amount } = req.body;
+  if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
+  const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
+  const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
+  try {
+    const keyRes = await (await ggTossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
+    console.log('[GG Promo] get-key response:', JSON.stringify(keyRes));
+    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    const key = keyRes.success.key;
+    const execRes = await (await ggTossFetch(`${BASE}/execute-promotion`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ promotionCode, key, amount })
+    })).json();
+    console.log('[GG Promo] execute response:', JSON.stringify(execRes));
+    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+    res.json(execRes.success);
+  } catch (e) {
+    console.error('[GG Promo Error]', e);
+    res.status(500).json({ error: 'promo_grant_failed', detail: e.message });
+  }
+});
+
+// POST /api/golden-goose/access/record — 일일 접속 기록 (17시 재유도 알림용)
+app.post('/api/golden-goose/access/record', (req, res) => {
+  const { userHash, date } = req.body || {};
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+  const today = date || new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  db.prepare('INSERT OR IGNORE INTO gg_access_log (user_hash, access_date) VALUES (?, ?)').run(userHash, today);
+  res.json({ ok: true });
+});
+
+// POST /api/golden-goose/debug/reset — 디버그용: 유저 데이터 전체 초기화
+app.post('/api/golden-goose/debug/reset', (req, res) => {
+  const { userHash } = req.body || {};
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM gg_users WHERE user_hash = ?').run(userHash);
+    db.prepare('DELETE FROM gg_coins WHERE user_hash = ?').run(userHash);
+    db.prepare('DELETE FROM gg_exchanges WHERE user_hash = ?').run(userHash);
+    db.prepare('DELETE FROM gg_promotion_grants WHERE user_hash = ?').run(userHash);
+    db.prepare('DELETE FROM gg_access_log WHERE user_hash = ?').run(userHash);
+  });
+  tx();
+  console.log(`[GG Debug] Full reset for ${userHash} (users, coins, exchanges, promotions, access)`);
+  res.json({ ok: true });
 });
 
 // POST /api/golden-goose/debug/add-coins — 디버그용: 금화 추가
