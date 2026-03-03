@@ -1428,6 +1428,24 @@ app.post('/api/golden-goose/promo/record', (req, res) => {
   }
 });
 
+// POST /api/golden-goose/debug/add-coins — 디버그용: 금화 추가
+app.post('/api/golden-goose/debug/add-coins', (req, res) => {
+  const { userHash, coins: amount } = req.body || {};
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+  const addAmount = Number(amount) || 5;
+  db.prepare(`
+    INSERT INTO gg_coins (user_hash, coins, total_earned)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET
+      coins = coins + excluded.coins,
+      total_earned = total_earned + excluded.coins,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(userHash, addAmount, addAmount);
+  const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
+  console.log(`[GG Debug] Added ${addAmount} coins for ${userHash}, total: ${row?.coins}`);
+  res.json({ ok: true, totalCoins: row?.coins ?? addAmount });
+});
+
 if (require.main === module) {
   app.listen(PORT, '127.0.0.1', () => {
     console.log(`Score API running on port ${PORT}`);
