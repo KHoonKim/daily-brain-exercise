@@ -1555,8 +1555,8 @@ app.post('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => {
 app.get('/api/golden-goose/coins/:userHash', (req, res) => {
   const { userHash } = req.params;
   const row = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
-  const exchangeRow = db.prepare("SELECT COUNT(*) as cnt FROM gg_exchanges WHERE user_hash = ? AND status = 'confirmed'").get(userHash);
-  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0, totalExchangedPoints: exchangeRow?.cnt ?? 0 });
+  const exchangeRow = db.prepare("SELECT COALESCE(SUM(coins_spent), 0) / 10 as total_points FROM gg_exchanges WHERE user_hash = ? AND status = 'confirmed'").get(userHash);
+  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0, totalExchangedPoints: exchangeRow?.total_points ?? 0 });
 });
 
 // POST /api/golden-goose/reward — 광고 완료 후 금화 지급 (서버에서 확률 추첨)
@@ -1582,6 +1582,42 @@ app.post('/api/golden-goose/reward', (req, res) => {
 
   const updated = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
   res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned });
+});
+
+// POST /api/golden-goose/lottery — 복권 금화 지급 (서버에서 추첨)
+app.post('/api/golden-goose/lottery', (req, res) => {
+  const { userHash, type } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
+
+  let coins;
+  if (type === 'premium') {
+    // 꽝없는 복권: 80% → 10~20 / 17% → 20~50 / 2.95% → 50~100 / 0.035% → 1000 / 0.015% → 10000
+    const r = Math.random();
+    if (r < 0.80)         coins = Math.floor(Math.random() * 11) + 10;
+    else if (r < 0.97)    coins = Math.floor(Math.random() * 31) + 20;
+    else if (r < 0.9995)  coins = Math.floor(Math.random() * 51) + 50;
+    else if (r < 0.99985) coins = 1000;
+    else                   coins = 10000;
+  } else {
+    // 일반 복권: 35% 꽝 / 35% 1코인 / 20% 3코인 / 10% 5코인
+    const r = Math.random();
+    if (r < 0.35)      { return res.json({ coins: 0, bust: true, totalCoins: null }); }
+    else if (r < 0.70) coins = 1;
+    else if (r < 0.90) coins = 3;
+    else                coins = 5;
+  }
+
+  db.prepare(`
+    INSERT INTO gg_coins (user_hash, coins, total_earned)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET
+      coins = coins + excluded.coins,
+      total_earned = total_earned + excluded.coins,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(userHash, coins, coins);
+
+  const updated = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins, bust: false, totalCoins: updated.coins, totalEarned: updated.total_earned });
 });
 
 // POST /api/golden-goose/exchange — 금화 10단위 일괄 차감 + 교환 ID 발급
