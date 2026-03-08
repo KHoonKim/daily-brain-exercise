@@ -1806,7 +1806,9 @@ function smTossFetch(url, options = {}) {
 }
 
 // Sleep-Money DB
-const SM_DB_PATH = path.join(__dirname, '../../../sleep-money/server/sleep-money.db');
+const SM_DB_PATH = fs.existsSync('/var/www/sleep-money/server/sleep-money.db')
+  ? '/var/www/sleep-money/server/sleep-money.db'
+  : path.join(__dirname, '../../../sleep-money/server/sleep-money.db');
 const smDb = new Database(SM_DB_PATH);
 smDb.pragma('journal_mode = WAL');
 smDb.exec(`
