@@ -8,7 +8,7 @@ function lrGen(){const isLeft=Math.random()<.5;const rot=[0,90,180,270][~~(Math.
 const isPalm=Math.random()<.5;
 lrAns=isLeft?'left':'right';
 const hand=document.getElementById('lr-hand');
-const imgFile=isLeft?(isPalm?'left%20palm.png':'left%20back.png'):(isPalm?'right%20palm.png':'right%20back.png');
+const imgFile=isLeft?(isPalm?'left-palm.png':'left-back.png'):(isPalm?'right-palm.png':'right-back.png');
 if(hand) {
   hand.innerHTML=`<img src="./${imgFile}" style="width:140px;height:175px;object-fit:contain;transform:rotate(${rot}deg);display:block;margin:0 auto"/>`;
 }

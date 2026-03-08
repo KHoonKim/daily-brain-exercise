@@ -626,9 +626,8 @@ db.exec(`
 
 // GG 프로모션 ID 초기화
 db.exec(`
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_exchange', '01KJQMQJHX7Y5MAVRVTN0A4VNZ');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_login', '01KJQKQHVSCC3WC4Q7AGFWTWN6');
-  INSERT OR IGNORE INTO settings (key, value) VALUES ('gg_promo_reward', '01KJQMNSDZDH69WP2CG7NTFGX2');
+  INSERT OR REPLACE INTO settings (key, value) VALUES ('gg_promo_exchange', '01KJQMQJHX7Y5MAVRVTN0A4VNZ');
+  INSERT OR REPLACE INTO settings (key, value) VALUES ('gg_promo_login', '01KJQKQHVSCC3WC4Q7AGFWTWN6');
 `);
 
 app.post('/api/score/promo/exchange', (req, res) => {
@@ -1671,11 +1670,9 @@ app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
 app.get('/api/golden-goose/promo-config', (req, res) => {
   const exchange = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_exchange'").get();
   const login = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_login'").get();
-  const reward = db.prepare("SELECT value FROM settings WHERE key = 'gg_promo_reward'").get();
   res.json({
     exchange: exchange?.value || '01KJQMQJHX7Y5MAVRVTN0A4VNZ',
     login: login?.value || '01KJQKQHVSCC3WC4Q7AGFWTWN6',
-    reward: reward?.value || '01KJQMNSDZDH69WP2CG7NTFGX2',
   });
 });
 
@@ -1765,6 +1762,300 @@ app.post('/api/golden-goose/debug/add-coins', (req, res) => {
   const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
   console.log(`[GG Debug] Added ${addAmount} coins for ${userHash}, total: ${row?.coins}`);
   res.json({ ok: true, totalCoins: row?.coins ?? addAmount });
+});
+
+// ===== SLEEP-MONEY API =====
+
+// Sleep-Money mTLS agent
+const smCertPath = fs.existsSync('/root/sleep-money_public.crt')
+  ? '/root/sleep-money_public.crt'
+  : path.join(__dirname, '../../../sleep-money/sleep-money_public.crt');
+const smKeyPath = fs.existsSync('/root/sleep-money_private.key')
+  ? '/root/sleep-money_private.key'
+  : path.join(__dirname, '../../../sleep-money/sleep-money_private.key');
+const smTossAgent = new https.Agent({
+  cert: fs.readFileSync(smCertPath),
+  key: fs.readFileSync(smKeyPath),
+});
+function smTossFetch(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const body = options.body || null;
+    const reqOpts = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: options.method || 'GET',
+      headers: { ...(options.headers || {}) },
+      agent: smTossAgent,
+    };
+    if (body) reqOpts.headers['Content-Length'] = Buffer.byteLength(body);
+    const req = https.request(reqOpts, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        ok: res.statusCode >= 200 && res.statusCode < 300,
+        text: () => Promise.resolve(data),
+        json: () => Promise.resolve(JSON.parse(data)),
+      }));
+    });
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+// Sleep-Money DB
+const SM_DB_PATH = path.join(__dirname, '../../../sleep-money/server/sleep-money.db');
+const smDb = new Database(SM_DB_PATH);
+smDb.pragma('journal_mode = WAL');
+smDb.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    user_hash TEXT PRIMARY KEY,
+    user_name TEXT,
+    user_gender TEXT,
+    user_birthday TEXT,
+    points INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS coin_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS promo_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    promo_type TEXT NOT NULL,
+    promo_code TEXT,
+    amount INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_hash, promo_type)
+  );
+  CREATE TABLE IF NOT EXISTS exchanges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    coin_count INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    promo_id TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS sleep_settings (
+    user_hash TEXT PRIMARY KEY,
+    bedtime TEXT NOT NULL,
+    wake_time TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS sleep_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    sleep_start DATETIME,
+    sleep_end DATETIME,
+    total_minutes INTEGER,
+    coins_earned INTEGER,
+    bonus_multiplier REAL DEFAULT 1.0,
+    ad_watched INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// Sleep-Money 토스 복호화 키
+const smTossKeysPath = path.join(__dirname, '../../../sleep-money/server/keys/toss-login.json');
+const smTossKeys = fs.existsSync(smTossKeysPath)
+  ? JSON.parse(fs.readFileSync(smTossKeysPath, 'utf8'))
+  : null;
+
+function smDecryptToss(encryptedText) {
+  if (!smTossKeys) return encryptedText;
+  try {
+    const decoded = Buffer.from(encryptedText, 'base64');
+    const IV_LENGTH = 12;
+    const iv = decoded.subarray(0, IV_LENGTH);
+    const authTagLength = 16;
+    const ciphertext = decoded.subarray(IV_LENGTH, decoded.length - authTagLength);
+    const authTag = decoded.subarray(decoded.length - authTagLength);
+    const key = Buffer.from(smTossKeys.key, 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    decipher.setAAD(Buffer.from(smTossKeys.aad));
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+  } catch (e) {
+    console.warn('[sleep-money auth] decrypt failed:', e.message);
+    return encryptedText;
+  }
+}
+
+const smPrefix = '/api/sleep-money';
+
+// Auth - 토스 로그인
+app.post(`${smPrefix}/toss/login`, async (req, res) => {
+  try {
+    const { authorizationCode, referrer } = req.body;
+    if (!authorizationCode) return res.status(400).json({ error: 'missing_auth_code' });
+
+    let userHash, userName, userGender, userBirthday;
+
+    const result = await smTossFetch('https://oauth2.cert.toss.im/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authorizationCode }),
+    });
+    const data = await result.json();
+
+    userHash = data.userHash || crypto.createHash('sha256').update(authorizationCode).digest('hex').slice(0, 16);
+    userName = data.name ? smDecryptToss(data.name) : '사용자';
+    userGender = data.gender ? smDecryptToss(data.gender) : '';
+    userBirthday = data.birthday ? smDecryptToss(data.birthday) : '';
+
+    smDb.prepare(`
+      INSERT INTO users (user_hash, user_name, user_gender, user_birthday, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(user_hash) DO UPDATE SET
+        user_name = excluded.user_name,
+        updated_at = datetime('now')
+    `).run(userHash, userName, userGender, userBirthday);
+
+    res.json({
+      status: 'ok',
+      userHash,
+      userKey: userHash,
+      name: userName,
+      referrer: referrer || null,
+    });
+  } catch (err) {
+    console.error('[sleep-money auth] login error:', err);
+    res.status(500).json({ error: 'login_failed' });
+  }
+});
+
+// Coins
+app.get(`${smPrefix}/coins/:userHash`, (req, res) => {
+  const { userHash } = req.params;
+  const row = smDb.prepare(`SELECT COALESCE(SUM(amount), 0) as coins FROM coin_transactions WHERE user_hash = ?`).get(userHash);
+  res.json({ coins: row?.coins || 0 });
+});
+
+app.post(`${smPrefix}/coins/add`, (req, res) => {
+  const { userHash, amount, reason } = req.body;
+  if (!userHash || !amount) return res.status(400).json({ error: 'missing_params' });
+  smDb.prepare(`INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, ?)`).run(userHash, amount, reason || 'game_reward');
+  const row = smDb.prepare(`SELECT COALESCE(SUM(amount), 0) as coins FROM coin_transactions WHERE user_hash = ?`).get(userHash);
+  res.json({ success: true, coins: row.coins });
+});
+
+// Config
+app.get(`${smPrefix}/config`, (req, res) => {
+  const rows = smDb.prepare(`SELECT key, value FROM settings`).all();
+  const config = {};
+  for (const row of rows) config[row.key] = row.value;
+  res.json(config);
+});
+
+app.get(`${smPrefix}/promo-config`, (req, res) => {
+  const rows = smDb.prepare(`SELECT key, value FROM settings WHERE key LIKE 'promo_%'`).all();
+  const config = {};
+  for (const row of rows) config[row.key] = row.value;
+  res.json(config);
+});
+
+// Exchange
+const SM_EXCHANGE_RATE = 10;
+
+app.post(`${smPrefix}/exchange`, (req, res) => {
+  const { userHash } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_user' });
+  const coinRow = smDb.prepare(`SELECT COALESCE(SUM(amount), 0) as coins FROM coin_transactions WHERE user_hash = ?`).get(userHash);
+  const coins = coinRow?.coins || 0;
+  if (coins < SM_EXCHANGE_RATE) return res.json({ error: 'insufficient_coins' });
+  const exchangeCoins = Math.floor(coins / SM_EXCHANGE_RATE) * SM_EXCHANGE_RATE;
+  const points = exchangeCoins / SM_EXCHANGE_RATE;
+  smDb.prepare(`INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, 'exchange')`).run(userHash, -exchangeCoins);
+  const result = smDb.prepare(`INSERT INTO exchanges (user_hash, coin_count, points, status) VALUES (?, ?, ?, 'pending')`).run(userHash, exchangeCoins, points);
+  const promoSetting = smDb.prepare(`SELECT value FROM settings WHERE key = 'promo_exchange'`).get();
+  res.json({ exchangeId: result.lastInsertRowid, promoId: promoSetting?.value || null, coinCount: exchangeCoins, points });
+});
+
+app.post(`${smPrefix}/exchange/:id/confirm`, (req, res) => {
+  smDb.prepare(`UPDATE exchanges SET status = 'confirmed' WHERE id = ?`).run(req.params.id);
+  res.json({ success: true });
+});
+
+app.post(`${smPrefix}/exchange/:id/restore`, (req, res) => {
+  const ex = smDb.prepare(`SELECT * FROM exchanges WHERE id = ? AND status = 'pending'`).get(req.params.id);
+  if (!ex) return res.status(404).json({ error: 'not_found' });
+  smDb.prepare(`INSERT INTO coin_transactions (user_hash, amount, reason) VALUES (?, ?, 'exchange_restore')`).run(ex.user_hash, ex.coin_count);
+  smDb.prepare(`UPDATE exchanges SET status = 'restored' WHERE id = ?`).run(req.params.id);
+  res.json({ success: true, restoredCoins: ex.coin_count });
+});
+
+app.get(`${smPrefix}/exchanges/:userHash`, (req, res) => {
+  const rows = smDb.prepare(`SELECT * FROM exchanges WHERE user_hash = ? ORDER BY created_at DESC LIMIT 50`).all(req.params.userHash);
+  res.json({ exchanges: rows });
+});
+
+// Promo
+app.get(`${smPrefix}/promo/check/:userHash/:type`, (req, res) => {
+  const { userHash, type } = req.params;
+  const row = smDb.prepare(`SELECT * FROM promo_records WHERE user_hash = ? AND promo_type = ?`).get(userHash, type);
+  res.json({ used: !!row, record: row || null });
+});
+
+app.post(`${smPrefix}/promo/record`, (req, res) => {
+  const { userHash, promoType, promoCode, amount } = req.body;
+  if (!userHash || !promoType) return res.status(400).json({ error: 'missing_params' });
+  try {
+    smDb.prepare(`INSERT INTO promo_records (user_hash, promo_type, promo_code, amount) VALUES (?, ?, ?, ?)`).run(userHash, promoType, promoCode || '', amount || 0);
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message?.includes('UNIQUE')) return res.json({ success: false, error: 'already_used' });
+    throw err;
+  }
+});
+
+app.post(`${smPrefix}/promo/grant`, (req, res) => {
+  const { promoCode, amount, userHash } = req.body;
+  console.log(`[sleep-money promo] grant: code=${promoCode}, amount=${amount}, user=${userHash}`);
+  res.json({ success: true, granted: amount });
+});
+
+// Sleep
+app.get(`${smPrefix}/sleep/settings/:userHash`, (req, res) => {
+  const row = smDb.prepare('SELECT * FROM sleep_settings WHERE user_hash = ?').get(req.params.userHash);
+  res.json(row || { bedtime: '23:00', wake_time: '07:00' });
+});
+
+app.post(`${smPrefix}/sleep/settings`, (req, res) => {
+  const { userHash, bedtime, wakeTime } = req.body;
+  if (!userHash || !bedtime || !wakeTime) return res.status(400).json({ error: 'missing_params' });
+  smDb.prepare(`
+    INSERT INTO sleep_settings (user_hash, bedtime, wake_time) VALUES (?, ?, ?)
+    ON CONFLICT(user_hash) DO UPDATE SET bedtime = excluded.bedtime, wake_time = excluded.wake_time, updated_at = CURRENT_TIMESTAMP
+  `).run(userHash, bedtime, wakeTime);
+  res.json({ success: true });
+});
+
+app.post(`${smPrefix}/sleep/complete`, (req, res) => {
+  const { userHash, sleepStart, sleepEnd, totalMinutes, coinsEarned, bonusMultiplier, adWatched } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_params' });
+  smDb.prepare(`
+    INSERT INTO sleep_sessions (user_hash, sleep_start, sleep_end, total_minutes, coins_earned, bonus_multiplier, ad_watched)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(userHash, sleepStart, sleepEnd, totalMinutes, coinsEarned, bonusMultiplier || 1, adWatched || 0);
+  res.json({ success: true });
+});
+
+app.get(`${smPrefix}/sleep/stats/:userHash`, (req, res) => {
+  const rows = smDb.prepare(`SELECT * FROM sleep_sessions WHERE user_hash = ? ORDER BY created_at DESC LIMIT 30`).all(req.params.userHash);
+  res.json({ sessions: rows });
 });
 
 if (require.main === module) {

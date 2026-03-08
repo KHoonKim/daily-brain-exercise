@@ -43,6 +43,7 @@ function addPoints(n){
     snackbar(`두뇌점수 <span class="tds-badge tds-badge-sm tds-badge-weak-blue" style="vertical-align:middle;margin-left:2px;color:#fff;font-size:16px"><img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" style="width:20px;height:20px;margin-right:2px"> ${_pendingPointsTotal}점</span>`,2500);
     _pendingPointsTotal=0;
   },50);
+  renderPoints(true);
   // 서버 동기화 (best-effort, non-blocking)
   if(window.AIT){
     AIT.getUserHash().then(uh=>{

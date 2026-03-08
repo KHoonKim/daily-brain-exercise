@@ -12,6 +12,7 @@ async function initIntro() {
   const userKey = await AIT.storageGet('toss_userKey');
   if (userKey) {
     show('homeScreen');
+    renderHome();
   } else {
     show('introScreen');
   }
@@ -26,6 +27,7 @@ async function startApp() {
     const result = await AIT.login();
     if (result?.userKey || result?.mock) {
       show('homeScreen');
+      renderHome();
     } else {
       toast('로그인에 실패했어요. 다시 시도해주세요.');
       btn.disabled = false;
