@@ -29,7 +29,7 @@ db.exec(`
     game TEXT NOT NULL,
     score INTEGER NOT NULL,
     user_hash TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE INDEX IF NOT EXISTS idx_game ON scores(game);
   CREATE INDEX IF NOT EXISTS idx_game_score ON scores(game, score);
@@ -45,7 +45,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   )
 `);
 
@@ -57,8 +57,8 @@ db.exec(`
     user_gender TEXT,
     user_birthday TEXT,
     points INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   )
 `);
 
@@ -425,10 +425,10 @@ app.post('/api/score/toss/login', async (req, res) => {
     // 4. DB 저장 (userKey를 user_hash로 사용)
     const userHash = String(user.userKey);
     db.prepare(`INSERT INTO users (user_hash, user_name, user_gender, user_birthday, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, (datetime('now','+9 hours')))
       ON CONFLICT(user_hash) DO UPDATE SET
         user_name=excluded.user_name, user_gender=excluded.user_gender,
-        user_birthday=excluded.user_birthday, updated_at=CURRENT_TIMESTAMP
+        user_birthday=excluded.user_birthday, updated_at=(datetime('now','+9 hours'))
     `).run(userHash, decrypted.name || null, decrypted.gender || null, decrypted.birthday || null);
 
     console.log(`[Toss Login] User ${userHash} (${decrypted.name}) logged in`);
@@ -454,10 +454,10 @@ app.post('/api/score/user', (req, res) => {
   const { user_hash, user_name, user_gender, user_birthday } = req.body;
   if (!user_hash) return res.status(400).json({ error: 'user_hash required' });
   db.prepare(`INSERT INTO users (user_hash, user_name, user_gender, user_birthday, updated_at)
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    VALUES (?, ?, ?, ?, (datetime('now','+9 hours')))
     ON CONFLICT(user_hash) DO UPDATE SET
       user_name=excluded.user_name, user_gender=excluded.user_gender,
-      user_birthday=excluded.user_birthday, updated_at=CURRENT_TIMESTAMP
+      user_birthday=excluded.user_birthday, updated_at=(datetime('now','+9 hours'))
   `).run(user_hash, user_name || null, user_gender || null, user_birthday || null);
   res.json({ status: 'ok' });
 });
@@ -486,7 +486,7 @@ db.exec(`
     promo_code TEXT,
     amount INTEGER,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
     UNIQUE(user_hash, promo_type)
   )
 `);
@@ -540,7 +540,7 @@ db.exec(`
     points INTEGER NOT NULL,
     amount INTEGER NOT NULL,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   )
 `);
 
@@ -551,8 +551,8 @@ db.exec(`
     user_name TEXT,
     user_gender TEXT,
     user_birthday TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS cashword_promotion_grants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -561,14 +561,14 @@ db.exec(`
     promo_code TEXT,
     amount INTEGER,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
     UNIQUE(user_hash, promo_type)
   );
   CREATE TABLE IF NOT EXISTS cashword_coins (
     user_hash TEXT PRIMARY KEY,
     coins INTEGER DEFAULT 0,
     total_earned INTEGER DEFAULT 0,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS cashword_exchanges (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -576,7 +576,7 @@ db.exec(`
     coins_spent INTEGER NOT NULL DEFAULT 10,
     toss_points INTEGER NOT NULL DEFAULT 1,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
 `);
 
@@ -585,8 +585,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS gg_users (
     user_hash TEXT PRIMARY KEY,
     user_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS gg_promotion_grants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -595,14 +595,20 @@ db.exec(`
     promo_code TEXT,
     amount INTEGER DEFAULT 1,
     status TEXT DEFAULT 'granted',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
     UNIQUE(user_hash, promo_type)
   );
   CREATE TABLE IF NOT EXISTS gg_coins (
     user_hash TEXT PRIMARY KEY,
     coins INTEGER DEFAULT 0,
     total_earned INTEGER DEFAULT 0,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
+  );
+  CREATE TABLE IF NOT EXISTS gg_reward_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    coins INTEGER NOT NULL,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS gg_exchanges (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -610,8 +616,25 @@ db.exec(`
     coins_spent INTEGER DEFAULT 10,
     promo_id TEXT,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
+  CREATE TABLE IF NOT EXISTS gg_referral_codes (
+    user_hash TEXT PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
+  );
+  CREATE TABLE IF NOT EXISTS gg_referrals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    referrer_hash TEXT NOT NULL,
+    referred_hash TEXT NOT NULL,
+    referred_name TEXT,
+    referral_code TEXT NOT NULL,
+    claimed INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    claimed_at DATETIME,
+    UNIQUE(referred_hash)
+  );
+  CREATE INDEX IF NOT EXISTS idx_gg_referrals_referrer ON gg_referrals(referrer_hash);
 `);
 
 // 일일 접속 기록 (17시 재유도 알림용)
@@ -619,9 +642,29 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS gg_access_log (
     user_hash TEXT NOT NULL,
     access_date TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
     PRIMARY KEY (user_hash, access_date)
   )
+`);
+
+// ===== Golden Goose Analytics Tables =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS gg_analytics_users (
+    user_hash TEXT PRIMARY KEY,
+    first_visit_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    first_hatch_at DATETIME,
+    first_login_at DATETIME
+  );
+  CREATE TABLE IF NOT EXISTS gg_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_hash TEXT NOT NULL,
+    event TEXT NOT NULL,
+    params TEXT,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_gg_events_user ON gg_events(user_hash);
+  CREATE INDEX IF NOT EXISTS idx_gg_events_event ON gg_events(event, created_at);
+  CREATE INDEX IF NOT EXISTS idx_gg_events_date ON gg_events(created_at);
 `);
 
 // GG 프로모션 ID 초기화
@@ -1026,7 +1069,7 @@ app.patch('/api/admin/settings', (req, res) => {
   const { key, value } = req.body;
   if (!key || value === undefined) return res.status(400).json({ error: 'key, value 필요' });
 
-  db.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at').run(key, value);
+  db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES (?, ?, (datetime('now','+9 hours'))) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(key, value);
 
   // 메모리 캐시 갱신
   if (key === 'daily_notify_template') dailyNotifyTemplate = value;
@@ -1129,6 +1172,7 @@ function decryptCashword(encryptedText) {
     const tag = decoded.slice(decoded.length - 16);
     const ciphertext = decoded.slice(12, decoded.length - 16);
     const decipher = crypto.createDecipheriv('aes-256-gcm', cashwordKey, iv);
+    decipher.setAAD(Buffer.from('TOSS'));
     decipher.setAuthTag(tag);
     return decipher.update(ciphertext, undefined, 'utf8') + decipher.final('utf8');
   } catch (e) { console.warn('[CashWord decrypt] failed:', e.message); return null; }
@@ -1172,10 +1216,10 @@ app.post('/api/cashword/toss/login', async (req, res) => {
     // 4. cashword_users 테이블에 저장 (brain-exercise users 테이블과 별도)
     const userHash = String(user.userKey);
     db.prepare(`INSERT INTO cashword_users (user_hash, user_name, user_gender, user_birthday, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, (datetime('now','+9 hours')))
       ON CONFLICT(user_hash) DO UPDATE SET
         user_name=excluded.user_name, user_gender=excluded.user_gender,
-        user_birthday=excluded.user_birthday, updated_at=CURRENT_TIMESTAMP
+        user_birthday=excluded.user_birthday, updated_at=(datetime('now','+9 hours'))
     `).run(userHash, decrypted.name || null, decrypted.gender || null, decrypted.birthday || null);
 
     console.log(`[CashWord Login] User ${userHash} (${decrypted.name}) logged in`);
@@ -1219,6 +1263,78 @@ app.post('/api/cashword/promo/record', (req, res) => {
   }
 });
 
+// POST /api/cashword/promo/execute — 일회성 프로모션 원자적 처리 (중복체크 + Toss API + 기록)
+app.post('/api/cashword/promo/execute', async (req, res) => {
+  const { userHash, userKey, promoType, promoCode, amount } = req.body;
+  if (!userHash || !userKey || !promoType || !promoCode) return res.status(400).json({ error: 'missing params' });
+
+  // 서버에서 프로모 타입별 지급 금액 강제 (클라 배포 없이 변경 가능)
+  const promoAmounts = { 'FIRST_LOGIN': 3 };
+  const finalAmount = promoAmounts[promoType] || amount || 1;
+
+  const existing = db.prepare('SELECT * FROM cashword_promotion_grants WHERE user_hash = ? AND promo_type = ?').get(userHash, promoType);
+  if (existing) return res.json({ status: 'already_granted' });
+
+  const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
+  const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
+  try {
+    const keyRes = await (await cashwordTossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
+    console.log('[CashWord Promo] execute get-key:', JSON.stringify(keyRes));
+    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    const key = keyRes.success.key;
+    const execRes = await (await cashwordTossFetch(`${BASE}/execute-promotion`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ promotionCode: promoCode, key, amount: finalAmount })
+    })).json();
+    console.log('[CashWord Promo] execute result:', JSON.stringify(execRes));
+    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+
+    db.prepare('INSERT OR IGNORE INTO cashword_promotion_grants (user_hash, promo_type, promo_code, amount, status) VALUES (?, ?, ?, ?, ?)').run(userHash, promoType, promoCode, finalAmount, 'granted');
+    console.log(`[CashWord Promo] ${promoType} granted to ${userHash} (${finalAmount})`);
+    res.json({ status: 'ok' });
+  } catch (e) {
+    console.error('[CashWord Promo Execute Error]', e);
+    res.status(500).json({ error: 'promo_execute_failed', detail: e.message });
+  }
+});
+
+// POST /api/cashword/promo/grant — Toss 프로모션 지급 (CashWord mTLS)
+app.post('/api/cashword/promo/grant', async (req, res) => {
+  const { userKey, promotionCode, amount } = req.body;
+  if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
+  const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
+  const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
+  try {
+    const keyRes = await (await cashwordTossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
+    console.log('[CashWord Promo] grant get-key:', JSON.stringify(keyRes));
+    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    const key = keyRes.success.key;
+    const execRes = await (await cashwordTossFetch(`${BASE}/execute-promotion`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ promotionCode, key, amount })
+    })).json();
+    console.log('[CashWord Promo] grant execute:', JSON.stringify(execRes));
+    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+    res.json(execRes.success);
+  } catch (e) {
+    console.error('[CashWord Promo Error]', e);
+    res.status(500).json({ error: 'promo_grant_failed', detail: e.message });
+  }
+});
+
+// GET /api/cashword/promo-config
+app.get('/api/cashword/promo-config', (req, res) => {
+  console.log('[CashWord PromoConfig] requested');
+  const tossLogin = db.prepare("SELECT value FROM settings WHERE key = 'cashword_promo_toss_login'").get();
+  const firstQuestion = db.prepare("SELECT value FROM settings WHERE key = 'cashword_promo_first_question'").get();
+  const exchange = db.prepare("SELECT value FROM settings WHERE key = 'cashword_promo_exchange'").get();
+  res.json({
+    tossLogin: tossLogin?.value || null,
+    firstQuestion: firstQuestion?.value || null,
+    exchange: exchange?.value || null
+  });
+});
+
 // GET /api/cashword/coins/:userHash — 코인 잔액 조회
 app.get('/api/cashword/coins/:userHash', (req, res) => {
   const { userHash } = req.params;
@@ -1230,27 +1346,31 @@ app.get('/api/cashword/coins/:userHash', (req, res) => {
 app.post('/api/cashword/coins/add', (req, res) => {
   const { userHash, amount } = req.body;
   if (!userHash) return res.status(400).json({ error: 'userHash required' });
-  // anti-cheat: 1~3 범위만 허용
-  const safeAmount = Math.max(1, Math.min(3, parseInt(amount) || 1));
+  // anti-cheat: 1~100 범위만 허용
+  const safeAmount = Math.max(1, Math.min(100, parseInt(amount) || 1));
   db.prepare(`
     INSERT INTO cashword_coins (user_hash, coins, total_earned)
     VALUES (?, ?, ?)
     ON CONFLICT(user_hash) DO UPDATE SET
       coins = coins + excluded.coins,
       total_earned = total_earned + excluded.total_earned,
-      updated_at = CURRENT_TIMESTAMP
+      updated_at = (datetime('now','+9 hours'))
   `).run(userHash, safeAmount, safeAmount);
   const row = db.prepare('SELECT coins, total_earned FROM cashword_coins WHERE user_hash = ?').get(userHash);
   res.json({ coins: row.coins, totalEarned: row.total_earned });
 });
 
-// POST /api/cashword/exchange — 10코인 차감 + 교환 ID 발급
+// POST /api/cashword/exchange — 코인 차감 + 교환 ID 발급 (count: 교환 횟수, 기본 1)
 app.post('/api/cashword/exchange', (req, res) => {
-  const { userHash } = req.body;
+  const { userHash, count: rawCount } = req.body;
   if (!userHash) return res.status(400).json({ error: 'userHash required' });
 
+  const count = Math.max(1, Math.floor(Number(rawCount) || 1));
+  const coinsNeeded = count * 10;
+  const tossPoints = count;
+
   const row = db.prepare('SELECT coins FROM cashword_coins WHERE user_hash = ?').get(userHash);
-  if (!row || row.coins < 10) {
+  if (!row || row.coins < coinsNeeded) {
     return res.status(400).json({ error: 'insufficient_coins', coins: row?.coins || 0 });
   }
   // 동시성: 10초 내 중복 교환 차단
@@ -1260,13 +1380,14 @@ app.post('/api/cashword/exchange', (req, res) => {
   if (recent) return res.status(429).json({ error: 'too_fast' });
 
   const doExchange = db.transaction(() => {
-    db.prepare('UPDATE cashword_coins SET coins = coins - 10, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(userHash);
+    db.prepare(`UPDATE cashword_coins SET coins = coins - ?, updated_at = (datetime('now','+9 hours')) WHERE user_hash = ?`).run(coinsNeeded, userHash);
     return db.prepare(
-      'INSERT INTO cashword_exchanges (user_hash, coins_spent, toss_points, status) VALUES (?, 10, 1, ?)'
-    ).run(userHash, 'pending');
+      'INSERT INTO cashword_exchanges (user_hash, coins_spent, toss_points, status) VALUES (?, ?, ?, ?)'
+    ).run(userHash, coinsNeeded, tossPoints, 'pending');
   });
   const result = doExchange();
-  res.json({ exchangeId: result.lastInsertRowid });
+  const promoCfg = db.prepare("SELECT value FROM settings WHERE key = 'cashword_promo_exchange'").get();
+  res.json({ exchangeId: result.lastInsertRowid, promoId: promoCfg?.value || null, coinsSpent: coinsNeeded, tossPoints });
 });
 
 // POST /api/cashword/exchange/:id/confirm — SDK 성공 후 확정
@@ -1286,7 +1407,7 @@ app.post('/api/cashword/exchange/:id/restore', (req, res) => {
   if (!row) return res.status(404).json({ error: 'not found' });
   if (row.status !== 'pending') return res.status(400).json({ error: 'already_processed' });
   db.transaction(() => {
-    db.prepare('UPDATE cashword_coins SET coins = coins + 10 WHERE user_hash = ?').run(row.user_hash);
+    db.prepare('UPDATE cashword_coins SET coins = coins + ? WHERE user_hash = ?').run(row.coins_spent, row.user_hash);
     db.prepare("UPDATE cashword_exchanges SET status = 'cancelled' WHERE id = ?").run(id);
   })();
   res.json({ status: 'ok' });
@@ -1380,9 +1501,14 @@ async function sendGoldenGooseLotteryNotification() {
     return;
   }
 
-  const users = db.prepare(
-    "SELECT user_hash FROM gg_coins WHERE CAST(user_hash AS INTEGER) > 0"
-  ).all();
+  const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const users = db.prepare(`
+    SELECT user_hash FROM gg_coins
+    WHERE CAST(user_hash AS INTEGER) > 0
+    AND user_hash NOT IN (
+      SELECT user_hash FROM gg_access_log WHERE access_date = ?
+    )
+  `).all(today);
   if (users.length === 0) {
     console.log('[GG LotteryNotify] 발송 대상 유저 없음');
     return;
@@ -1467,15 +1593,16 @@ async function sendGoldenGooseReengageNotification() {
   console.log(`[GG ReengageNotify] 완료 — 대상: ${users.length}명 (미접속), 성공: ${totalSuccess}, 실패: ${totalFail}`);
 }
 
-// 매일 KST 09:00 복권 충전 알림 (전체 유저)
-cron.schedule('0 9 * * *', sendGoldenGooseLotteryNotification, { timezone: 'Asia/Seoul' });
-// 매일 KST 17:00 미접속 유저 재유도 알림
-cron.schedule('0 17 * * *', sendGoldenGooseReengageNotification, { timezone: 'Asia/Seoul' });
+// 매일 KST 09:13 당일 미접속 유저 복권 알림
+cron.schedule('13 9 * * *', sendGoldenGooseLotteryNotification, { timezone: 'Asia/Seoul' });
+// 매일 KST 18:13 당일 미접속 유저 복권 알림 (2차)
+cron.schedule('13 18 * * *', sendGoldenGooseLotteryNotification, { timezone: 'Asia/Seoul' });
 
 // POST /api/golden-goose/toss/login — 인가코드 → 토큰 → 유저정보 조회+저장 (GG mTLS)
 app.post('/api/golden-goose/toss/login', async (req, res) => {
   try {
     const { authorizationCode, referrer } = req.body;
+    console.log('[GG Login] request body:', JSON.stringify({ authorizationCode: authorizationCode?.slice(0, 10) + '...', referrer }));
     if (!authorizationCode || !referrer) return res.status(400).json({ error: 'authorizationCode and referrer required' });
 
     // 1. 토큰 발급 (GG mTLS)
@@ -1506,9 +1633,9 @@ app.post('/api/golden-goose/toss/login', async (req, res) => {
     let name = null;
     try { if (user.name) name = decryptGGToss(user.name); } catch (e) { console.warn('[GG Login] name decrypt failed:', e.message); }
     db.prepare(`INSERT INTO gg_users (user_hash, user_name, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, (datetime('now','+9 hours')))
       ON CONFLICT(user_hash) DO UPDATE SET
-        user_name=excluded.user_name, updated_at=CURRENT_TIMESTAMP
+        user_name=excluded.user_name, updated_at=(datetime('now','+9 hours'))
     `).run(userHash, name || null);
 
     console.log(`[GG Login] User ${userHash} (${name}) logged in`);
@@ -1550,37 +1677,128 @@ app.post('/api/golden-goose/disconnect', setDisconnectCors, (req, res) => {
 
 // ===== Golden Goose API =====
 
+// GET /api/golden-goose/recent-rewards — 최근 보상 티커용
+app.get('/api/golden-goose/recent-rewards', (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.coins, r.created_at as time, COALESCE(r.reason, 'reward') as reason,
+           COALESCE(u.user_name, '익명') as name
+    FROM gg_reward_log r
+    LEFT JOIN gg_users u ON r.user_hash = u.user_hash
+    WHERE r.coins >= 20
+    ORDER BY r.id DESC LIMIT 20
+  `).all();
+  // 영문 이름 제외 + 마스킹 + 연속 동일 유저 제거
+  const korean = rows.filter(r => /^[가-힣]+$/.test(r.name));
+  const deduped = korean.filter((r, i) => i === 0 || r.name !== korean[i - 1].name);
+  const masked = deduped.map(r => ({
+    ...r,
+    name: r.name.length >= 2 ? r.name[0] + '*'.repeat(r.name.length - 2) + r.name[r.name.length - 1] : r.name
+  }));
+  res.json(masked);
+});
+
 // GET /api/golden-goose/coins/:userHash — 금화 잔액 조회
 app.get('/api/golden-goose/coins/:userHash', (req, res) => {
   const { userHash } = req.params;
-  const row = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
+  const row = db.prepare('SELECT coins, total_earned, milestone_eggs FROM gg_coins WHERE user_hash = ?').get(userHash);
   const exchangeRow = db.prepare("SELECT COALESCE(SUM(coins_spent), 0) / 10 as total_points FROM gg_exchanges WHERE user_hash = ? AND status = 'confirmed'").get(userHash);
-  res.json({ coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0, totalExchangedPoints: exchangeRow?.total_points ?? 0 });
+  // 마일스톤: 프로모 ID가 등록된 것만 활성
+  const MILESTONE_POINTS = { 20:1, 50:5, 100:10, 200:20, 500:50, 1000:100, 2000:100, 3000:100, 5000:200, 8000:300, 10000:500, 15000:700, 20000:1000 };
+  const msRows = db.prepare("SELECT key, value FROM settings WHERE key LIKE 'gg_milestone_%' AND value != ''").all();
+  const milestones = msRows
+    .map(r => { const eggs = parseInt(r.key.replace('gg_milestone_', '')); return { eggs, points: MILESTONE_POINTS[eggs] || 0, promo: r.value }; })
+    .filter(m => m.points > 0)
+    .sort((a, b) => a.eggs - b.eggs);
+  // 공지사항
+  const noticeId = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_id'").get()?.value || '';
+  const noticeTitle = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_title'").get()?.value || '';
+  const noticeBody = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_body'").get()?.value || '';
+  const notice = noticeId ? { id: noticeId, title: noticeTitle, body: noticeBody } : null;
+
+  res.json({
+    coins: row?.coins ?? 0, totalEarned: row?.total_earned ?? 0,
+    totalExchangedPoints: exchangeRow?.total_points ?? 0,
+    milestoneEggs: row?.milestone_eggs ?? 0,
+    milestones,
+    notice
+  });
 });
 
 // POST /api/golden-goose/reward — 광고 완료 후 금화 지급 (서버에서 확률 추첨)
 app.post('/api/golden-goose/reward', (req, res) => {
-  const { userHash } = req.body;
+  const { userHash, fixedCoins } = req.body;
   if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
 
-  const rand = Math.random();
+  // 오늘 지급 횟수 조회 (KST 오전 9시 = UTC 자정 기준)
+  const todayCount = db.prepare(`
+    SELECT COUNT(*) as cnt FROM gg_reward_log
+    WHERE user_hash = ? AND created_at >= datetime(date('now'), '+9 hours')
+  `).get(userHash)?.cnt || 0;
+
+  // fixedCoins: 최초 로그인 보너스 등 고정 코인 지급 (1~50 범위 제한)
   let coins;
-  if (rand < 0.40)       coins = Math.floor(Math.random() * 4) + 1;
-  else if (rand < 0.88)  coins = Math.floor(Math.random() * 6) + 5;
-  else if (rand < 0.985) coins = Math.floor(Math.random() * 15) + 11;
-  else                   coins = Math.floor(Math.random() * 25) + 26;
+  if (fixedCoins && Number.isInteger(fixedCoins) && fixedCoins >= 1 && fixedCoins <= 50) {
+    coins = fixedCoins;
+  } else {
+
+  const rand = Math.random();
+  if (todayCount >= 20) {
+    // 20회+: 1~5코인 (기대값 2)
+    if (rand < 0.45)       coins = 1;
+    else if (rand < 0.70)  coins = 2;
+    else if (rand < 0.90)  coins = 3;
+    else if (rand < 0.95)  coins = 4;
+    else                   coins = 5;
+  } else if (todayCount >= 15) {
+    // 16~20회: 기대값 ~3코인
+    if (rand < 0.60)       coins = Math.floor(Math.random() * 3) + 1;   // 1~3 (60%)
+    else if (rand < 0.90)  coins = Math.floor(Math.random() * 3) + 3;   // 3~5 (30%)
+    else                   coins = Math.floor(Math.random() * 4) + 5;   // 5~8 (10%)
+  } else if (todayCount >= 10) {
+    // 11~15회: 기대값 ~4코인
+    if (rand < 0.50)       coins = Math.floor(Math.random() * 3) + 1;   // 1~3 (50%)
+    else if (rand < 0.85)  coins = Math.floor(Math.random() * 3) + 4;   // 4~6 (35%)
+    else                   coins = Math.floor(Math.random() * 4) + 7;   // 7~10 (15%)
+  } else {
+    // 1~10회: 기본 확률 테이블 (기대값 ~7코인)
+    if (rand < 0.40)       coins = Math.floor(Math.random() * 4) + 1;
+    else if (rand < 0.88)  coins = Math.floor(Math.random() * 6) + 5;
+    else if (rand < 0.985) coins = Math.floor(Math.random() * 15) + 11;
+    else                   coins = Math.floor(Math.random() * 25) + 26;
+  }
+  } // end fixedCoins else
+
+  // 지급 로그 기록
+  db.prepare('INSERT INTO gg_reward_log (user_hash, coins) VALUES (?, ?)').run(userHash, coins);
 
   db.prepare(`
-    INSERT INTO gg_coins (user_hash, coins, total_earned)
-    VALUES (?, ?, ?)
+    INSERT INTO gg_coins (user_hash, coins, total_earned, milestone_eggs)
+    VALUES (?, ?, ?, 1)
     ON CONFLICT(user_hash) DO UPDATE SET
       coins = coins + excluded.coins,
       total_earned = total_earned + excluded.coins,
-      updated_at = CURRENT_TIMESTAMP
+      milestone_eggs = milestone_eggs + 1,
+      updated_at = (datetime('now','+9 hours'))
   `).run(userHash, coins, coins);
 
-  const updated = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
-  res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned });
+  const updated = db.prepare('SELECT coins, total_earned, milestone_eggs FROM gg_coins WHERE user_hash = ?').get(userHash);
+  res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned, milestoneEggs: updated.milestone_eggs ?? 0 });
+});
+
+// POST /api/golden-goose/reset — 유저 데이터 초기화 (디버그용)
+app.post('/api/golden-goose/reset', (req, res) => {
+  const { userHash, tossUserKey } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
+
+  const hashes = [userHash, tossUserKey].filter(Boolean);
+  console.log(`[GG Reset] users: ${hashes.join(', ')}`);
+  for (const h of hashes) {
+    db.prepare('DELETE FROM gg_coins WHERE user_hash = ?').run(h);
+    db.prepare('DELETE FROM gg_reward_log WHERE user_hash = ?').run(h);
+    db.prepare('DELETE FROM gg_exchanges WHERE user_hash = ?').run(h);
+  }
+  console.log(`[GG Reset] done`);
+  res.json({ ok: true });
 });
 
 // POST /api/golden-goose/lottery — 복권 금화 지급 (서버에서 추첨)
@@ -1606,13 +1824,16 @@ app.post('/api/golden-goose/lottery', (req, res) => {
     else                coins = 5;
   }
 
+  // 복권 로그 기록
+  db.prepare('INSERT INTO gg_reward_log (user_hash, coins, reason) VALUES (?, ?, ?)').run(userHash, coins, `lottery_${type}`);
+
   db.prepare(`
     INSERT INTO gg_coins (user_hash, coins, total_earned)
     VALUES (?, ?, ?)
     ON CONFLICT(user_hash) DO UPDATE SET
       coins = coins + excluded.coins,
       total_earned = total_earned + excluded.coins,
-      updated_at = CURRENT_TIMESTAMP
+      updated_at = (datetime('now','+9 hours'))
   `).run(userHash, coins, coins);
 
   const updated = db.prepare('SELECT coins, total_earned FROM gg_coins WHERE user_hash = ?').get(userHash);
@@ -1635,7 +1856,7 @@ app.post('/api/golden-goose/exchange', (req, res) => {
   const promoId = promoCfg?.value || 'GOLDEN_GOOSE_EXCHANGE_PROMO';
 
   const tx = db.transaction(() => {
-    db.prepare('UPDATE gg_coins SET coins = coins - ?, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(coinCount, userHash);
+    db.prepare(`UPDATE gg_coins SET coins = coins - ?, updated_at = (datetime('now','+9 hours')) WHERE user_hash = ?`).run(coinCount, userHash);
     const result = db.prepare(
       'INSERT INTO gg_exchanges (user_hash, coins_spent, promo_id, status) VALUES (?, ?, ?, ?)'
     ).run(userHash, coinCount, promoId, 'pending');
@@ -1660,7 +1881,7 @@ app.post('/api/golden-goose/exchange/:id/restore', (req, res) => {
   if (!exchange || exchange.status !== 'pending') return res.json({ ok: false });
 
   db.transaction(() => {
-    db.prepare('UPDATE gg_coins SET coins = coins + ?, updated_at = CURRENT_TIMESTAMP WHERE user_hash = ?').run(exchange.coins_spent, exchange.user_hash);
+    db.prepare(`UPDATE gg_coins SET coins = coins + ?, updated_at = (datetime('now','+9 hours')) WHERE user_hash = ?`).run(exchange.coins_spent, exchange.user_hash);
     db.prepare("UPDATE gg_exchanges SET status = 'restored' WHERE id = ?").run(id);
   })();
   res.json({ ok: true });
@@ -1730,6 +1951,241 @@ app.post('/api/golden-goose/access/record', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/golden-goose/event — 클라이언트 이벤트 수집
+app.post('/api/golden-goose/event', (req, res) => {
+  const { userHash, event, params } = req.body || {};
+  if (!userHash || !event) return res.status(400).json({ error: 'userHash and event required' });
+
+  // analytics_users: 첫 방문 자동 등록
+  db.prepare('INSERT OR IGNORE INTO gg_analytics_users (user_hash) VALUES (?)').run(userHash);
+
+  // 최초 이벤트 업데이트 (first_hatch, first_login)
+  if (event === 'egg_hatch') {
+    db.prepare('UPDATE gg_analytics_users SET first_hatch_at = datetime(\'now\',\'+9 hours\') WHERE user_hash = ? AND first_hatch_at IS NULL').run(userHash);
+  } else if (event === 'login_success') {
+    db.prepare('UPDATE gg_analytics_users SET first_login_at = datetime(\'now\',\'+9 hours\') WHERE user_hash = ? AND first_login_at IS NULL').run(userHash);
+  }
+
+  // 이벤트 기록
+  db.prepare('INSERT INTO gg_events (user_hash, event, params) VALUES (?, ?, ?)').run(userHash, event, params ? JSON.stringify(params) : null);
+  res.json({ ok: true });
+});
+
+// GET /api/golden-goose/analytics/dashboard-data — 대시보드용 통합 데이터
+app.get('/api/golden-goose/analytics/dashboard-data', (req, res) => {
+  const { date, cohort_date } = req.query;
+  const today = date || new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const cohortDate = cohort_date || today;
+
+  // 1. 신규 유저 첫 알 부화율
+  const firstHatchRate = db.prepare(`
+    SELECT
+      COUNT(*) as total_new,
+      COUNT(first_hatch_at) as hatched
+    FROM gg_analytics_users WHERE DATE(first_visit_at) = ?
+  `).get(cohortDate);
+
+  // 2. 신규 유저 로그인 전환율
+  const loginRate = db.prepare(`
+    SELECT
+      COUNT(*) as total_new,
+      COUNT(first_login_at) as logged_in
+    FROM gg_analytics_users WHERE DATE(first_visit_at) = ?
+  `).get(cohortDate);
+
+  // 3. D1~D7 리텐션 (코호트 기준)
+  const retention = db.prepare(`
+    SELECT
+      CAST(julianday(DATE(e.created_at)) - julianday(?) AS INT) as day_n,
+      COUNT(DISTINCT e.user_hash) as users
+    FROM gg_events e
+    JOIN gg_analytics_users u ON e.user_hash = u.user_hash
+    WHERE DATE(u.first_visit_at) = ? AND e.event = 'app_open'
+      AND CAST(julianday(DATE(e.created_at)) - julianday(?) AS INT) BETWEEN 0 AND 28
+    GROUP BY day_n ORDER BY day_n
+  `).all(cohortDate, cohortDate, cohortDate);
+  const cohortSize = db.prepare('SELECT COUNT(*) as cnt FROM gg_analytics_users WHERE DATE(first_visit_at) = ?').get(cohortDate)?.cnt || 0;
+
+  // 4. 유저별 일평균 부화 수
+  const avgHatches = db.prepare(`
+    SELECT AVG(daily_count) as avg_daily FROM (
+      SELECT user_hash, DATE(created_at) as day, COUNT(*) as daily_count
+      FROM gg_events WHERE event = 'egg_hatch' GROUP BY user_hash, day
+    )
+  `).get();
+
+  // 5. Daily 부화 횟수별 유저 분포 (오늘)
+  const hatchDistribution = db.prepare(`
+    SELECT daily_count, COUNT(*) as users FROM (
+      SELECT user_hash, COUNT(*) as daily_count
+      FROM gg_events WHERE event = 'egg_hatch' AND DATE(created_at) = ?
+      GROUP BY user_hash
+    ) GROUP BY daily_count ORDER BY daily_count
+  `).all(today);
+
+  // 6. 장기 유저 vs 이탈 유저 첫날 행동 비교
+  const behaviorComparison = db.prepare(`
+    WITH user_lifespan AS (
+      SELECT user_hash,
+        COUNT(DISTINCT DATE(created_at)) as active_days,
+        MIN(DATE(created_at)) as first_day
+      FROM gg_events WHERE event = 'app_open' GROUP BY user_hash
+    ),
+    first_day_actions AS (
+      SELECT e.user_hash,
+        SUM(CASE WHEN e.event='egg_hatch' THEN 1 ELSE 0 END) as hatches,
+        MAX(CASE WHEN e.event='lottery_result' THEN 1 ELSE 0 END) as used_lottery,
+        MAX(CASE WHEN e.event='login_success' THEN 1 ELSE 0 END) as logged_in,
+        MAX(COALESCE(json_extract(e.params,'$.amount'),0)) as max_lottery_win,
+        SUM(CASE WHEN e.event='egg_hatch' THEN COALESCE(json_extract(e.params,'$.coins'),0) ELSE 0 END) as total_coins
+      FROM gg_events e JOIN user_lifespan u
+        ON e.user_hash = u.user_hash AND DATE(e.created_at) = u.first_day
+      GROUP BY e.user_hash
+    )
+    SELECT
+      CASE WHEN u.active_days >= 7 THEN 'retained' ELSE 'churned' END as segment,
+      COUNT(*) as users,
+      AVG(f.hatches) as avg_hatches,
+      AVG(f.used_lottery) as lottery_rate,
+      AVG(f.logged_in) as login_rate,
+      AVG(f.max_lottery_win) as avg_max_lottery_win,
+      AVG(f.total_coins) as avg_first_day_coins
+    FROM user_lifespan u JOIN first_day_actions f ON u.user_hash = f.user_hash
+    GROUP BY segment
+  `).all();
+
+  // 7. 복권 이용 유저 비율 (오늘)
+  const lotteryUsage = db.prepare(`
+    SELECT
+      COUNT(DISTINCT CASE WHEN event='lottery_result' THEN user_hash END) as lottery_users,
+      COUNT(DISTINCT CASE WHEN event='app_open' THEN user_hash END) as total_users
+    FROM gg_events WHERE DATE(created_at) = ?
+  `).get(today);
+
+  // 오늘 요약 (이벤트 기반)
+  const todaySummary = db.prepare(`
+    SELECT
+      COUNT(DISTINCT user_hash) as dau,
+      COUNT(CASE WHEN event='egg_hatch' THEN 1 END) as total_hatches,
+      COUNT(CASE WHEN event='lottery_result' THEN 1 END) as total_lotteries,
+      COUNT(CASE WHEN event='exchange_complete' THEN 1 END) as total_exchanges,
+      COUNT(CASE WHEN event='ad_fail' THEN 1 END) as ad_fails
+    FROM gg_events WHERE DATE(created_at) = ?
+  `).get(today);
+
+  // 오늘 실제 비즈니스 지표 (기존 DB 테이블에서)
+  const todayBiz = db.prepare(`
+    SELECT
+      COUNT(*) as ad_views,
+      COALESCE(SUM(coins), 0) as total_coins_given
+    FROM gg_reward_log WHERE DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+  const todayExchange = db.prepare(`
+    SELECT
+      COALESCE(SUM(coins_spent), 0) as coins_exchanged,
+      COALESCE(SUM(coins_spent / 10), 0) as points_exchanged
+    FROM gg_exchanges WHERE status = 'confirmed' AND DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+  const todayShares = db.prepare(`
+    SELECT COUNT(*) as share_count, COUNT(DISTINCT user_hash) as share_users
+    FROM gg_reward_log WHERE reason = 'share' AND DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+
+  // 일별 DAU 추이 (최근 30일) — gg_events 기반 + gg_access_log 폴백
+  let dauTrend = db.prepare(`
+    SELECT DATE(created_at) as date, COUNT(DISTINCT user_hash) as dau
+    FROM gg_events WHERE event = 'app_open' AND DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+  if (dauTrend.length === 0) {
+    dauTrend = db.prepare(`
+      SELECT access_date as date, COUNT(DISTINCT user_hash) as dau
+      FROM gg_access_log WHERE access_date >= DATE(?, '-30 days')
+      GROUP BY access_date ORDER BY access_date
+    `).all(today);
+  }
+
+  // 신규 유저 수 추이 (최근 30일)
+  let newUserTrend = db.prepare(`
+    SELECT DATE(first_visit_at) as date, COUNT(*) as new_users
+    FROM gg_analytics_users WHERE DATE(first_visit_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(first_visit_at) ORDER BY date
+  `).all(today);
+  if (newUserTrend.length === 0) {
+    newUserTrend = db.prepare(`
+      SELECT DATE(created_at) as date, COUNT(*) as new_users
+      FROM gg_users WHERE DATE(created_at) >= DATE(?, '-30 days')
+      GROUP BY DATE(created_at) ORDER BY date
+    `).all(today);
+  }
+
+  // === 기존 DB 기반 지표 (이벤트 배포 전에도 사용 가능) ===
+
+  // 일별 광고 노출(부화) 추이 (최근 30일, gg_reward_log에서)
+  const adTrend = db.prepare(`
+    SELECT DATE(created_at) as date, COUNT(*) as ad_views, SUM(coins) as coins_given
+    FROM gg_reward_log WHERE DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+
+  // 일별 교환 포인트 추이 (최근 30일)
+  const exchangeTrend = db.prepare(`
+    SELECT DATE(created_at) as date, SUM(coins_spent / 10) as points, COUNT(*) as count
+    FROM gg_exchanges WHERE status = 'confirmed' AND DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+
+  // 총 유저 수
+  const totalUsers = db.prepare('SELECT COUNT(*) as cnt FROM gg_coins').get()?.cnt || 0;
+
+  // 일별 부화 횟수별 유저 분포 (기존 gg_reward_log에서, 오늘)
+  let hatchDistLegacy = [];
+  if (hatchDistribution.length === 0) {
+    hatchDistLegacy = db.prepare(`
+      SELECT daily_count, COUNT(*) as users FROM (
+        SELECT user_hash, COUNT(*) as daily_count
+        FROM gg_reward_log WHERE DATE(created_at) = DATE(?, '+9 hours')
+        GROUP BY user_hash
+      ) GROUP BY daily_count ORDER BY daily_count
+    `).all(today);
+  }
+
+  // 유저별 일평균 부화 수 (기존 gg_reward_log에서)
+  let avgHatchesLegacy = 0;
+  if (!avgHatches?.avg_daily) {
+    avgHatchesLegacy = db.prepare(`
+      SELECT AVG(daily_count) as avg_daily FROM (
+        SELECT user_hash, DATE(created_at) as day, COUNT(*) as daily_count
+        FROM gg_reward_log GROUP BY user_hash, day
+      )
+    `).get()?.avg_daily || 0;
+  }
+
+  res.json({
+    today,
+    cohortDate,
+    cohortSize,
+    firstHatchRate,
+    loginRate,
+    retention,
+    avgDailyHatches: avgHatches?.avg_daily || 0,
+    hatchDistribution,
+    behaviorComparison,
+    lotteryUsage,
+    todaySummary,
+    todayBiz,
+    todayExchange,
+    todayShares,
+    dauTrend,
+    newUserTrend,
+    adTrend,
+    exchangeTrend,
+    totalUsers,
+    hatchDistLegacy,
+    avgHatchesLegacy,
+  });
+});
+
 // POST /api/golden-goose/debug/reset — 디버그용: 유저 데이터 전체 초기화
 app.post('/api/golden-goose/debug/reset', (req, res) => {
   const { userHash } = req.body || {};
@@ -1757,11 +2213,156 @@ app.post('/api/golden-goose/debug/add-coins', (req, res) => {
     ON CONFLICT(user_hash) DO UPDATE SET
       coins = coins + excluded.coins,
       total_earned = total_earned + excluded.coins,
-      updated_at = CURRENT_TIMESTAMP
+      updated_at = (datetime('now','+9 hours'))
   `).run(userHash, addAmount, addAmount);
   const row = db.prepare('SELECT coins FROM gg_coins WHERE user_hash = ?').get(userHash);
   console.log(`[GG Debug] Added ${addAmount} coins for ${userHash}, total: ${row?.coins}`);
   res.json({ ok: true, totalCoins: row?.coins ?? addAmount });
+});
+
+// ===== GOLDEN-GOOSE REFERRAL API =====
+
+// GET /api/golden-goose/referral/code/:userHash — 추천 코드 조회/생성
+app.get('/api/golden-goose/referral/code/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+
+  try {
+    let row = db.prepare('SELECT code FROM gg_referral_codes WHERE user_hash = ?').get(userHash);
+    if (!row) {
+      let code;
+      for (let i = 0; i < 10; i++) {
+        code = crypto.randomBytes(3).toString('hex');
+        if (!db.prepare('SELECT 1 FROM gg_referral_codes WHERE code = ?').get(code)) break;
+        if (i === 9) return res.status(500).json({ error: '코드 생성 실패' });
+      }
+      db.prepare('INSERT INTO gg_referral_codes (user_hash, code) VALUES (?, ?)').run(userHash, code);
+      row = { code };
+    }
+    res.json({ code: row.code });
+  } catch (err) {
+    console.error('[GG Referral] code error:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// POST /api/golden-goose/referral/register — 추천 관계 등록
+app.post('/api/golden-goose/referral/register', (req, res) => {
+  const { referrerCode, referredHash, referredName } = req.body || {};
+  if (!referrerCode || !referredHash) {
+    return res.status(400).json({ error: 'referrerCode, referredHash 필요' });
+  }
+
+  try {
+    const registerReferral = db.transaction(() => {
+      const codeRow = db.prepare('SELECT user_hash FROM gg_referral_codes WHERE code = ?').get(referrerCode);
+      if (!codeRow) return { error: '유효하지 않은 추천 코드' };
+
+      const referrerHash = codeRow.user_hash;
+      if (referrerHash === referredHash) return { error: '자기 자신은 추천할 수 없습니다' };
+
+      const existing = db.prepare('SELECT 1 FROM gg_referrals WHERE referred_hash = ?').get(referredHash);
+      if (existing) return { ok: true, message: '이미 등록됨' };
+
+      const count = db.prepare('SELECT COUNT(*) as cnt FROM gg_referrals WHERE referrer_hash = ?').get(referrerHash);
+      if (count.cnt >= 300) return { error: '추천 상한 초과' };
+
+      db.prepare(
+        'INSERT INTO gg_referrals (referrer_hash, referred_hash, referred_name, referral_code) VALUES (?, ?, ?, ?)'
+      ).run(referrerHash, referredHash, referredName || null, referrerCode);
+
+      return { ok: true };
+    });
+
+    const result = registerReferral();
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+  } catch (err) {
+    console.error('[GG Referral] register error:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// GET /api/golden-goose/referral/status/:userHash — 초대 현황
+app.get('/api/golden-goose/referral/status/:userHash', (req, res) => {
+  const { userHash } = req.params;
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+
+  try {
+    let codeRow = db.prepare('SELECT code FROM gg_referral_codes WHERE user_hash = ?').get(userHash);
+    if (!codeRow) {
+      const code = crypto.randomBytes(3).toString('hex');
+      db.prepare('INSERT OR IGNORE INTO gg_referral_codes (user_hash, code) VALUES (?, ?)').run(userHash, code);
+      codeRow = { code };
+    }
+
+    const list = db.prepare(
+      'SELECT id, referred_name as name, claimed, created_at FROM gg_referrals WHERE referrer_hash = ? ORDER BY created_at DESC'
+    ).all(userHash);
+
+    const total = list.length;
+    const unclaimed = list.filter(r => !r.claimed).length;
+    const claimed = total - unclaimed;
+
+    res.json({
+      code: codeRow.code,
+      total,
+      limit: 300,
+      unclaimed,
+      claimed,
+      unclaimedCoins: unclaimed * 10,
+      list: list.map(r => ({
+        id: r.id,
+        created_at: r.created_at,
+        claimed: !!r.claimed,
+        name: r.name || '익명',
+      })),
+    });
+  } catch (err) {
+    console.error('[GG Referral] status error:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// POST /api/golden-goose/referral/claim — 미수령 일괄 클레임
+app.post('/api/golden-goose/referral/claim', (req, res) => {
+  const { userHash } = req.body || {};
+  if (!userHash) return res.status(400).json({ error: 'userHash 필요' });
+
+  try {
+    const claimReferrals = db.transaction(() => {
+      const unclaimed = db.prepare(
+        'SELECT COUNT(*) as cnt FROM gg_referrals WHERE referrer_hash = ? AND claimed = 0'
+      ).get(userHash);
+
+      if (unclaimed.cnt === 0) return { ok: true, claimedCount: 0, coins: 0 };
+
+      const coins = unclaimed.cnt * 10;
+
+      db.prepare(
+        "UPDATE gg_referrals SET claimed = 1, claimed_at = datetime('now','+9 hours') WHERE referrer_hash = ? AND claimed = 0"
+      ).run(userHash);
+
+      db.prepare(`
+        INSERT INTO gg_coins (user_hash, coins, total_earned)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_hash) DO UPDATE SET
+          coins = coins + excluded.coins,
+          total_earned = total_earned + excluded.coins,
+          updated_at = (datetime('now','+9 hours'))
+      `).run(userHash, coins, coins);
+
+      db.prepare('INSERT INTO gg_reward_log (user_hash, coins, reason) VALUES (?, ?, ?)').run(userHash, coins, 'referral_claim');
+
+      return { ok: true, claimedCount: unclaimed.cnt, coins };
+    });
+
+    const result = claimReferrals();
+    res.json(result);
+  } catch (err) {
+    console.error('[GG Referral] claim error:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
 });
 
 // ===== SLEEP-MONEY API =====
@@ -1818,15 +2419,15 @@ smDb.exec(`
     user_gender TEXT,
     user_birthday TEXT,
     points INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS coin_transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_hash TEXT NOT NULL,
     amount INTEGER NOT NULL,
     reason TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS promo_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1834,7 +2435,7 @@ smDb.exec(`
     promo_type TEXT NOT NULL,
     promo_code TEXT,
     amount INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT (datetime('now','+9 hours')),
     UNIQUE(user_hash, promo_type)
   );
   CREATE TABLE IF NOT EXISTS exchanges (
@@ -1844,18 +2445,18 @@ smDb.exec(`
     points INTEGER NOT NULL,
     promo_id TEXT,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS sleep_settings (
     user_hash TEXT PRIMARY KEY,
     bedtime TEXT NOT NULL,
     wake_time TEXT NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
   CREATE TABLE IF NOT EXISTS sleep_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1866,7 +2467,7 @@ smDb.exec(`
     coins_earned INTEGER,
     bonus_multiplier REAL DEFAULT 1.0,
     ad_watched INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT (datetime('now','+9 hours'))
   );
 `);
 
@@ -1920,10 +2521,10 @@ app.post(`${smPrefix}/toss/login`, async (req, res) => {
 
     smDb.prepare(`
       INSERT INTO users (user_hash, user_name, user_gender, user_birthday, updated_at)
-      VALUES (?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, datetime('now','+9 hours'))
       ON CONFLICT(user_hash) DO UPDATE SET
         user_name = excluded.user_name,
-        updated_at = datetime('now')
+        updated_at = datetime('now','+9 hours')
     `).run(userHash, userName, userGender, userBirthday);
 
     res.json({
@@ -2040,7 +2641,7 @@ app.post(`${smPrefix}/sleep/settings`, (req, res) => {
   if (!userHash || !bedtime || !wakeTime) return res.status(400).json({ error: 'missing_params' });
   smDb.prepare(`
     INSERT INTO sleep_settings (user_hash, bedtime, wake_time) VALUES (?, ?, ?)
-    ON CONFLICT(user_hash) DO UPDATE SET bedtime = excluded.bedtime, wake_time = excluded.wake_time, updated_at = CURRENT_TIMESTAMP
+    ON CONFLICT(user_hash) DO UPDATE SET bedtime = excluded.bedtime, wake_time = excluded.wake_time, updated_at = (datetime('now','+9 hours'))
   `).run(userHash, bedtime, wakeTime);
   res.json({ success: true });
 });
@@ -2058,6 +2659,29 @@ app.post(`${smPrefix}/sleep/complete`, (req, res) => {
 app.get(`${smPrefix}/sleep/stats/:userHash`, (req, res) => {
   const rows = smDb.prepare(`SELECT * FROM sleep_sessions WHERE user_hash = ? ORDER BY created_at DESC LIMIT 30`).all(req.params.userHash);
   res.json({ sessions: rows });
+});
+
+// Golden Goose Analytics Dashboard
+// GET /api/golden-goose/notice — 현재 공지 조회
+app.get('/api/golden-goose/notice', (req, res) => {
+  const id = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_id'").get()?.value || '';
+  const title = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_title'").get()?.value || '';
+  const body = db.prepare("SELECT value FROM settings WHERE key = 'gg_notice_body'").get()?.value || '';
+  res.json({ id, title, body, enabled: !!id });
+});
+
+// POST /api/golden-goose/notice — 공지 수정
+app.post('/api/golden-goose/notice', (req, res) => {
+  const { id, title, body } = req.body;
+  db.prepare("UPDATE settings SET value = ? WHERE key = 'gg_notice_id'").run(id || '');
+  db.prepare("UPDATE settings SET value = ? WHERE key = 'gg_notice_title'").run(title || '');
+  db.prepare("UPDATE settings SET value = ? WHERE key = 'gg_notice_body'").run(body || '');
+  console.log(`[GG Notice] ${id ? 'ON' : 'OFF'}: ${title}`);
+  res.json({ ok: true });
+});
+
+app.get('/api/golden-goose/analytics', (req, res) => {
+  res.sendFile(path.join(__dirname, 'gg-dashboard.html'));
 });
 
 if (require.main === module) {
