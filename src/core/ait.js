@@ -80,21 +80,49 @@ window.AIT = (() => {
   };
 
   // ── User Key ──
+  // 정책: stored OAuth userHash 만 사용. anonymous 브릿지 키는 사용하지 않음.
+  // stored 없으면 'toss_anonymous' 반환 → server 호출 가드로 차단.
+  // 회복은 _recoverViaSilentLogin() 으로 명시적 트리거에서만 수행 (init race 회피).
   async function getUserHash() {
     if (_userHash) return _userHash;
     if (!isToss) { _userHash = 'web_' + (localStorage.getItem('bf-uid') || (() => { const id = crypto.randomUUID(); localStorage.setItem('bf-uid', id); return id; })()); return _userHash; }
-    try {
-      const result = await Promise.race([
-        _bridgeCall('getUserKeyForGame'),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
-      ]);
-      if (result && result.type === 'HASH') { _userHash = result.hash; return _userHash; }
-    } catch (e) { console.warn('AIT getUserKeyForGame failed:', e); }
-    // 폴백: 저장된 toss_userKey 사용
-    const storedKey = await storageGet('toss_userKey');
-    if (storedKey) { _userHash = storedKey; return _userHash; }
+    const storedHash = await storageGet('toss_userHash');
+    if (storedHash) { _userHash = storedHash; return _userHash; }
     _userHash = 'toss_anonymous';
     return _userHash;
+  }
+
+  // stored 비어있는 유저를 silent appLogin 으로 회복.
+  // - 이미 로그인 동의한 유저는 토스 SDK가 동의 화면 없이 바로 인가코드 반환 (공식 문서 보장)
+  // - 미동의 유저는 동의 화면 뜸 → 호출 컨텍스트(교환 버튼 등)에서 사용자가 인지하는 액션이어야 안전
+  // - LS bf-points 는 절대 건드리지 않음 (실패해도 보존)
+  let _recoverInFlight = null;
+  async function _recoverViaSilentLogin() {
+    if (!isToss) return false;
+    if (_recoverInFlight) return _recoverInFlight;
+    _recoverInFlight = (async () => {
+      try {
+        // 이미 stored 있으면 회복 불필요
+        const existing = await storageGet('toss_userHash');
+        if (existing) { _userHash = existing; return true; }
+        // 로그인 (이미 동의한 유저는 silent)
+        const result = await login();
+        // 엄격 판정: userHash + userKey 둘 다 있어야 진짜 회복 성공.
+        // login() 내부에서 둘 다 있을 때만 storage 저장하므로 이 조건이 일치해야 stored 가 채워졌음.
+        if (result?.userHash && result?.userKey) {
+          // login() 내부의 fire-and-forget sync 와 별개로 await sync 보장 (회복 흐름은 sync 결과까지 기다려야 함).
+          await _syncLocalPointsOnce();
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.warn('[AIT] silent recovery failed:', e);
+        return false;
+      } finally {
+        _recoverInFlight = null;
+      }
+    })();
+    return _recoverInFlight;
   }
 
   // ── Ads ──
@@ -120,8 +148,10 @@ window.AIT = (() => {
     const id = type === 'rewarded' ? CONFIG.AD_REWARDED_ID : CONFIG.AD_INTERSTITIAL_ID;
     return new Promise((resolve) => {
       const handleEvent = (event) => {
-        const evtType = typeof event === 'string' ? event : event?.type;
-        if (evtType === 'userEarnedReward' || evtType === 'dismissed' || evtType === 'adDismissed') {
+        const evtType = typeof event === 'string' ? event : (event?.type || event?.eventType);
+        console.log('[AIT] showAd event:', type, evtType, JSON.stringify(event));
+        if (evtType === 'userEarnedReward' || evtType === 'rewarded' || evtType === 'reward' ||
+            evtType === 'dismissed' || evtType === 'adDismissed' || evtType === 'adClosed' || evtType === 'closed') {
           _adLoaded[type] = false;
           preloadAd(type);
           resolve({ success: true, event: evtType });
@@ -129,234 +159,107 @@ window.AIT = (() => {
       };
       const handleError = (err) => { resolve({ success: false, error: err }); };
       try {
-        if (_bridge && _bridge.showAppsInTossAdMob) {
-          _bridge.showAppsInTossAdMob({ options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
-        } else {
-          _bridgeEvent('showAppsInTossAdMob', { options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
-        }
+        _bridgeEvent('showAppsInTossAdMob', { options: { adGroupId: id }, onEvent: handleEvent, onError: handleError });
       } catch (e) { resolve({ success: false, error: e }); }
-      // 타임아웃: 30초 내 응답 없으면 실패 처리
-      setTimeout(() => resolve({ success: false, error: 'timeout' }), 30000);
+      // 타임아웃: 리워드 광고는 1분 이상일 수 있으므로 5분으로 설정
+      setTimeout(() => resolve({ success: false, error: 'timeout' }), 300000);
     });
   }
 
-  // ── Banner Ad ──
-  // 공식 @apps-in-toss/web-bridge TossAds.initialize / TossAds.attachBanner 로직 기반
-  // 핵심 차이: fetchTossAd 타임아웃 제거, wrapper div 패턴, renderPadding 콜백 사용
-  const _TOSS_ADS_SDK_URL = 'https://static.toss.im/ads/sdk/toss-ads-space-kit-1.3.0.js';
-  let _tossAdSdkLoadPromise = null; // 스크립트 중복 로드 방지 (resolve 후 재사용 안 함)
-  let _sdkInitPromise = null;       // sdk.init() 중복 호출 방지 (singleton)
+  // ── Banner Ad (official TossAds.attachBanner API via window.TossAds bridge) ──
+  let _tossAdsInitialized = false;
+  let _tossAdsInitPromise = null;
+  const _bannerHandles = new Map();
+  const _bannerRetryTimers = {};
 
-  function _loadTossAdSdk() {
-    if (typeof window.TossAdsSpaceKit !== 'undefined') return Promise.resolve(window.TossAdsSpaceKit);
-    if (_tossAdSdkLoadPromise) return _tossAdSdkLoadPromise;
-    _tossAdSdkLoadPromise = new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      const cleanup = () => {
-        script.removeEventListener('load', handleLoad);
-        script.removeEventListener('error', handleError);
-        clearTimeout(timeoutId);
-        _tossAdSdkLoadPromise = null;
-      };
-      const handleLoad = () => {
-        const sdk = window.TossAdsSpaceKit;
-        if (sdk) { cleanup(); resolve(sdk); return; }
-        cleanup(); reject(new Error('TossAdsSpaceKit not found after load'));
-      };
-      const handleError = () => { cleanup(); reject(new Error('Failed to load TossAdsSpaceKit')); };
-      // 공식 구현과 동일: 15초 타임아웃
-      const timeoutId = setTimeout(() => { cleanup(); reject(new Error('TossAdsSpaceKit load timeout (15s)')); }, 15000);
-      script.src = _TOSS_ADS_SDK_URL;
-      script.async = true;
-      script.addEventListener('load', handleLoad);
-      script.addEventListener('error', handleError);
-      document.head.appendChild(script);
-    });
-    return _tossAdSdkLoadPromise;
-  }
-
-  // fetchTossAd 지원 여부 확인
-  const _fetchTossAdSupported = () => !!(window.__CONSTANT_HANDLER_MAP?.fetchTossAd_isSupported);
-
-  // 공식 createCustomAdFetcher와 동일: fetchTossAd 타임아웃 없이 브리지 응답 대기
-  function _createCustomAdFetcher() {
-    const VALID_STYLE_IDS = new Set(['1', '2']);
-    function normalizeAdResponse(raw) {
-      const filterAds = (ads) => Array.isArray(ads) ? ads.filter(a => VALID_STYLE_IDS.has(String(a.styleId))) : [];
-      const hasResultType = raw && typeof raw === 'object' && 'resultType' in raw;
-      const hasAds = raw && typeof raw === 'object' && 'ads' in raw;
-      if (hasResultType) {
-        if (raw.resultType !== 'SUCCESS') return raw;
-        if (!raw.success) return { resultType: 'FAIL', error: { reason: 'fetchTossAd returned SUCCESS without payload' } };
-        return { ...raw, success: { ...raw.success, ads: filterAds(raw.success.ads) } };
-      }
-      if (hasAds) {
-        return { resultType: 'SUCCESS', success: { requestId: raw.requestId || '', status: raw.status || 'OK', ads: filterAds(raw.ads), ext: raw.ext } };
-      }
-      return { resultType: 'FAIL', error: { reason: 'Invalid response from fetchTossAd' } };
+  function _initTossAds() {
+    if (_tossAdsInitialized) return Promise.resolve();
+    if (_tossAdsInitPromise) return _tossAdsInitPromise;
+    // window.TossAds is set by module bridge in index.html
+    const _TossAds = window.TossAds;
+    if (!_TossAds || !_TossAds.initialize || !_TossAds.initialize.isSupported()) {
+      console.warn('[Banner] TossAds.initialize not supported');
+      return Promise.reject(new Error('TossAds not supported'));
     }
-    return async (_ctx, slotOpts) => {
-      const adGroupId = slotOpts?.spaceUnitId || slotOpts?.spaceId;
-      try {
-        if (!_fetchTossAdSupported()) {
-          return { resultType: 'FAIL', error: { reason: 'fetchTossAd is not supported in this environment.' } };
+    _tossAdsInitPromise = new Promise((resolve, reject) => {
+      _TossAds.initialize({
+        callbacks: {
+          onInitialized: () => {
+            console.log('[Banner] TossAds initialized');
+            _tossAdsInitialized = true;
+            resolve();
+          },
+          onFailedToInitialize: (err) => {
+            console.warn('[Banner] TossAds init failed:', err);
+            _tossAdsInitPromise = null;
+            reject(err);
+          }
         }
-        const raw = await new Promise((resolve, reject) => {
-          // 공식 구현: 타임아웃 없이 브리지 응답 대기 (브리지 자체 타임아웃에 위임)
-          const cleanup = _bridgeEvent('fetchTossAd', {
-            options: { adGroupId, sdkId: '108', availableStyleIds: ['1', '2'] },
-            onEvent: (r) => { if (cleanup) cleanup(); resolve(r); },
-            onError: (e) => { if (cleanup) cleanup(); reject(e); }
-          });
-        });
-        const normalized = normalizeAdResponse(raw);
-        console.log('[Banner] fetchTossAd:', normalized?.resultType, 'ads:', normalized?.success?.ads?.length ?? 0);
-        return normalized;
-      } catch (e) {
-        console.warn('[Banner] fetchTossAd error:', e);
-        return { resultType: 'FAIL', error: { reason: String(e?.message || e) } };
-      }
-    };
-  }
-
-  function _initSdkOnce(sdk) {
-    if (_sdkInitPromise) return _sdkInitPromise;
-    if (sdk.isInitialized()) return Promise.resolve(sdk);
-    _sdkInitPromise = new Promise((resolve, reject) => {
-      try {
-        sdk.init({
-          environment: 'live',
-          customAdFetcher: _createCustomAdFetcher(),
-          opener: (url) => { _bridgeCall('openURL', [url]).catch(() => {}); }
-        });
-        resolve(sdk);
-      } catch (e) {
-        console.warn('[Banner] sdk.init failed:', e);
-        _sdkInitPromise = null;
-        reject(e);
-      }
+      });
     });
-    return _sdkInitPromise;
+    return _tossAdsInitPromise;
   }
-
-  const _bannerLoading = new Set();          // 로딩/폴링 중인 containerId
-  const _bannerHandles = new Map();          // containerId -> { destroy() }
 
   function destroyBannerAd(containerId) {
     const handle = _bannerHandles.get(containerId);
     if (handle) { try { handle.destroy(); } catch(e) {} _bannerHandles.delete(containerId); }
-    _bannerLoading.delete(containerId);
-  }
-
-  function _showBannerPlaceholder(el, containerId, reason) {
-    el.innerHTML = '';
-    el.style.display = '';
-    el.style.minHeight = '60px';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-    el.style.flexDirection = 'column';
-    el.style.gap = '4px';
-    el.style.padding = '12px 16px';
-    el.innerHTML = `<div style="font-size:11px;color:#8B95A1;text-align:center">📭 광고 없음 [${containerId}]</div><div style="font-size:10px;color:#C4CAD4;text-align:center;word-break:break-all">${reason}</div>`;
+    if (_bannerRetryTimers[containerId]) { clearTimeout(_bannerRetryTimers[containerId]); _bannerRetryTimers[containerId] = null; }
   }
 
   function loadBannerAd(containerId, opts = {}) {
     if (!isToss) {
       const el = document.getElementById(containerId);
-      if (el) { el.style.cssText += ';background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px'; el.textContent = '광고 영역'; }
+      if (el) { el.style.cssText += ';background:var(--border);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px;min-height:60px'; el.textContent = '광고 영역'; }
       return;
     }
-    // 로딩 중이면 스킵
-    if (_bannerLoading.has(containerId)) return;
-
     const el = document.getElementById(containerId);
     if (!el) return;
-
-    // 핸들이 있어도 컨테이너가 비어있으면 DOM 재렌더링으로 stale된 것 → 핸들 제거 후 재생성
     if (_bannerHandles.has(containerId)) {
       if (el.children.length === 0) {
         _bannerHandles.delete(containerId);
       } else {
-        return; // 정상적으로 이미 로드됨
-      }
-    }
-
-    // fetchTossAd 브리지 미준비: 1초 간격 최대 20회(20초) 재시도 (앱 시작 직후 브리지 초기화 대기)
-    if (!_fetchTossAdSupported()) {
-      _bannerLoading.add(containerId);
-      let attempts = 0;
-      const poll = setInterval(() => {
-        attempts++;
-        if (_fetchTossAdSupported()) {
-          clearInterval(poll);
-          _bannerLoading.delete(containerId);
-          // 컨테이너가 숨겨진 상태면 스킵 → 다음 화면 진입 시 자연 재호출
-          const curEl = document.getElementById(containerId);
-          if (curEl && curEl.offsetParent !== null) {
-            loadBannerAd(containerId, opts);
-          }
-        } else if (attempts >= 20) {
-          clearInterval(poll);
-          _bannerLoading.delete(containerId);
-          console.warn('[Banner] fetchTossAd 미지원 환경 포기:', containerId);
-        }
-      }, 1000);
-      return;
-    }
-
-    _bannerLoading.add(containerId);
-    const spaceId = opts.spaceId || CONFIG.AD_BANNER_ID;
-    const theme = opts.theme || 'light';
-    const isImage = spaceId === CONFIG.AD_IMAGE_BANNER_ID;
-    console.log('[Banner] loadBannerAd:', containerId, spaceId);
-
-    // 공식 attachBanner 패턴: wrapper div + inner div 구조
-    // 이미지형: wrapper에 패딩 적용 (renderPadding은 이미지 렌더링 실패 유발)
-    // 텍스트형: renderPadding으로 SDK가 내부 패딩 처리
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = isImage
-      ? 'width:100%;box-sizing:border-box;overflow:hidden;padding:16px 20px;'
-      : 'width:100%;box-sizing:border-box;overflow:hidden;';
-    const innerEl = document.createElement('div');
-    if (isImage) innerEl.style.cssText = 'border-radius:12px;overflow:hidden;';
-    wrapper.appendChild(innerEl);
-    el.appendChild(wrapper);
-
-    _loadTossAdSdk().then(sdk => _initSdkOnce(sdk)).then(sdk => {
-      _bannerLoading.delete(containerId);
-      if (!sdk.banner) { el.style.display = 'none'; return; }
-      // SDK 비동기 로딩 중 화면이 숨겨진 경우 → wrapper 제거하고 스킵 (다음 진입 시 재시도)
-      if (el.offsetParent === null) {
-        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
         return;
       }
-      console.log('[Banner] createSlot:', containerId, spaceId);
-      const slot = sdk.banner.createSlot(innerEl, {
-        spaceId,
-        autoLoad: true,
-        theme: theme === 'auto' ? undefined : theme,
-        ...(!isImage && { renderPadding: (styleId) => styleId === '1' ? '16px 20px' : '20px' }),
+    }
+    const adGroupId = opts.spaceId || CONFIG.AD_BANNER_ID;
+    const theme = opts.theme || 'light';
+    const variant = opts.variant || 'expanded';
+    const retryCount = opts._retryCount || 0;
+    console.log('[Banner] loadBannerAd:', containerId, adGroupId, retryCount > 0 ? `retry:${retryCount}` : '');
+
+    const retryBanner = () => {
+      if (retryCount < 3 && document.getElementById(containerId)) {
+        const delay = (retryCount + 1) * 10000;
+        console.log(`[Banner] ${containerId} retry ${retryCount + 1}/3 in ${delay}ms`);
+        _bannerRetryTimers[containerId] = setTimeout(() => {
+          _bannerHandles.delete(containerId);
+          loadBannerAd(containerId, { ...opts, _retryCount: retryCount + 1 });
+        }, delay);
+      }
+    };
+
+    _initTossAds().then(() => {
+      if (!document.getElementById(containerId)) return;
+      const _TossAds = window.TossAds;
+      const handle = _TossAds.attachBanner(adGroupId, el, {
+        theme,
+        variant,
         callbacks: {
-          onAdRendered: () => console.log('[Banner] rendered:', containerId),
-          onAdFailedToRender: (info) => {
-            console.warn('[Banner] failed:', info);
-            destroyBannerAd(containerId);
-            _showBannerPlaceholder(el, containerId, 'onAdFailedToRender: ' + JSON.stringify(info?.error || info));
+          onAdRendered: (payload) => {
+            console.log('[Banner] rendered:', containerId, payload?.slotId);
+            if (_bannerRetryTimers[containerId]) { clearTimeout(_bannerRetryTimers[containerId]); _bannerRetryTimers[containerId] = null; }
           },
-          onNoFill: () => {
-            console.log('[Banner] No fill:', containerId);
-            _showBannerPlaceholder(el, containerId, 'onNoFill');
-          }
-        }
+          onAdViewable: (payload) => console.log('[Banner] viewable:', containerId, payload?.slotId),
+          onAdImpression: (payload) => console.log('[Banner] impression:', containerId, payload?.slotId),
+          onAdClicked: (payload) => console.log('[Banner] clicked:', containerId, payload?.slotId),
+          onAdFailedToRender: (payload) => { console.warn('[Banner] failed:', containerId, payload?.error?.message); retryBanner(); },
+          onNoFill: (payload) => { console.log('[Banner] no fill:', containerId, payload?.adGroupId); retryBanner(); },
+        },
       });
-      _bannerHandles.set(containerId, {
-        destroy() { slot?.destroy(); if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper); }
-      });
+      _bannerHandles.set(containerId, handle);
     }).catch(e => {
-      _bannerLoading.delete(containerId);
-      console.warn('[Banner] init failed:', e);
-      _showBannerPlaceholder(el, containerId, 'catch: ' + (e?.message || e));
+      console.warn('[Banner] loadBannerAd failed:', containerId, e);
+      retryBanner();
     });
   }
 
@@ -463,9 +366,26 @@ window.AIT = (() => {
     try { await _bridgeCall('closeView'); } catch (e) {}
   }
 
+  // ── Pop Activity (뒤로가기 — 종료 모달 없이 이전 화면으로) ──
+  async function popActivity() {
+    if (!isToss) { window.history.back(); return; }
+    try { await _bridgeCall('popActivity'); } catch (e) {
+      try { await _bridgeCall('closeView'); } catch (e2) {}
+    }
+  }
+
   // ── Back Event (네이티브 백버튼 기본 동작 차단 + 직접 처리) ──
   function subscribeBackEvent(cb) {
     return _bridgeEvent('backEvent', { onEvent: cb, onError: () => {} });
+  }
+
+  function addBackEventListener(options) {
+    if (!isToss) {
+      const handler = (e) => { if (e.key === 'Escape') options.onEvent && options.onEvent(); };
+      window.addEventListener('keydown', handler);
+      return () => window.removeEventListener('keydown', handler);
+    }
+    return _bridgeEvent('backEvent', options);
   }
 
   // ── Device Info ──
@@ -502,12 +422,22 @@ window.AIT = (() => {
       });
       const data = await resp.json();
       if (data.status === 'ok') {
-        _userHash = data.userHash;
-        _loginData = data;
-        await storageSet('toss_userKey', data.userKey);
-        await storageSet('toss_name', data.name || '');
-        log('toss_login', { userKey: data.userKey });
-        checkPromoFirstLogin();
+        // userHash 가 falsy 면 stored 빈 문자열 저장 → 다음 진입에 anonymous 로 떨어짐.
+        // 따라서 둘 다 있을 때만 stored 저장 (없으면 다음 진입에 재시도).
+        if (data.userHash && data.userKey) {
+          _userHash = data.userHash;
+          _loginData = data;
+          await storageSet('toss_userKey', String(data.userKey));
+          await storageSet('toss_userHash', data.userHash);
+          await storageSet('toss_name', data.name || '');
+          log('toss_login', { userKey: data.userKey });
+          checkPromoFirstLogin();
+          // LS bf-points 가 anonymous 시기에 쌓여있을 수 있으므로 즉시 server 로 max sync.
+          // fire-and-forget — 실패해도 LS 점수는 보존됨 (sync 라우트가 max 보장).
+          _syncLocalPointsOnce().catch(() => {});
+        } else {
+          console.warn('[AIT] login response missing userHash/userKey; not persisting', data);
+        }
       }
       return data;
     } catch (e) { console.error('AIT login failed:', e); return { error: e.message }; }
@@ -569,13 +499,69 @@ window.AIT = (() => {
   async function init() {
     await getUserHash();
     if (isToss) {
-      _loadTossAdSdk().catch(() => {}); // 배너 SDK 선제 로드
+      _initTossAds().catch(e => { console.warn('[AIT] TossAds init failed on startup:', e); });
       preloadAd('interstitial');
       preloadAd('rewarded');
       setScreenAwake(true);
       log('app_open', { version: 'v57' });
       // 자동 로그인 제거: 사용자가 시작하기 버튼 클릭 시에만 로그인
     }
+  }
+
+  // 두뇌점수 양방향 동기화 (4/15 SDK 마이그레이션 보정 + storage 손실 회복).
+  // server <-> local 중 큰 값으로 양쪽 정합.
+  // ⚠️ stored toss_userHash 가 있을 때만 동작 — 익명 hash 로 절대 sync 안 함 (race condition 방지)
+  async function _syncLocalPointsOnce() {
+    try {
+      const storedHash = await storageGet('toss_userHash');
+      if (!storedHash) return;  // 로그인 안 된 상태면 sync 시도 자체 안 함
+      const localPoints = parseInt(localStorage.getItem('bf-points') || '0', 10) || 0;
+      const resp = await fetch(`${API_BASE}/api/score/points/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userHash: storedHash, localPoints })
+      }).catch(() => null);
+      if (!resp) return;
+      // 응답 직전에 storage 가 비워졌는지 재확인 (UNLINK race 방지)
+      const stillStored = await storageGet('toss_userHash');
+      if (!stillStored || stillStored !== storedHash) return;
+      if (resp.status === 404) {
+        // 자동 청소 비활성화 — 무한 루프 위험. 로그만 남김. 필요 시 ?reset=1 로 수동 처리.
+        console.warn('[AIT] sync 404 (server has no user) — auto-clear disabled');
+        return;
+      }
+      const res = await resp.json().catch(() => null);
+      if (res && res.status === 'ok' && typeof res.points === 'number') {
+        if (res.points !== localPoints) {
+          localStorage.setItem('bf-points', String(res.points));
+          console.log('[AIT] points reconciled:', { local: localPoints, server: res.server, final: res.points });
+          if (typeof window.renderPoints === 'function') {
+            try { window.renderPoints(); } catch (e) {}
+          }
+        }
+      }
+    } catch (e) { console.warn('[AIT] _syncLocalPointsOnce error:', e); }
+  }
+
+  // 서버에 user 레코드 없음 (UNLINK / 데이터 삭제 등) 감지 시 인증 정리 + 인트로 재진입
+  function _handleStaleSession() {
+    console.warn('[AIT] stale session detected (server user not found) — clearing auth & forcing re-login');
+    try {
+      localStorage.removeItem('toss_userKey');
+      localStorage.removeItem('toss_userHash');
+      localStorage.removeItem('toss_name');
+      _userHash = null;
+    } catch (e) {}
+    // 화면 전환: intro 가 있으면 그쪽으로, 없으면 reload
+    try {
+      const intro = document.getElementById('introScreen');
+      const home = document.getElementById('homeScreen');
+      if (intro && typeof window.show === 'function') {
+        window.show('introScreen');
+      } else {
+        window.location.reload();
+      }
+    } catch (e) { try { window.location.reload(); } catch (_) {} }
   }
 
   return {
@@ -586,8 +572,8 @@ window.AIT = (() => {
     submitScore, openLeaderboard, getProfile,
     storageGet, storageSet, haptic,
     grantPromoReward, shareInvite, shareMessage,
-    log, setScreenAwake, close, subscribeBackEvent, getDeviceId, getPlatform, getEnv,
-    init, get userHash() { return _userHash; }
+    log, setScreenAwake, close, popActivity, subscribeBackEvent, addBackEventListener, getDeviceId, getPlatform, getEnv,
+    init, _recoverViaSilentLogin, get userHash() { return _userHash; }
   };
 })();
 

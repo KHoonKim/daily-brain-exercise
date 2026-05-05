@@ -84,6 +84,36 @@ function renderHome(){
   renderTicketCount();
   if(window.renderPoints) renderPoints(true);
 
+  // 두뇌점수 양방향 sync (홈 진입 시점, login 이후이므로 toss_userHash 보장됨)
+  // local > server 면 push, server > local 이면 pull. 양쪽 max 정합.
+  // ⚠️ LS 절대 감소 금지 — 응답 points 가 LS 보다 클 때만 갱신.
+  if (window.AIT && window.AIT.isToss) {
+    AIT.getUserHash().then(uh => {
+      if (!uh || uh === 'toss_anonymous') return;
+      const localPoints = getPoints();
+      fetch(`${API_BASE}/api/score/points/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userHash: uh, localPoints })
+      }).then(r => r.json()).then(res => {
+        if (res && res.status === 'ok' && typeof res.points === 'number' && res.points > localPoints) {
+          LS.set('points', res.points);
+          renderPoints();
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+  }
+
+  // 출석체크
+  const { isNewDay: _attNew, streakBonus: _attBonus } = markTodayAttendance();
+  if (_attNew) {
+    const _attPts = 1 + (_attBonus ? 3 : 0);
+    addPoints(_attPts);
+    if (_attBonus) setTimeout(() => snackbar('🧠 7일 연속 출석! 보너스 <b>+3점</b> 지급!', 3000), 600);
+  }
+  const _attEl = document.getElementById('attendanceCard');
+  if (_attEl) _attEl.innerHTML = renderAttendanceHTML();
+
   // Game grid grouped by category
   const cats=['기억력','집중력','수리력','전환력','언어력','논리력','공간지각력','반응력'];
   let gridHtml='';
@@ -93,23 +123,25 @@ function renderHome(){
     gridHtml+=`<div class="game-grid">${games.map(g=>`<div class="game-card" onclick="startGame('${g.id}', false, 'free')">
       <div class="gc-icon" style="width:36px;height:36px;border-radius:10px;background:${g.color}18;color:${g.color};display:flex;align-items:center;justify-content:center;padding:7px">${GI[g.id]||''}</div>
       <div class="gc-name">${g.name}</div>
-      <div class="gc-best">${(()=>{const pct=_lsCache[g.id+'-pct']||0;const pctHtml=pct>0?`<span style="font-size:10px;color:#8B95A1"> · 상위 ${pct}%</span>`:'';if(g.goalUnit==='ms'){const b=_lsCache[g.id+'-best-ms']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}ms${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}ms</span>`}const b=_lsCache[g.id+'-best']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:11px;color:#3182F6;font-weight:600">최고 ${b}점${pctHtml}</span><span style="font-size:11px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:`<span style="font-size:11px;color:#00b84c">목표 ${g.goalDefault}점</span>`})()}</div>
+      <div class="gc-best">${(()=>{const pct=_lsCache[g.id+'-pct']||0;const pctHtml=pct>0?`<span style="font-size:13px;color:#8B95A1"> · 상위 ${pct}%</span>`:'';if(g.goalUnit==='ms'){const b=_lsCache[g.id+'-best-ms']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:13px;color:#3182F6;font-weight:600">최고 ${b}ms${pctHtml}</span><span style="font-size:13px;color:#00b84c">목표 ${Math.round(b*0.99)}ms</span></div>`:`<span style="font-size:13px;color:#00b84c">목표 ${g.goalDefault}ms</span>`}const b=_lsCache[g.id+'-best']||0;return b>0?`<div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span style="font-size:13px;color:#3182F6;font-weight:600">최고 ${b}점${pctHtml}</span><span style="font-size:13px;color:#00b84c">목표 ${Math.round(b*1.05)}점</span></div>`:`<span style="font-size:13px;color:#00b84c">목표 ${g.goalDefault}점</span>`})()}</div>
     </div>`).join('')}</div>`;
-    if(cat==='언어력'){
-      gridHtml+=`<div id="home-banner-4" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>`;
+    if(cat==='기억력'){
+      gridHtml+=`<div id="home-banner-4" style="margin:16px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>`;
     }
   });
   const gameGridEl = document.getElementById('gameGrid');
   if(gameGridEl) gameGridEl.innerHTML=gridHtml;
 
+  const b0Wrap=document.getElementById('home-banner-0-wrap');
+  if(b0Wrap) b0Wrap.innerHTML='<div id="home-banner-0" style="margin:8px 0 16px;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
   const b1Wrap=document.getElementById('home-banner-1-wrap');
-  if(b1Wrap) b1Wrap.innerHTML='<div id="home-banner-1" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
+  if(b1Wrap) b1Wrap.innerHTML='';
   const b2Wrap=document.getElementById('home-banner-2-wrap');
-  if(b2Wrap) b2Wrap.innerHTML='<div id="home-banner-2" style="margin:8px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
+  if(b2Wrap) b2Wrap.innerHTML='<div id="home-banner-2" style="margin:16px 0;width:100%;background:var(--card);border-radius:16px;overflow:hidden"></div>';
 
   if(window.AIT) {
     setTimeout(()=>{
-      AIT.loadBannerAd('home-banner-1');
+      AIT.loadBannerAd('home-banner-0');
       AIT.loadBannerAd('home-banner-2', {spaceId: AIT.CONFIG.AD_IMAGE_BANNER_ID});
       AIT.loadBannerAd('home-banner-4');
     }, 200);

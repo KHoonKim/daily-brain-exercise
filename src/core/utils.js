@@ -79,7 +79,6 @@ function renderPoints(animate=false){
 }
 
 async function exchangePoints(){
-  if(getPoints()<100){toast('100점 이상부터 교환 가능합니다');return}
   if(!AIT.isToss){toast('토스 앱에서만 교환 가능합니다');return}
   if(_exchangeLock){return}
   _exchangeLock=true;
@@ -87,7 +86,31 @@ async function exchangePoints(){
   if(btn){btn.disabled=true;btn.textContent='교환 중...'}
   let exchangeId=null;
   try {
-    const uh=await AIT.getUserHash();
+    let uh=await AIT.getUserHash();
+    // anonymous 상태(stored 비어있음)면 silent appLogin 으로 OAuth userKey 회복 시도.
+    // 이미 토스 로그인 동의한 유저는 동의 화면 없이 즉시 인가코드 반환됨 (공식 보장).
+    // 회복 후 _syncLocalPointsOnce 가 LS → server max sync 까지 처리하므로 LS 점수 보존.
+    if(uh==='toss_anonymous' && AIT._recoverViaSilentLogin){
+      const ok=await AIT._recoverViaSilentLogin();
+      if(ok) uh=await AIT.getUserHash();
+    }
+    if(uh==='toss_anonymous'){
+      throw new Error('교환을 위해 로그인이 필요합니다');
+    }
+    // 0. LS ↔ server 양방향 sync (max 정합). LS 절대 감소 금지: 응답이 LS 보다 클 때만 갱신.
+    // sync 가 server 의 더 큰 값을 LS 로 pull-up 하므로 점수 가드는 sync 후로 미룬다.
+    const localPoints=getPoints();
+    const syncRes=await fetch(`${API_BASE}/api/score/points/sync`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userHash:uh,localPoints})
+    }).then(r=>r.json()).catch(()=>null);
+    if(syncRes && syncRes.status==='ok' && typeof syncRes.points==='number' && syncRes.points>localPoints){
+      LS.set('points',syncRes.points);
+      renderPoints();
+    }
+    // 1. 점수 가드 — sync 로 server max 가 LS 에 반영된 후 체크
+    if(getPoints()<100){toast('100점 이상부터 교환 가능합니다');return}
     // 1. 서버 잔액 검증 + 차감 (pending 상태)
     const serverRes=await fetch(`${API_BASE}/api/score/promo/exchange`,{
       method:'POST',
@@ -110,7 +133,10 @@ async function exchangePoints(){
     AIT.log('point_exchange',{amount:100,userHash:uh});
   } catch(e) {
     console.error('Exchange failed:',e);
-    toast('교환에 실패했습니다. 다시 시도해주세요.');
+    const msg = e?.message?.includes('로그인')
+      ? '로그인이 필요해요. 다시 시도해주세요.'
+      : '교환에 실패했습니다. 다시 시도해주세요.';
+    toast(msg);
   } finally {
     _exchangeLock=false;
     if(btn){btn.disabled=getPoints()<100;btn.textContent='100원 받기'}

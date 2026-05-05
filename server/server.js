@@ -532,6 +532,32 @@ app.get('/api/score/points/:userHash', (req, res) => {
   res.json({ points: user.points || 0 });
 });
 
+// POST /api/score/points/sync — 양방향 동기화 (4/15 SDK 마이그레이션 보정 + storage 손실 회복)
+// max(server, local) 로 정합. 응답의 points 가 클라가 채택해야 할 최종값.
+app.post('/api/score/points/sync', (req, res) => {
+  const { userHash, localPoints } = req.body;
+  console.log(`[Points Sync IN] userHash=${userHash} localPoints=${localPoints}`);
+  if (!userHash || typeof localPoints !== 'number' || localPoints < 0) {
+    return res.status(400).json({ error: 'userHash and non-negative localPoints required' });
+  }
+  const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
+  if (!user) {
+    console.log(`[Points Sync 404] user not found: ${userHash}`);
+    return res.status(404).json({ error: 'user not found' });
+  }
+  const server = user.points || 0;
+  const finalPoints = Math.max(server, localPoints);
+  if (finalPoints > server) {
+    db.prepare('UPDATE users SET points = ? WHERE user_hash = ?').run(finalPoints, userHash);
+    console.log(`[Points Sync] ${userHash}: server ${server} → ${finalPoints} (local was ${localPoints})`);
+  } else if (finalPoints > localPoints) {
+    console.log(`[Points Sync] ${userHash}: local ${localPoints} ← server ${server} (pull down)`);
+  } else {
+    console.log(`[Points Sync OK] ${userHash}: server=${server} local=${localPoints} (no change)`);
+  }
+  res.json({ status: 'ok', server, local: localPoints, points: finalPoints });
+});
+
 // Point exchange (두뇌점수 100점 → 100원)
 db.exec(`
   CREATE TABLE IF NOT EXISTS point_exchanges (
@@ -679,15 +705,24 @@ app.post('/api/score/promo/exchange', (req, res) => {
 
   // 서버 잔액 확인
   const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
-  if (!user) return res.status(404).json({ error: 'user not found' });
+  if (!user) {
+    console.log(`[Exchange REJECT 404] user not found: ${userHash}`);
+    return res.status(404).json({ error: 'user not found' });
+  }
   const serverPoints = user.points || 0;
-  if (serverPoints < 100) return res.status(400).json({ error: 'insufficient_points', points: serverPoints });
+  if (serverPoints < 100) {
+    console.log(`[Exchange REJECT 400] insufficient_points: user=${userHash} server=${serverPoints}`);
+    return res.status(400).json({ error: 'insufficient_points', points: serverPoints });
+  }
 
   // 최근 10초 내 동일 유저 교환 요청 방지 (동시성)
   const recent = db.prepare(
     "SELECT * FROM point_exchanges WHERE user_hash = ? AND created_at > datetime('now', '-10 seconds')"
   ).get(userHash);
-  if (recent) return res.status(429).json({ error: 'too_fast', message: '잠시 후 다시 시도해주세요' });
+  if (recent) {
+    console.log(`[Exchange REJECT 429] too_fast: user=${userHash}`);
+    return res.status(429).json({ error: 'too_fast', message: '잠시 후 다시 시도해주세요' });
+  }
 
   // 서버 잔액 차감 + 교환 기록 (트랜잭션)
   const doExchange = db.transaction(() => {
@@ -976,22 +1011,28 @@ app.post('/api/admin/recalibrate', (req, res) => {
 app.post('/api/score/promo/grant', async (req, res) => {
   const { userKey, promotionCode, amount } = req.body;
   if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
+  const ukShort = String(userKey).slice(0, 12);
   const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
   const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
   try {
     const keyRes = await (await tossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
-    console.log('[Toss promo] get-key response:', JSON.stringify(keyRes));
-    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    if (keyRes.resultType !== 'SUCCESS') {
+      console.log(`[Toss promo FAIL get-key] code=${promotionCode} amount=${amount} user=${ukShort} err=${keyRes?.error?.errorCode || 'unknown'} reason=${keyRes?.error?.reason || ''}`);
+      return res.json({ error: keyRes });
+    }
     const key = keyRes.success.key;
     const execRes = await (await tossFetch(`${BASE}/execute-promotion`, {
       method: 'POST', headers,
       body: JSON.stringify({ promotionCode, key, amount })
     })).json();
-    console.log('[Toss promo] execute response:', JSON.stringify(execRes));
-    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+    if (execRes.resultType !== 'SUCCESS') {
+      console.log(`[Toss promo FAIL exec] code=${promotionCode} amount=${amount} user=${ukShort} err=${execRes?.error?.errorCode || 'unknown'} reason=${execRes?.error?.reason || ''}`);
+      return res.json({ error: execRes });
+    }
+    console.log(`[Toss promo OK] code=${promotionCode} amount=${amount} user=${ukShort}`);
     res.json({ key: execRes.success.key });
   } catch (e) {
-    console.error('[Toss promo] error:', e);
+    console.error('[Toss promo] exception:', String(e), 'code=', promotionCode, 'user=', ukShort);
     res.status(500).json({ error: String(e) });
   }
 });
