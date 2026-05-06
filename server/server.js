@@ -897,21 +897,54 @@ db.exec(`
   INSERT OR REPLACE INTO settings (key, value) VALUES ('gg_promo_login', '01KJQKQHVSCC3WC4Q7AGFWTWN6');
 `);
 
+// === Debug 라우트: exchange catch 에서 클라가 보낸 실패 정보 로깅 ===
+// 클라 fetch 실패 환경에서도 추적 가능하도록 sendBeacon + LS 큐 fallback 도 같이 사용.
+app.post('/api/score/debug/exchange-fail', (req, res) => {
+  const { userHash, error, stack, ua, localPoints, stage, ts } = req.body || {};
+  const tsStr = ts ? new Date(ts).toISOString() : 'now';
+  console.log(`[Exchange Fail] user=${userHash} stage=${stage} err=${error} localPoints=${localPoints} ts=${tsStr}`);
+  if (ua) console.log(`[Exchange Fail UA] user=${userHash} ua=${String(ua).slice(0,150)}`);
+  if (stack) console.log(`[Exchange Fail Stack] user=${userHash} stack=${String(stack).slice(0,300)}`);
+  res.json({ ok: true });
+});
+
+// LS 큐에 누적된 디버그 로그를 다음 진입 시 batch 전송
+app.post('/api/score/debug/queue-flush', (req, res) => {
+  const queue = Array.isArray(req.body?.queue) ? req.body.queue : [];
+  for (const q of queue) {
+    const tsStr = q?.ts ? new Date(q.ts).toISOString() : 'now';
+    console.log(`[Exchange Fail QUEUE] user=${q?.userHash} stage=${q?.stage} err=${q?.error} localPoints=${q?.localPoints} ts=${tsStr}`);
+  }
+  res.json({ ok: true, count: queue.length });
+});
+
 app.post('/api/score/promo/exchange', (req, res) => {
   const { userHash } = req.body;
-  if (!userHash) return res.status(400).json({ error: 'userHash required' });
+  if (!userHash) {
+    console.log(`[Exchange REJECT 400] userHash empty`);
+    return res.status(400).json({ error: 'userHash required' });
+  }
 
   // 서버 잔액 확인
   const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
-  if (!user) return res.status(404).json({ error: 'user not found' });
+  if (!user) {
+    console.log(`[Exchange REJECT 404] user not found: ${userHash}`);
+    return res.status(404).json({ error: 'user not found' });
+  }
   const serverPoints = user.points || 0;
-  if (serverPoints < 100) return res.status(400).json({ error: 'insufficient_points', points: serverPoints });
+  if (serverPoints < 100) {
+    console.log(`[Exchange REJECT 400] insufficient_points: user=${userHash} server=${serverPoints}`);
+    return res.status(400).json({ error: 'insufficient_points', points: serverPoints });
+  }
 
   // 최근 10초 내 동일 유저 교환 요청 방지 (동시성)
   const recent = db.prepare(
     "SELECT * FROM point_exchanges WHERE user_hash = ? AND created_at > datetime('now', '-10 seconds')"
   ).get(userHash);
-  if (recent) return res.status(429).json({ error: 'too_fast', message: '잠시 후 다시 시도해주세요' });
+  if (recent) {
+    console.log(`[Exchange REJECT 429] too_fast: user=${userHash}`);
+    return res.status(429).json({ error: 'too_fast', message: '잠시 후 다시 시도해주세요' });
+  }
 
   // 서버 잔액 차감 + 교환 기록 (트랜잭션)
   const doExchange = db.transaction(() => {
@@ -1200,22 +1233,28 @@ app.post('/api/admin/recalibrate', (req, res) => {
 app.post('/api/score/promo/grant', async (req, res) => {
   const { userKey, promotionCode, amount } = req.body;
   if (!userKey || !promotionCode || amount == null) return res.status(400).json({ error: 'missing params' });
+  const ukShort = String(userKey).slice(0, 12);
   const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
   const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
   try {
     const keyRes = await (await tossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
-    console.log('[Toss promo] get-key response:', JSON.stringify(keyRes));
-    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    if (keyRes.resultType !== 'SUCCESS') {
+      console.log(`[Toss promo FAIL get-key] code=${promotionCode} amount=${amount} user=${ukShort} err=${keyRes?.error?.errorCode || 'unknown'} reason=${keyRes?.error?.reason || ''}`);
+      return res.json({ error: keyRes });
+    }
     const key = keyRes.success.key;
     const execRes = await (await tossFetch(`${BASE}/execute-promotion`, {
       method: 'POST', headers,
       body: JSON.stringify({ promotionCode, key, amount })
     })).json();
-    console.log('[Toss promo] execute response:', JSON.stringify(execRes));
-    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+    if (execRes.resultType !== 'SUCCESS') {
+      console.log(`[Toss promo FAIL exec] code=${promotionCode} amount=${amount} user=${ukShort} err=${execRes?.error?.errorCode || 'unknown'} reason=${execRes?.error?.reason || ''}`);
+      return res.json({ error: execRes });
+    }
+    console.log(`[Toss promo OK] code=${promotionCode} amount=${amount} user=${ukShort}`);
     res.json({ key: execRes.success.key });
   } catch (e) {
-    console.error('[Toss promo] error:', e);
+    console.error('[Toss promo] exception:', String(e), 'code=', promotionCode, 'user=', ukShort);
     res.status(500).json({ error: String(e) });
   }
 });
