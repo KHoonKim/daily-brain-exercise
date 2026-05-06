@@ -80,14 +80,21 @@ window.AIT = (() => {
   };
 
   // ── User Key ──
-  // 정책: stored OAuth userHash 만 사용. anonymous 브릿지 키는 사용하지 않음.
-  // stored 없으면 'toss_anonymous' 반환 → server 호출 가드로 차단.
-  // 회복은 _recoverViaSilentLogin() 으로 명시적 트리거에서만 수행 (init race 회피).
+  // 정책: stored OAuth userHash (numeric 만) 사용. 그 외 모든 형태는 무효 처리.
+  // - numeric stored → 그대로 반환
+  // - non-numeric stored (과거 빌드에서 잘못 저장된 anonymous SDK key 등) → 정리 + 'toss_anonymous'
+  // - stored 없음 → 'toss_anonymous'
+  // 'toss_anonymous' 반환 시 server 호출 가드로 차단되며, exchangePoints 등에서 _recoverViaSilentLogin() 으로 회복.
   async function getUserHash() {
     if (_userHash) return _userHash;
     if (!isToss) { _userHash = 'web_' + (localStorage.getItem('bf-uid') || (() => { const id = crypto.randomUUID(); localStorage.setItem('bf-uid', id); return id; })()); return _userHash; }
     const storedHash = await storageGet('toss_userHash');
-    if (storedHash) { _userHash = storedHash; return _userHash; }
+    if (storedHash && /^\d+$/.test(storedHash)) { _userHash = storedHash; return _userHash; }
+    // 잘못된 형식의 stored 정리 (과거 빌드 잔재)
+    if (storedHash) {
+      try { await storageSet('toss_userHash', ''); } catch (_) {}
+      console.warn('[AIT] cleared invalid stored toss_userHash:', storedHash);
+    }
     _userHash = 'toss_anonymous';
     return _userHash;
   }

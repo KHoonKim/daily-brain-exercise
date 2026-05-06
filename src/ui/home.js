@@ -1,5 +1,22 @@
 // ===== HOME RENDERING (ORIGINAL DESIGN RESTORED) =====
 function renderHome(){
+  // 디버그 큐 flush — 이전 catch 시점에 fetch 실패로 LS 에 누적된 디버그 로그를 batch 전송
+  try {
+    const _raw = localStorage.getItem('bf-debug-queue');
+    if (_raw) {
+      const _queue = JSON.parse(_raw);
+      if (Array.isArray(_queue) && _queue.length > 0) {
+        fetch(`${API_BASE}/api/score/debug/queue-flush`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queue: _queue })
+        }).then(r => r.json()).then(() => {
+          localStorage.removeItem('bf-debug-queue');
+        }).catch(() => {});
+      }
+    }
+  } catch (_) {}
+
   const xp=getXP();const rank=getRank(xp);const next=getNextRank(xp);
   const{streak,playedToday}=getStreak();
 

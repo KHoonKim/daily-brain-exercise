@@ -85,20 +85,21 @@ async function exchangePoints(){
   const btn=document.getElementById('exchangeBtn');
   if(btn){btn.disabled=true;btn.textContent='교환 중...'}
   let exchangeId=null;
+  let _stage='init';
   try {
+    _stage='getUserHash';
     let uh=await AIT.getUserHash();
-    // anonymous 상태(stored 비어있음)면 silent appLogin 으로 OAuth userKey 회복 시도.
-    // 이미 토스 로그인 동의한 유저는 동의 화면 없이 즉시 인가코드 반환됨 (공식 보장).
-    // 회복 후 _syncLocalPointsOnce 가 LS → server max sync 까지 처리하므로 LS 점수 보존.
     if(uh==='toss_anonymous' && AIT._recoverViaSilentLogin){
+      _stage='silent_recovery';
       const ok=await AIT._recoverViaSilentLogin();
-      if(ok) uh=await AIT.getUserHash();
+      if(ok){_stage='after_recovery';uh=await AIT.getUserHash();}
+      else{_stage='recovery_failed';}
     }
     if(uh==='toss_anonymous'){
+      _stage='still_anonymous';
       throw new Error('교환을 위해 로그인이 필요합니다');
     }
-    // 0. LS ↔ server 양방향 sync (max 정합). LS 절대 감소 금지: 응답이 LS 보다 클 때만 갱신.
-    // sync 가 server 의 더 큰 값을 LS 로 pull-up 하므로 점수 가드는 sync 후로 미룬다.
+    _stage='pre_sync';
     const localPoints=getPoints();
     const syncRes=await fetch(`${API_BASE}/api/score/points/sync`,{
       method:'POST',
@@ -109,30 +110,64 @@ async function exchangePoints(){
       LS.set('points',syncRes.points);
       renderPoints();
     }
-    // 1. 점수 가드 — sync 로 server max 가 LS 에 반영된 후 체크
+    _stage='points_check';
     if(getPoints()<100){toast('100점 이상부터 교환 가능합니다');return}
-    // 1. 서버 잔액 검증 + 차감 (pending 상태)
+    _stage='pre_exchange';
     const serverRes=await fetch(`${API_BASE}/api/score/promo/exchange`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({userHash:uh})
     }).then(r=>r.json());
-    if(serverRes.error){throw new Error(serverRes.error)}
+    if(serverRes.error){_stage='server_error';throw new Error(serverRes.error)}
     exchangeId=serverRes.exchangeId;
-    // 2. Toss SDK로 실제 100원 지급
+    _stage='pre_sdk';
     const ok=await AIT.triggerPromo('POINT_100',AIT.CONFIG.PROMO_POINT_100,100);
     if(!ok){
-      // SDK 실패 → 서버 포인트 복원
+      _stage='sdk_failed';
       await fetch(`${API_BASE}/api/score/promo/exchange/${exchangeId}/restore`,{method:'POST'}).catch(()=>{});
       throw new Error('SDK 지급 실패');
     }
-    // 3. 성공 확정
+    _stage='pre_confirm';
     fetch(`${API_BASE}/api/score/promo/exchange/${exchangeId}/confirm`,{method:'POST'}).catch(()=>{});
     LS.set('points',0);renderPoints();
     toast('100원 교환 완료!');
     AIT.log('point_exchange',{amount:100,userHash:uh});
+    _stage='done';
   } catch(e) {
-    console.error('Exchange failed:',e);
+    console.error('[Exchange Fail]',_stage,e);
+    // server 디버그 로깅 (3중 fallback: fetch → sendBeacon → LS 큐)
+    const debugInfo={
+      userHash:(typeof AIT!=='undefined' && AIT.userHash) || 'unknown',
+      error:e?.message || String(e),
+      stack:(e?.stack || '').slice(0,500),
+      ua:(typeof navigator!=='undefined' && navigator.userAgent) || '',
+      localPoints:getPoints(),
+      stage:_stage,
+      ts:Date.now()
+    };
+    // 1차: fetch
+    fetch(`${API_BASE}/api/score/debug/exchange-fail`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(debugInfo)
+    }).catch(()=>{
+      // 2차: LS 큐 (다음 진입 시 재전송)
+      try{
+        const queue=JSON.parse(localStorage.getItem('bf-debug-queue')||'[]');
+        queue.push(debugInfo);
+        if(queue.length>20)queue.shift();
+        localStorage.setItem('bf-debug-queue',JSON.stringify(queue));
+      }catch(_){}
+    });
+    // 3차: sendBeacon 병행 (다른 transport — fetch 와 독립적으로 시도)
+    try{
+      if(typeof navigator!=='undefined' && navigator.sendBeacon){
+        navigator.sendBeacon(
+          `${API_BASE}/api/score/debug/exchange-fail`,
+          new Blob([JSON.stringify(debugInfo)],{type:'application/json'})
+        );
+      }
+    }catch(_){}
     const msg = e?.message?.includes('로그인')
       ? '로그인이 필요해요. 다시 시도해주세요.'
       : '교환에 실패했습니다. 다시 시도해주세요.';

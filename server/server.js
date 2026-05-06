@@ -699,6 +699,27 @@ db.exec(`
   INSERT OR REPLACE INTO settings (key, value) VALUES ('gg_promo_login', '01KJQKQHVSCC3WC4Q7AGFWTWN6');
 `);
 
+// === Debug 라우트: exchange catch 에서 클라가 보낸 실패 정보 로깅 ===
+// 클라 fetch 실패 환경에서도 추적 가능하도록 sendBeacon + LS 큐 fallback 도 같이 사용.
+app.post('/api/score/debug/exchange-fail', (req, res) => {
+  const { userHash, error, stack, ua, localPoints, stage, ts } = req.body || {};
+  const tsStr = ts ? new Date(ts).toISOString() : 'now';
+  console.log(`[Exchange Fail] user=${userHash} stage=${stage} err=${error} localPoints=${localPoints} ts=${tsStr}`);
+  if (ua) console.log(`[Exchange Fail UA] user=${userHash} ua=${String(ua).slice(0,150)}`);
+  if (stack) console.log(`[Exchange Fail Stack] user=${userHash} stack=${String(stack).slice(0,300)}`);
+  res.json({ ok: true });
+});
+
+// LS 큐에 누적된 디버그 로그를 다음 진입 시 batch 전송
+app.post('/api/score/debug/queue-flush', (req, res) => {
+  const queue = Array.isArray(req.body?.queue) ? req.body.queue : [];
+  for (const q of queue) {
+    const tsStr = q?.ts ? new Date(q.ts).toISOString() : 'now';
+    console.log(`[Exchange Fail QUEUE] user=${q?.userHash} stage=${q?.stage} err=${q?.error} localPoints=${q?.localPoints} ts=${tsStr}`);
+  }
+  res.json({ ok: true, count: queue.length });
+});
+
 app.post('/api/score/promo/exchange', (req, res) => {
   const { userHash } = req.body;
   if (!userHash) return res.status(400).json({ error: 'userHash required' });
