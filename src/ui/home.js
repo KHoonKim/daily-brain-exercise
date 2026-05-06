@@ -1,22 +1,5 @@
 // ===== HOME RENDERING (ORIGINAL DESIGN RESTORED) =====
 function renderHome(){
-  // 디버그 큐 flush — 이전 catch 시점에 fetch 실패로 LS 에 누적된 디버그 로그를 batch 전송
-  try {
-    const _raw = localStorage.getItem('bf-debug-queue');
-    if (_raw) {
-      const _queue = JSON.parse(_raw);
-      if (Array.isArray(_queue) && _queue.length > 0) {
-        fetch(`${API_BASE}/api/score/debug/queue-flush`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ queue: _queue })
-        }).then(r => r.json()).then(() => {
-          localStorage.removeItem('bf-debug-queue');
-        }).catch(() => {});
-      }
-    }
-  } catch (_) {}
-
   const xp=getXP();const rank=getRank(xp);const next=getNextRank(xp);
   const{streak,playedToday}=getStreak();
 
@@ -100,26 +83,6 @@ function renderHome(){
   renderWorkout();
   renderTicketCount();
   if(window.renderPoints) renderPoints(true);
-
-  // 두뇌점수 양방향 sync (홈 진입 시점, login 이후이므로 toss_userHash 보장됨)
-  // local > server 면 push, server > local 이면 pull. 양쪽 max 정합.
-  // ⚠️ LS 절대 감소 금지 — 응답 points 가 LS 보다 클 때만 갱신.
-  if (window.AIT && window.AIT.isToss) {
-    AIT.getUserHash().then(uh => {
-      if (!uh || uh === 'toss_anonymous') return;
-      const localPoints = getPoints();
-      fetch(`${API_BASE}/api/score/points/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userHash: uh, localPoints })
-      }).then(r => r.json()).then(res => {
-        if (res && res.status === 'ok' && typeof res.points === 'number' && res.points > localPoints) {
-          LS.set('points', res.points);
-          renderPoints();
-        }
-      }).catch(() => {});
-    }).catch(() => {});
-  }
 
   // 출석체크
   const { isNewDay: _attNew, streakBonus: _attBonus } = markTodayAttendance();

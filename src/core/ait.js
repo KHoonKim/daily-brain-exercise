@@ -80,56 +80,21 @@ window.AIT = (() => {
   };
 
   // ── User Key ──
-  // 정책: stored OAuth userHash (numeric 만) 사용. 그 외 모든 형태는 무효 처리.
-  // - numeric stored → 그대로 반환
-  // - non-numeric stored (과거 빌드에서 잘못 저장된 anonymous SDK key 등) → 정리 + 'toss_anonymous'
-  // - stored 없음 → 'toss_anonymous'
-  // 'toss_anonymous' 반환 시 server 호출 가드로 차단되며, exchangePoints 등에서 _recoverViaSilentLogin() 으로 회복.
   async function getUserHash() {
     if (_userHash) return _userHash;
     if (!isToss) { _userHash = 'web_' + (localStorage.getItem('bf-uid') || (() => { const id = crypto.randomUUID(); localStorage.setItem('bf-uid', id); return id; })()); return _userHash; }
-    const storedHash = await storageGet('toss_userHash');
-    if (storedHash && /^\d+$/.test(storedHash)) { _userHash = storedHash; return _userHash; }
-    // 잘못된 형식의 stored 정리 (과거 빌드 잔재)
-    if (storedHash) {
-      try { await storageSet('toss_userHash', ''); } catch (_) {}
-      console.warn('[AIT] cleared invalid stored toss_userHash:', storedHash);
-    }
+    try {
+      const result = await Promise.race([
+        _bridgeCall('getUserKeyForGame'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]);
+      if (result && result.type === 'HASH') { _userHash = result.hash; return _userHash; }
+    } catch (e) { console.warn('AIT getUserKeyForGame failed:', e); }
+    // 폴백: 저장된 toss_userKey 사용
+    const storedKey = await storageGet('toss_userKey');
+    if (storedKey) { _userHash = storedKey; return _userHash; }
     _userHash = 'toss_anonymous';
     return _userHash;
-  }
-
-  // stored 비어있는 유저를 silent appLogin 으로 회복.
-  // - 이미 로그인 동의한 유저는 토스 SDK가 동의 화면 없이 바로 인가코드 반환 (공식 문서 보장)
-  // - 미동의 유저는 동의 화면 뜸 → 호출 컨텍스트(교환 버튼 등)에서 사용자가 인지하는 액션이어야 안전
-  // - LS bf-points 는 절대 건드리지 않음 (실패해도 보존)
-  let _recoverInFlight = null;
-  async function _recoverViaSilentLogin() {
-    if (!isToss) return false;
-    if (_recoverInFlight) return _recoverInFlight;
-    _recoverInFlight = (async () => {
-      try {
-        // 이미 stored 있으면 회복 불필요
-        const existing = await storageGet('toss_userHash');
-        if (existing) { _userHash = existing; return true; }
-        // 로그인 (이미 동의한 유저는 silent)
-        const result = await login();
-        // 엄격 판정: userHash + userKey 둘 다 있어야 진짜 회복 성공.
-        // login() 내부에서 둘 다 있을 때만 storage 저장하므로 이 조건이 일치해야 stored 가 채워졌음.
-        if (result?.userHash && result?.userKey) {
-          // login() 내부의 fire-and-forget sync 와 별개로 await sync 보장 (회복 흐름은 sync 결과까지 기다려야 함).
-          await _syncLocalPointsOnce();
-          return true;
-        }
-        return false;
-      } catch (e) {
-        console.warn('[AIT] silent recovery failed:', e);
-        return false;
-      } finally {
-        _recoverInFlight = null;
-      }
-    })();
-    return _recoverInFlight;
   }
 
   // ── Ads ──
@@ -429,22 +394,13 @@ window.AIT = (() => {
       });
       const data = await resp.json();
       if (data.status === 'ok') {
-        // userHash 가 falsy 면 stored 빈 문자열 저장 → 다음 진입에 anonymous 로 떨어짐.
-        // 따라서 둘 다 있을 때만 stored 저장 (없으면 다음 진입에 재시도).
-        if (data.userHash && data.userKey) {
-          _userHash = data.userHash;
-          _loginData = data;
-          await storageSet('toss_userKey', String(data.userKey));
-          await storageSet('toss_userHash', data.userHash);
-          await storageSet('toss_name', data.name || '');
-          log('toss_login', { userKey: data.userKey });
-          checkPromoFirstLogin();
-          // LS bf-points 가 anonymous 시기에 쌓여있을 수 있으므로 즉시 server 로 max sync.
-          // fire-and-forget — 실패해도 LS 점수는 보존됨 (sync 라우트가 max 보장).
-          _syncLocalPointsOnce().catch(() => {});
-        } else {
-          console.warn('[AIT] login response missing userHash/userKey; not persisting', data);
-        }
+        _userHash = data.userHash;
+        _loginData = data;
+        await storageSet('toss_userKey', data.userKey);
+        await storageSet('toss_userHash', data.userHash || '');
+        await storageSet('toss_name', data.name || '');
+        log('toss_login', { userKey: data.userKey });
+        checkPromoFirstLogin();
       }
       return data;
     } catch (e) { console.error('AIT login failed:', e); return { error: e.message }; }
@@ -515,62 +471,6 @@ window.AIT = (() => {
     }
   }
 
-  // 두뇌점수 양방향 동기화 (4/15 SDK 마이그레이션 보정 + storage 손실 회복).
-  // server <-> local 중 큰 값으로 양쪽 정합.
-  // ⚠️ stored toss_userHash 가 있을 때만 동작 — 익명 hash 로 절대 sync 안 함 (race condition 방지)
-  async function _syncLocalPointsOnce() {
-    try {
-      const storedHash = await storageGet('toss_userHash');
-      if (!storedHash) return;  // 로그인 안 된 상태면 sync 시도 자체 안 함
-      const localPoints = parseInt(localStorage.getItem('bf-points') || '0', 10) || 0;
-      const resp = await fetch(`${API_BASE}/api/score/points/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userHash: storedHash, localPoints })
-      }).catch(() => null);
-      if (!resp) return;
-      // 응답 직전에 storage 가 비워졌는지 재확인 (UNLINK race 방지)
-      const stillStored = await storageGet('toss_userHash');
-      if (!stillStored || stillStored !== storedHash) return;
-      if (resp.status === 404) {
-        // 자동 청소 비활성화 — 무한 루프 위험. 로그만 남김. 필요 시 ?reset=1 로 수동 처리.
-        console.warn('[AIT] sync 404 (server has no user) — auto-clear disabled');
-        return;
-      }
-      const res = await resp.json().catch(() => null);
-      if (res && res.status === 'ok' && typeof res.points === 'number') {
-        if (res.points !== localPoints) {
-          localStorage.setItem('bf-points', String(res.points));
-          console.log('[AIT] points reconciled:', { local: localPoints, server: res.server, final: res.points });
-          if (typeof window.renderPoints === 'function') {
-            try { window.renderPoints(); } catch (e) {}
-          }
-        }
-      }
-    } catch (e) { console.warn('[AIT] _syncLocalPointsOnce error:', e); }
-  }
-
-  // 서버에 user 레코드 없음 (UNLINK / 데이터 삭제 등) 감지 시 인증 정리 + 인트로 재진입
-  function _handleStaleSession() {
-    console.warn('[AIT] stale session detected (server user not found) — clearing auth & forcing re-login');
-    try {
-      localStorage.removeItem('toss_userKey');
-      localStorage.removeItem('toss_userHash');
-      localStorage.removeItem('toss_name');
-      _userHash = null;
-    } catch (e) {}
-    // 화면 전환: intro 가 있으면 그쪽으로, 없으면 reload
-    try {
-      const intro = document.getElementById('introScreen');
-      const home = document.getElementById('homeScreen');
-      if (intro && typeof window.show === 'function') {
-        window.show('introScreen');
-      } else {
-        window.location.reload();
-      }
-    } catch (e) { try { window.location.reload(); } catch (_) {} }
-  }
-
   return {
     isToss, CONFIG, getUserHash, login, getLoginData, triggerPromo,
     checkPromoFirstLogin, checkPromoPoint100, checkPromoFirstWorkout,
@@ -580,7 +480,7 @@ window.AIT = (() => {
     storageGet, storageSet, haptic,
     grantPromoReward, shareInvite, shareMessage,
     log, setScreenAwake, close, popActivity, subscribeBackEvent, addBackEventListener, getDeviceId, getPlatform, getEnv,
-    init, _recoverViaSilentLogin, get userHash() { return _userHash; }
+    init, get userHash() { return _userHash; }
   };
 })();
 

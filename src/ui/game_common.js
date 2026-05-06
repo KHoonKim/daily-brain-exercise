@@ -3,6 +3,7 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 
 // ===== BACK BUTTON =====
 function _handleBack(){
+  if(document.getElementById('exit-dialog')){document.getElementById('exit-dialog').remove();return;}
   if(document.getElementById('levelupOverlay')?.classList.contains('active')){closeLevelUp();}
   else if(document.getElementById('heartOverlay')?.classList.contains('active')){heartQuit();}
   else if(document.getElementById('timeExtendOverlay')?.classList.contains('active')){timeExtendQuit();}
@@ -11,17 +12,52 @@ function _handleBack(){
   else if(document.getElementById('wkTransition')?.classList.contains('active')){wkBack();}
   else if(document.getElementById('leaderboardScreen')?.classList.contains('active')){lbBack();}
   else if(document.getElementById('ticketShop')?.classList.contains('active')){goHome();}
-  else if(document.getElementById('homeScreen')?.classList.contains('active')){if(window.AIT)AIT.close();}
+  else if(document.getElementById('homeScreen')?.classList.contains('active')){showExitDialog();}
   else{goHome();}
 }
 
-// History API (web browser fallback)
-history.replaceState({app:true},'');
-history.pushState({app:true},''); // 초기 버퍼: 홈에서 뒤로가기도 popstate 발화되도록
-window.addEventListener('popstate',()=>{_handleBack();history.pushState({app:true},'');});
+function showExitDialog(){
+  if(document.getElementById('exit-dialog'))return;
+  const dialog=document.createElement('div');
+  dialog.id='exit-dialog';
+  dialog.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;z-index:9999';
+  dialog.innerHTML=`
+    <div style="background:var(--tds-card);border-radius:24px 24px 0 0;padding:28px 20px 40px;width:100%">
+      <div class="tds-t3 tds-fw-bold" style="color:var(--tds-text);margin-bottom:8px">두뇌운동을 종료하시겠어요?</div>
+      <div class="tds-t6" style="color:var(--tds-sub);margin-bottom:24px">내일도 두뇌운동으로 뇌를 깨워보세요!</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="exit-confirm" class="tds-btn tds-btn-primary tds-btn-xl tds-btn-block">종료하기</button>
+        <button id="exit-cancel" class="tds-btn tds-btn-secondary tds-btn-xl tds-btn-block">계속하기</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  dialog.querySelector('#exit-confirm').addEventListener('click',()=>{if(window.AIT)AIT.close();});
+  dialog.querySelector('#exit-cancel').addEventListener('click',()=>dialog.remove());
+}
 
-// Toss 네이티브 백버튼: 기본 동작 차단 후 직접 처리
-if(window.AIT&&AIT.isToss)AIT.subscribeBackEvent(_handleBack);
+// 뒤로가기: graniteEvent(Toss) 또는 popstate(웹) 중 하나만 사용
+let _useGraniteBack=false;
+
+// popstate (웹 브라우저 전용 — graniteEvent 사용 시 비활성)
+history.replaceState({app:true},'');
+history.pushState({app:true},'');
+window.addEventListener('popstate',()=>{
+  if(_useGraniteBack) return; // Toss에서는 graniteEvent가 처리
+  _handleBack();
+  history.pushState({app:true},'');
+});
+
+// Toss 네이티브 백버튼 (공식 graniteEvent API)
+document.addEventListener('DOMContentLoaded',()=>{
+  if(window.graniteEvent){
+    _useGraniteBack=true;
+    window.graniteEvent.addEventListener('backEvent',{
+      onEvent:()=>_handleBack(),
+      onError:()=>{}
+    });
+  }
+});
 
 let curGoal=0,goalReached=false;
 function initGoalBar(id){
@@ -131,7 +167,7 @@ function renderHearts(gameId){
   for(let i=0;i<MAX_HEARTS;i++){
     const h=document.createElement('span');
     h.className='heart'+(i>=hearts?' lost':'');
-    h.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';h.id=gameId+'-heart-'+i;
+    h.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';h.id=gameId+'-heart-'+i;
     el.appendChild(h);
   }
 }
@@ -142,6 +178,10 @@ function loseHeart(gameId){
   if(el){el.classList.add('heart-break');setTimeout(()=>el.classList.add('lost'),500)}
   const container=document.getElementById(gameId+'-hearts');
   if(container){container.classList.add('heart-shake');setTimeout(()=>container.classList.remove('heart-shake'),400)}
+  // Full-screen red flash + screen shake
+  const flash=document.createElement('div');flash.className='screen-wrong-flash';document.body.appendChild(flash);setTimeout(()=>flash.remove(),360);
+  const gameScreen=document.querySelector('.screen.active,.game-screen.active,[id$="Screen"]:not([style*="display:none"]):not([style*="display: none"])');
+  if(gameScreen){gameScreen.classList.remove('game-shake');void gameScreen.offsetWidth;gameScreen.classList.add('game-shake');setTimeout(()=>gameScreen.classList.remove('game-shake'),410);}
   if(navigator.vibrate)navigator.vibrate([50,30,50]);
   if(hearts<=0){
     clearInterval(curTimer);

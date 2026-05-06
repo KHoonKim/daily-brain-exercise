@@ -6,11 +6,13 @@ async function initIntro() {
     // bf- 로컬스토리지 전체 삭제
     Object.keys(localStorage).filter(k => k.startsWith('bf-')).forEach(k => localStorage.removeItem(k));
     await AIT.storageSet('toss_userKey', '');
+    await AIT.storageSet('toss_userHash', '');
     await AIT.storageSet('toss_name', '');
     return; // introScreen 유지
   }
   const userKey = await AIT.storageGet('toss_userKey');
   if (userKey) {
+    // 로그인된 userKey가 있으면 그대로 사용. 계정 전환은 ?reset=1로 처리.
     show('homeScreen');
     renderHome();
   } else {

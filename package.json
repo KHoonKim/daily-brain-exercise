@@ -27,6 +27,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "^1.14.1"
+    "@apps-in-toss/web-framework": "^2.4.7"
   }
 }

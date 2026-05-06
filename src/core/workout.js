@@ -92,7 +92,7 @@ function renderWorkout(){
           return`<div class="wk-game${done?' done':''}${current?' current':''}">
             ${done?'<div class="wk-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div>':''}
             <div class="wk-icon">${GI[g.id]||''}</div>
-            <div class="wk-name tds-st13 tds-fw-semibold">${g.name}</div>
+            <div class="wk-name tds-t5 tds-fw-semibold">${g.name}</div>
             ${done?`<div class="tds-st13 tds-fw-bold tds-color-success">${wk.scores[id]||0}점</div>`:''}
           </div>`}).join('')}
       </div>
@@ -106,11 +106,11 @@ function renderWorkout(){
     <div class="workout-card done tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
       <div style="text-align:center;padding:8px 0">
         <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:48px;height:48px"></div>
-        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px">오늘의 1분 두뇌운동 완료!</div>
+        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px;font-size:22px">오늘의 1분 두뇌운동 완료!</div>
         <div class="tds-t7 tds-color-sub" style="margin-bottom:16px">광고를 보고 두뇌점수 3점을 받아가세요</div>
       </div>
       <div class="wk-games" style="margin:0 0 16px">
-        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done"><div class="wk-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon">${GI[g.id]||''}</div><div class="wk-name tds-st13 tds-fw-semibold">${g.name}</div><div class="tds-st13 tds-fw-bold tds-color-primary">${wk.scores[id]||0}점</div></div>`}).join('')}
+        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done"><div class="wk-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon">${GI[g.id]||''}</div><div class="wk-name tds-t5 tds-fw-semibold">${g.name}</div><div class="tds-st13 tds-fw-bold tds-color-primary">${wk.scores[id]||0}점</div></div>`}).join('')}
       </div>
       <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" onclick="wkWatchAdForReward()" style="margin-bottom:0">
         광고보고 두뇌점수 3점 받기
@@ -119,11 +119,11 @@ function renderWorkout(){
     <div class="workout-card done tds-card tds-card--p20" style="margin-bottom:12px;border:1px solid var(--border)">
       <div style="text-align:center;padding:8px 0">
         <div style="margin-bottom:12px"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:48px;height:48px"></div>
-        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px">오늘의 1분 두뇌운동 완료!</div>
-        <div class="tds-t7 tds-color-sub">내일도 잊지 말고 운동하러 오세요!</div>
+        <div class="tds-st9 tds-fw-extrabold" style="margin-bottom:4px;font-size:22px">오늘의 1분 두뇌운동 완료!</div>
+        <div class="tds-t7 tds-color-sub" style="font-size:16px">내일도 잊지 말고 운동하러 오세요!</div>
       </div>
       <div class="wk-games" style="margin:14px 0 0">
-        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done"><div class="wk-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon">${GI[g.id]||''}</div><div class="wk-name tds-st13 tds-fw-semibold">${g.name}</div><div class="tds-st13 tds-fw-bold tds-color-primary">${wk.scores[id]||0}점</div></div>`}).join('')}
+        ${wk.games.map(id=>{const g=GAMES.find(x=>x.id===id);return`<div class="wk-game done"><div class="wk-check"><img src="https://static.toss.im/2d-emojis/svg/u2705.svg" style="width:14px;height:14px"></div><div class="wk-icon">${GI[g.id]||''}</div><div class="wk-name tds-t5 tds-fw-semibold">${g.name}</div><div class="tds-st13 tds-fw-bold tds-color-primary">${wk.scores[id]||0}점</div></div>`}).join('')}
       </div>
     </div>`;
 }

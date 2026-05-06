@@ -2,6 +2,7 @@ import { defineConfig } from '@apps-in-toss/web-framework/config';
 
 export default defineConfig({
   appName: 'everyday-brain-training',
+  outdir: 'dist',
   brand: {
     displayName: '매일매일 두뇌운동',
     primaryColor: '#3182F6',

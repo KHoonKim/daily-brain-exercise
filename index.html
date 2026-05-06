@@ -12,7 +12,7 @@
   <meta property="og:title" content="매일매일 두뇌운동">
   <meta property="og:description" content="38가지 두뇌 훈련 게임으로 매일 두뇌를 운동하세요!">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="src/styles/main.css?v=194">
+  <link rel="stylesheet" href="src/styles/main.css?v=197">
 </head>
 
 <body>
@@ -118,6 +118,11 @@
 
       <div id="streakDays" style="display:none"></div>
 
+      <div id="home-banner-0-wrap"></div>
+
+      <!-- 출석체크 -->
+      <div id="attendanceCard"></div>
+
       <!-- Profile Summary -->
       <div class="tds-card" style="padding:13px 16px 9px;margin-bottom:12px">
         <div style="display:flex;align-items:center;margin-bottom:8px">
@@ -163,19 +168,6 @@
         <div id="gameGrid" style="padding:0 14px 14px"></div>
       </div>
 
-      <!-- 친구 초대하기 -->
-      <div class="tds-list-row tds-list-row--card" onclick="inviteFriend()" style="margin-bottom:12px;cursor:pointer">
-        <div class="tds-list-row__left">
-          <img src="https://static.toss.im/2d-emojis/svg/u1F381.svg" style="width:36px;height:36px">
-        </div>
-        <div class="tds-list-row__contents">
-          <div class="tds-list-row__title tds-fw-semibold">친구에게 공유하고 두뇌점수 <span class="tds-badge tds-badge-xs tds-badge-weak-blue" style="font-size:12px;vertical-align:middle"><img src="https://static.toss.im/2d-emojis/svg/u1F9E0.svg" style="width:18px;height:18px;margin-right:2px"> 5점</span> 받기</div>
-          <div class="tds-list-row__desc tds-color-sub">친구를 초대할 때마다 두뇌점수 지급</div>
-        </div>
-        <div class="tds-list-row__right">
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style="color:var(--border)"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
 
       <div id="home-banner-2-wrap"></div>
 
@@ -858,8 +850,8 @@
         <div id="r-pct-players" class="tds-st13 tds-color-sub" style="margin-top:2px"></div>
       </div>
       <div id="r-science" class="tds-card" style="padding:14px 16px;margin-bottom:12px;text-align:left;border:1px solid var(--border)">
-        <div class="tds-t7 tds-fw-bold tds-color-primary" style="margin-bottom:4px" id="r-sci-title"></div>
-        <div class="tds-st12 tds-color-sub" style="line-height:1.5" id="r-sci-desc"></div>
+        <div class="tds-fw-bold tds-color-primary" style="font-size:17px;margin-bottom:4px" id="r-sci-title"></div>
+        <div class="tds-color-sub" style="font-size:15px;line-height:1.5" id="r-sci-desc"></div>
       </div>
       <!-- 재도전 (최우선) -->
       <div id="r-retry-msg" class="hide"
@@ -868,18 +860,6 @@
       <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-primary" id="r-main-btn" onclick="replayGame()"
         style="margin-bottom:12px">3초 광고보고 다시 도전하기</button>
 
-      <!-- Share & Leaderboard -->
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-share-btn" onclick="shareScore()"
-          style="flex:1;gap:6px"><img
-            src="https://static.toss.im/2d-emojis/svg/u1F4E4.svg" style="width:16px;height:16px">공유</button>
-        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-lb-btn" onclick="AIT.openLeaderboard()"
-          style="flex:1;gap:6px"><img
-            src="https://static.toss.im/2d-emojis/svg/u1F3C6.svg" style="width:16px;height:16px">리더보드</button>
-        <button class="tds-btn tds-btn-sm tds-btn-weak-dark" id="r-invite-btn" onclick="inviteFriend()"
-          style="flex:1;gap:6px"><img
-            src="https://static.toss.im/2d-emojis/svg/u1F44B.svg" style="width:16px;height:16px">초대</button>
-      </div>
 
       <button class="tds-btn tds-btn-xl tds-btn-block tds-btn-weak-dark" onclick="goHomeFromResult()">홈으로</button>
       <!-- 배너 광고 영역 -->
@@ -899,16 +879,16 @@
       <!-- 능력치 설명 -->
       <div class="tds-card" style="padding:16px;width:100%;box-sizing:border-box">
         <span class="tds-badge tds-badge-sm tds-badge-fill-blue" id="wkt-cat-badge"></span>
-        <div id="wkt-cat-desc" style="margin-top:8px;font-size:13px;color:var(--sub);line-height:1.6"></div>
+        <div id="wkt-cat-desc" style="margin-top:8px;font-size:17px;color:var(--sub);line-height:1.6"></div>
       </div>
       <!-- 목표 / 최고 점수 -->
       <div style="display:flex;gap:10px;width:100%">
         <div class="tds-card" style="flex:1;padding:14px 12px;text-align:center">
-          <div style="font-size:11px;color:var(--sub);margin-bottom:4px">목표 점수</div>
+          <div style="font-size:16px;color:var(--sub);margin-bottom:4px">목표 점수</div>
           <div id="wkt-goal" style="font-size:17px;font-weight:800;color:var(--tds-blue)"></div>
         </div>
         <div class="tds-card" style="flex:1;padding:14px 12px;text-align:center">
-          <div style="font-size:11px;color:var(--sub);margin-bottom:4px">내 최고 점수</div>
+          <div style="font-size:16px;color:var(--sub);margin-bottom:4px">내 최고 점수</div>
           <div id="wkt-best" style="font-size:17px;font-weight:800"></div>
         </div>
       </div>
@@ -971,58 +951,64 @@
 
   </div>
 
-  <script src="src/core/ait.js?v=194"></script>
-  <script src="src/core/config.js?v=194"></script>
-  <script src="src/core/utils.js?v=194"></script>
-  <script src="src/core/workout.js?v=194"></script>
-  <script src="src/core/ticket.js?v=194"></script>
-  <script src="src/ui/game_common.js?v=194"></script>
-  <script src="src/ui/intro.js?v=194"></script>
-  <script src="src/ui/home.js?v=194"></script>
-  <script src="src/ui/result.js?v=194"></script>
-  <script src="src/ui/leaderboard.js?v=194"></script>
-  <script src="src/games/math.js?v=194"></script>
-  <script src="src/games/memory.js?v=194"></script>
-  <script src="src/games/sequence.js?v=194"></script>
-  <script src="src/games/stroop.js?v=194"></script>
-  <script src="src/games/reaction.js?v=194"></script>
-  <script src="src/games/word.js?v=194"></script>
-  <script src="src/games/pattern.js?v=194"></script>
-  <script src="src/games/focus.js?v=194"></script>
-  <script src="src/games/rotate.js?v=194"></script>
-  <script src="src/games/reverse.js?v=194"></script>
-  <script src="src/games/numtouch.js?v=194"></script>
-  <script src="src/games/rhythm.js?v=194"></script>
-  <script src="src/games/rps.js?v=194"></script>
-  <script src="src/games/oddone.js?v=194"></script>
-  <script src="src/games/compare.js?v=194"></script>
-  <script src="src/games/bulb.js?v=194"></script>
-  <script src="src/games/colormix.js?v=194"></script>
-  <script src="src/games/wordcomp.js?v=194"></script>
-  <script src="src/games/timing.js?v=194"></script>
-  <script src="src/games/matchpair.js?v=194"></script>
-  <script src="src/games/headcount.js?v=194"></script>
-  <script src="src/games/pyramid.js?v=194"></script>
-  <script src="src/games/maxnum.js?v=194"></script>
-  <script src="src/games/signfind.js?v=194"></script>
-  <script src="src/games/coincount.js?v=194"></script>
-  <script src="src/games/clock.js?v=194"></script>
-  <script src="src/games/wordmem.js?v=194"></script>
-  <script src="src/games/blockcount.js?v=194"></script>
-  <script src="src/games/flanker.js?v=194"></script>
-  <script src="src/games/memgrid.js?v=194"></script>
-  <script src="src/games/nback.js?v=194"></script>
-  <script src="src/games/scramble.js?v=194"></script>
-  <script src="src/games/serial.js?v=194"></script>
-  <script src="src/games/leftright.js?v=194"></script>
-  <script src="src/games/calccomp.js?v=194"></script>
-  <script src="src/games/flash.js?v=194"></script>
-  <script src="src/games/sort.js?v=194"></script>
-  <script src="src/games/mirror.js?v=194"></script>
+  <script type="module">
+    import { TossAds, graniteEvent } from '@apps-in-toss/web-framework';
+    window.TossAds = TossAds;
+    window.graniteEvent = graniteEvent;
+  </script>
+  <script src="src/core/ait.js?v=197"></script>
+  <script src="src/core/config.js?v=197"></script>
+  <script src="src/core/utils.js?v=197"></script>
+  <script src="src/core/workout.js?v=197"></script>
+  <script src="src/core/ticket.js?v=197"></script>
+  <script src="src/core/attendance.js?v=197"></script>
+  <script src="src/ui/game_common.js?v=197"></script>
+  <script src="src/ui/intro.js?v=197"></script>
+  <script src="src/ui/home.js?v=197"></script>
+  <script src="src/ui/result.js?v=197"></script>
+  <script src="src/ui/leaderboard.js?v=197"></script>
+  <script src="src/games/math.js?v=197"></script>
+  <script src="src/games/memory.js?v=197"></script>
+  <script src="src/games/sequence.js?v=197"></script>
+  <script src="src/games/stroop.js?v=197"></script>
+  <script src="src/games/reaction.js?v=197"></script>
+  <script src="src/games/word.js?v=197"></script>
+  <script src="src/games/pattern.js?v=197"></script>
+  <script src="src/games/focus.js?v=197"></script>
+  <script src="src/games/rotate.js?v=197"></script>
+  <script src="src/games/reverse.js?v=197"></script>
+  <script src="src/games/numtouch.js?v=197"></script>
+  <script src="src/games/rhythm.js?v=197"></script>
+  <script src="src/games/rps.js?v=197"></script>
+  <script src="src/games/oddone.js?v=197"></script>
+  <script src="src/games/compare.js?v=197"></script>
+  <script src="src/games/bulb.js?v=197"></script>
+  <script src="src/games/colormix.js?v=197"></script>
+  <script src="src/games/wordcomp.js?v=197"></script>
+  <script src="src/games/timing.js?v=197"></script>
+  <script src="src/games/matchpair.js?v=197"></script>
+  <script src="src/games/headcount.js?v=197"></script>
+  <script src="src/games/pyramid.js?v=197"></script>
+  <script src="src/games/maxnum.js?v=197"></script>
+  <script src="src/games/signfind.js?v=197"></script>
+  <script src="src/games/coincount.js?v=197"></script>
+  <script src="src/games/clock.js?v=197"></script>
+  <script src="src/games/wordmem.js?v=197"></script>
+  <script src="src/games/blockcount.js?v=197"></script>
+  <script src="src/games/flanker.js?v=197"></script>
+  <script src="src/games/memgrid.js?v=197"></script>
+  <script src="src/games/nback.js?v=197"></script>
+  <script src="src/games/scramble.js?v=197"></script>
+  <script src="src/games/serial.js?v=197"></script>
+  <script src="src/games/leftright.js?v=197"></script>
+  <script src="src/games/calccomp.js?v=197"></script>
+  <script src="src/games/flash.js?v=197"></script>
+  <script src="src/games/sort.js?v=197"></script>
+  <script src="src/games/mirror.js?v=197"></script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      renderHome();
+      // renderHome()은 intro.js의 initIntro()에서 로그인 상태에 따라 호출됨
 
       // 버전 이스터에그: 5초 안에 10번 클릭 → 데이터 전체 초기화
       const vBtn = document.getElementById('versionBtn');

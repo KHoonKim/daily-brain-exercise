@@ -98,24 +98,24 @@
 .tds-st0  { font-size: 40px; line-height: 52px; }
 .tds-st1  { font-size: 29px; line-height: 38px; }
 
-/* t1=30px  t2=26px  t3=22px  t4=20px  t5=17px  t6=15px  t7=13px */
+/* t1=30px  t2=26px  t3=22px  t4=20px  t5=18px  t6=16px  t7=15px (60대 접근성 +1~2px) */
 .tds-t1 { font-size: 30px; line-height: 40px; }
 .tds-t2 { font-size: 26px; line-height: 35px; }
 .tds-t3 { font-size: 22px; line-height: 31px; }
 .tds-t4 { font-size: 20px; line-height: 29px; }
-.tds-t5 { font-size: 17px; line-height: 25.5px; }
-.tds-t6 { font-size: 15px; line-height: 22.5px; }
-.tds-t7 { font-size: 13px; line-height: 19.5px; }
+.tds-t5 { font-size: 18px; line-height: 27px; }
+.tds-t6 { font-size: 16px; line-height: 24px; }
+.tds-t7 { font-size: 15px; line-height: 22.5px; }
 
 /* st scale (between-sizes) */
 .tds-st2  { font-size: 28px; line-height: 37px; }
 .tds-st3  { font-size: 27px; line-height: 36px; }
 .tds-st5  { font-size: 24px; line-height: 33px; }
 .tds-st9  { font-size: 18px; line-height: 27px; }
-.tds-st10 { font-size: 16px; line-height: 24px; }
-.tds-st11 { font-size: 14px; line-height: 21px; }
-.tds-st12 { font-size: 12px; line-height: 18px; }
-.tds-st13 { font-size: 11px; line-height: 16.5px; }
+.tds-st10 { font-size: 17px; line-height: 25.5px; }
+.tds-st11 { font-size: 16px; line-height: 24px; }
+.tds-st12 { font-size: 14px; line-height: 21px; }
+.tds-st13 { font-size: 13px; line-height: 19.5px; }
 
 /* Font weight helpers */
 .tds-fw-regular  { font-weight: 400; }
@@ -306,10 +306,10 @@
 }
 /* Timer / status in nav right */
 .tds-nav__timer {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--tds-blue);
-  min-width: 40px;
+  min-width: 48px;
   text-align: right;
 }
 .tds-nav__timer--urgent { color: var(--tds-red); }
@@ -369,7 +369,7 @@
 
 /* Text helpers inside ListRow */
 .tds-list-row__title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--tds-text);
   white-space: nowrap;
@@ -377,7 +377,7 @@
   text-overflow: ellipsis;
 }
 .tds-list-row__desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--tds-sub);
   margin-top: 2px;
 }
@@ -601,3 +601,30 @@
   padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
+
+/* ===== PHASE 8: Attendance Card ===== */
+.attendance-card { padding: 16px; margin-bottom: 12px; }
+.attendance-card__grid { display: flex; flex-direction: column; gap: 4px; }
+.attendance-card__labels {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 6px; text-align: center;
+  font-size: 12px; color: var(--tds-sub); font-weight: 500;
+}
+.attendance-card__dots {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  padding-bottom: 20px;
+}
+.attendance-dot {
+  position: relative; width: 36px; height: 36px; border-radius: 50%;
+  margin: 0 auto; background: var(--tds-grey-200);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #fff;
+}
+.attendance-dot--checked { background: var(--p); }
+.attendance-dot--today { outline: 2px solid var(--p); outline-offset: 1px; }
+.attendance-label {
+  position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; background: var(--tds-grey-300); color: var(--tds-sub);
+  border-radius: 8px; padding: 1px 5px; font-weight: 700; white-space: nowrap;
+}
+.attendance-label--bonus { background: #F5C842; color: #7A5800; }
