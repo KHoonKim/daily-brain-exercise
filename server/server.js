@@ -4128,6 +4128,266 @@ cron.schedule('1 20 * * *', async () => {
 }, { timezone: 'Asia/Seoul' });
 console.log('[GG Lottery Cron] scheduled: 19:50 reminder + 20:01 winner notice');
 
+app.post('/api/cashword/promo/execute', async (req, res) => {
+  const { userHash, userKey, promoType, promoCode, amount } = req.body;
+  if (!userHash || !userKey || !promoType || !promoCode) return res.status(400).json({ error: 'missing params' });
+
+  // 서버에서 프로모 타입별 지급 금액 강제 (클라 배포 없이 변경 가능)
+  const promoAmounts = { 'FIRST_LOGIN': 3 };
+  const finalAmount = promoAmounts[promoType] || amount || 1;
+
+  const existing = db.prepare('SELECT * FROM cashword_promotion_grants WHERE user_hash = ? AND promo_type = ?').get(userHash, promoType);
+  if (existing) return res.json({ status: 'already_granted' });
+
+  const BASE = 'https://apps-in-toss-api.toss.im/api-partner/v1/apps-in-toss/promotion';
+  const headers = { 'Content-Type': 'application/json', 'x-toss-user-key': userKey };
+  try {
+    const keyRes = await (await cashwordTossFetch(`${BASE}/execute-promotion/get-key`, { method: 'POST', headers })).json();
+    console.log('[CashWord Promo] execute get-key:', JSON.stringify(keyRes));
+    if (keyRes.resultType !== 'SUCCESS') return res.json({ error: keyRes });
+    const key = keyRes.success.key;
+    const execRes = await (await cashwordTossFetch(`${BASE}/execute-promotion`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ promotionCode: promoCode, key, amount: finalAmount })
+    })).json();
+    console.log('[CashWord Promo] execute result:', JSON.stringify(execRes));
+    if (execRes.resultType !== 'SUCCESS') return res.json({ error: execRes });
+
+    db.prepare('INSERT OR IGNORE INTO cashword_promotion_grants (user_hash, promo_type, promo_code, amount, status) VALUES (?, ?, ?, ?, ?)').run(userHash, promoType, promoCode, finalAmount, 'granted');
+    console.log(`[CashWord Promo] ${promoType} granted to ${userHash} (${finalAmount})`);
+    res.json({ status: 'ok' });
+  } catch (e) {
+    console.error('[CashWord Promo Execute Error]', e);
+    res.status(500).json({ error: 'promo_execute_failed', detail: e.message });
+  }
+});
+app.post('/api/golden-goose/reset', (req, res) => {
+  const { userHash, tossUserKey } = req.body;
+  if (!userHash) return res.status(400).json({ error: 'missing_userHash' });
+
+  const hashes = [userHash, tossUserKey].filter(Boolean);
+  console.log(`[GG Reset] users: ${hashes.join(', ')}`);
+  for (const h of hashes) {
+    db.prepare('DELETE FROM gg_coins WHERE user_hash = ?').run(h);
+    db.prepare('DELETE FROM gg_reward_log WHERE user_hash = ?').run(h);
+    db.prepare('DELETE FROM gg_exchanges WHERE user_hash = ?').run(h);
+  }
+  console.log(`[GG Reset] done`);
+  res.json({ ok: true });
+});
+app.get('/api/golden-goose/analytics/dashboard-data', (req, res) => {
+  const { date, cohort_date } = req.query;
+  const today = date || new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const cohortDate = cohort_date || today;
+
+  // 1. 신규 유저 첫 알 부화율
+  const firstHatchRate = db.prepare(`
+    SELECT
+      COUNT(*) as total_new,
+      COUNT(first_hatch_at) as hatched
+    FROM gg_analytics_users WHERE DATE(first_visit_at) = ?
+  `).get(cohortDate);
+
+  // 2. 신규 유저 로그인 전환율
+  const loginRate = db.prepare(`
+    SELECT
+      COUNT(*) as total_new,
+      COUNT(first_login_at) as logged_in
+    FROM gg_analytics_users WHERE DATE(first_visit_at) = ?
+  `).get(cohortDate);
+
+  // 3. D1~D7 리텐션 (코호트 기준)
+  const retention = db.prepare(`
+    SELECT
+      CAST(julianday(DATE(e.created_at)) - julianday(?) AS INT) as day_n,
+      COUNT(DISTINCT e.user_hash) as users
+    FROM gg_events e
+    JOIN gg_analytics_users u ON e.user_hash = u.user_hash
+    WHERE DATE(u.first_visit_at) = ? AND e.event = 'app_open'
+      AND CAST(julianday(DATE(e.created_at)) - julianday(?) AS INT) BETWEEN 0 AND 28
+    GROUP BY day_n ORDER BY day_n
+  `).all(cohortDate, cohortDate, cohortDate);
+  const cohortSize = db.prepare('SELECT COUNT(*) as cnt FROM gg_analytics_users WHERE DATE(first_visit_at) = ?').get(cohortDate)?.cnt || 0;
+
+  // 4. 유저별 일평균 부화 수
+  const avgHatches = db.prepare(`
+    SELECT AVG(daily_count) as avg_daily FROM (
+      SELECT user_hash, DATE(created_at) as day, COUNT(*) as daily_count
+      FROM gg_events WHERE event = 'egg_hatch' GROUP BY user_hash, day
+    )
+  `).get();
+
+  // 5. Daily 부화 횟수별 유저 분포 (오늘)
+  const hatchDistribution = db.prepare(`
+    SELECT daily_count, COUNT(*) as users FROM (
+      SELECT user_hash, COUNT(*) as daily_count
+      FROM gg_events WHERE event = 'egg_hatch' AND DATE(created_at) = ?
+      GROUP BY user_hash
+    ) GROUP BY daily_count ORDER BY daily_count
+  `).all(today);
+
+  // 6. 장기 유저 vs 이탈 유저 첫날 행동 비교
+  const behaviorComparison = db.prepare(`
+    WITH user_lifespan AS (
+      SELECT user_hash,
+        COUNT(DISTINCT DATE(created_at)) as active_days,
+        MIN(DATE(created_at)) as first_day
+      FROM gg_events WHERE event = 'app_open' GROUP BY user_hash
+    ),
+    first_day_actions AS (
+      SELECT e.user_hash,
+        SUM(CASE WHEN e.event='egg_hatch' THEN 1 ELSE 0 END) as hatches,
+        MAX(CASE WHEN e.event='lottery_result' THEN 1 ELSE 0 END) as used_lottery,
+        MAX(CASE WHEN e.event='login_success' THEN 1 ELSE 0 END) as logged_in,
+        MAX(COALESCE(json_extract(e.params,'$.amount'),0)) as max_lottery_win,
+        SUM(CASE WHEN e.event='egg_hatch' THEN COALESCE(json_extract(e.params,'$.coins'),0) ELSE 0 END) as total_coins
+      FROM gg_events e JOIN user_lifespan u
+        ON e.user_hash = u.user_hash AND DATE(e.created_at) = u.first_day
+      GROUP BY e.user_hash
+    )
+    SELECT
+      CASE WHEN u.active_days >= 7 THEN 'retained' ELSE 'churned' END as segment,
+      COUNT(*) as users,
+      AVG(f.hatches) as avg_hatches,
+      AVG(f.used_lottery) as lottery_rate,
+      AVG(f.logged_in) as login_rate,
+      AVG(f.max_lottery_win) as avg_max_lottery_win,
+      AVG(f.total_coins) as avg_first_day_coins
+    FROM user_lifespan u JOIN first_day_actions f ON u.user_hash = f.user_hash
+    GROUP BY segment
+  `).all();
+
+  // 7. 복권 이용 유저 비율 (오늘)
+  const lotteryUsage = db.prepare(`
+    SELECT
+      COUNT(DISTINCT CASE WHEN event='lottery_result' THEN user_hash END) as lottery_users,
+      COUNT(DISTINCT CASE WHEN event='app_open' THEN user_hash END) as total_users
+    FROM gg_events WHERE DATE(created_at) = ?
+  `).get(today);
+
+  // 오늘 요약 (이벤트 기반)
+  const todaySummary = db.prepare(`
+    SELECT
+      COUNT(DISTINCT user_hash) as dau,
+      COUNT(CASE WHEN event='egg_hatch' THEN 1 END) as total_hatches,
+      COUNT(CASE WHEN event='lottery_result' THEN 1 END) as total_lotteries,
+      COUNT(CASE WHEN event='exchange_complete' THEN 1 END) as total_exchanges,
+      COUNT(CASE WHEN event='ad_fail' THEN 1 END) as ad_fails
+    FROM gg_events WHERE DATE(created_at) = ?
+  `).get(today);
+
+  // 오늘 실제 비즈니스 지표 (기존 DB 테이블에서)
+  const todayBiz = db.prepare(`
+    SELECT
+      COUNT(*) as ad_views,
+      COALESCE(SUM(coins), 0) as total_coins_given
+    FROM gg_reward_log WHERE DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+  const todayExchange = db.prepare(`
+    SELECT
+      COALESCE(SUM(coins_spent), 0) as coins_exchanged,
+      COALESCE(SUM(coins_spent / 10), 0) as points_exchanged
+    FROM gg_exchanges WHERE status = 'confirmed' AND DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+  const todayShares = db.prepare(`
+    SELECT COUNT(*) as share_count, COUNT(DISTINCT user_hash) as share_users
+    FROM gg_reward_log WHERE reason = 'share' AND DATE(created_at) = DATE(?, '+9 hours')
+  `).get(today);
+
+  // 일별 DAU 추이 (최근 30일) — gg_events 기반 + gg_access_log 폴백
+  let dauTrend = db.prepare(`
+    SELECT DATE(created_at) as date, COUNT(DISTINCT user_hash) as dau
+    FROM gg_events WHERE event = 'app_open' AND DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+  if (dauTrend.length === 0) {
+    dauTrend = db.prepare(`
+      SELECT access_date as date, COUNT(DISTINCT user_hash) as dau
+      FROM gg_access_log WHERE access_date >= DATE(?, '-30 days')
+      GROUP BY access_date ORDER BY access_date
+    `).all(today);
+  }
+
+  // 신규 유저 수 추이 (최근 30일)
+  let newUserTrend = db.prepare(`
+    SELECT DATE(first_visit_at) as date, COUNT(*) as new_users
+    FROM gg_analytics_users WHERE DATE(first_visit_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(first_visit_at) ORDER BY date
+  `).all(today);
+  if (newUserTrend.length === 0) {
+    newUserTrend = db.prepare(`
+      SELECT DATE(created_at) as date, COUNT(*) as new_users
+      FROM gg_users WHERE DATE(created_at) >= DATE(?, '-30 days')
+      GROUP BY DATE(created_at) ORDER BY date
+    `).all(today);
+  }
+
+  // === 기존 DB 기반 지표 (이벤트 배포 전에도 사용 가능) ===
+
+  // 일별 광고 노출(부화) 추이 (최근 30일, gg_reward_log에서)
+  const adTrend = db.prepare(`
+    SELECT DATE(created_at) as date, COUNT(*) as ad_views, SUM(coins) as coins_given
+    FROM gg_reward_log WHERE DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+
+  // 일별 교환 포인트 추이 (최근 30일)
+  const exchangeTrend = db.prepare(`
+    SELECT DATE(created_at) as date, SUM(coins_spent / 10) as points, COUNT(*) as count
+    FROM gg_exchanges WHERE status = 'confirmed' AND DATE(created_at) >= DATE(?, '-30 days')
+    GROUP BY DATE(created_at) ORDER BY date
+  `).all(today);
+
+  // 총 유저 수
+  const totalUsers = db.prepare('SELECT COUNT(*) as cnt FROM gg_coins').get()?.cnt || 0;
+
+  // 일별 부화 횟수별 유저 분포 (기존 gg_reward_log에서, 오늘)
+  let hatchDistLegacy = [];
+  if (hatchDistribution.length === 0) {
+    hatchDistLegacy = db.prepare(`
+      SELECT daily_count, COUNT(*) as users FROM (
+        SELECT user_hash, COUNT(*) as daily_count
+        FROM gg_reward_log WHERE DATE(created_at) = DATE(?, '+9 hours')
+        GROUP BY user_hash
+      ) GROUP BY daily_count ORDER BY daily_count
+    `).all(today);
+  }
+
+  // 유저별 일평균 부화 수 (기존 gg_reward_log에서)
+  let avgHatchesLegacy = 0;
+  if (!avgHatches?.avg_daily) {
+    avgHatchesLegacy = db.prepare(`
+      SELECT AVG(daily_count) as avg_daily FROM (
+        SELECT user_hash, DATE(created_at) as day, COUNT(*) as daily_count
+        FROM gg_reward_log GROUP BY user_hash, day
+      )
+    `).get()?.avg_daily || 0;
+  }
+
+  res.json({
+    today,
+    cohortDate,
+    cohortSize,
+    firstHatchRate,
+    loginRate,
+    retention,
+    avgDailyHatches: avgHatches?.avg_daily || 0,
+    hatchDistribution,
+    behaviorComparison,
+    lotteryUsage,
+    todaySummary,
+    todayBiz,
+    todayExchange,
+    todayShares,
+    dauTrend,
+    newUserTrend,
+    adTrend,
+    exchangeTrend,
+    totalUsers,
+    hatchDistLegacy,
+    avgHatchesLegacy,
+  });
+});
 app.listen(PORT, '127.0.0.1', () => {
     console.log(`Score API running on port ${PORT}`);
   });
