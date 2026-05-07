@@ -514,6 +514,31 @@ app.post('/api/score/promo/record', (req, res) => {
   }
 });
 
+// POST /api/score/points/sync — 클라 LS ↔ server max 동기화
+app.post('/api/score/points/sync', (req, res) => {
+  const { userHash, localPoints } = req.body;
+  console.log(`[Points Sync IN] userHash=${userHash} localPoints=${localPoints}`);
+  if (!userHash || typeof localPoints !== 'number' || localPoints < 0) {
+    return res.status(400).json({ error: 'userHash and non-negative localPoints required' });
+  }
+  const user = db.prepare('SELECT points FROM users WHERE user_hash = ?').get(userHash);
+  if (!user) {
+    console.log(`[Points Sync 404] user not found: ${userHash}`);
+    return res.status(404).json({ error: 'user not found' });
+  }
+  const server = user.points || 0;
+  const finalPoints = Math.max(server, localPoints);
+  if (finalPoints > server) {
+    db.prepare('UPDATE users SET points = ? WHERE user_hash = ?').run(finalPoints, userHash);
+    console.log(`[Points Sync] ${userHash}: server ${server} → ${finalPoints} (local was ${localPoints})`);
+  } else if (finalPoints > localPoints) {
+    console.log(`[Points Sync] ${userHash}: local ${localPoints} ← server ${server} (pull down)`);
+  } else {
+    console.log(`[Points Sync OK] ${userHash}: server=${server} local=${localPoints} (no change)`);
+  }
+  res.json({ status: 'ok', server, local: localPoints, points: finalPoints });
+});
+
 // POST /api/score/points/add — 서버에 포인트 적립 기록
 app.post('/api/score/points/add', (req, res) => {
   const { userHash, amount } = req.body;
@@ -2013,7 +2038,10 @@ app.post('/api/golden-goose/reward', (req, res) => {
   }
 
   db.prepare(`INSERT INTO gg_coins (user_hash, coins, total_earned, milestone_eggs) VALUES (?, ?, ?, 1) ON CONFLICT(user_hash) DO UPDATE SET coins = coins + excluded.coins, total_earned = total_earned + excluded.coins, milestone_eggs = milestone_eggs + 1, updated_at = (datetime('now','+9 hours'))`).run(userHash, coins, coins);
-  db.prepare('INSERT INTO gg_reward_log (user_hash, coins, reason) VALUES (?, ?, ?)').run(userHash, coins, reason || 'reward');
+  // Stale 클라이언트가 reason 없이 fixedCoins만 보내면 미션 카운트(reward)에서 제외하기 위해
+  // 'fixed_unknown'으로 기록. (egg-hatch 경로는 fixedCoins/reason 둘 다 없어서 'reward' 유지)
+  const finalReason = reason || (fixedCoins ? 'fixed_unknown' : 'reward');
+  db.prepare('INSERT INTO gg_reward_log (user_hash, coins, reason) VALUES (?, ?, ?)').run(userHash, coins, finalReason);
   const updated = db.prepare('SELECT coins, total_earned, milestone_eggs FROM gg_coins WHERE user_hash = ?').get(userHash);
   res.json({ coins, totalCoins: updated.coins, totalEarned: updated.total_earned, milestoneEggs: updated.milestone_eggs ?? 0 });
 });
